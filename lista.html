@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>La Provence — Lista de Casamento</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/lista.css" />
+  <link rel="icon" href="assets/img/CrownIcon.png" type="image/png">
+</head>
+<body>
+
+  <!-- ─── NAVBAR ─── -->
+  <nav class="public-navbar">
+    <a href="index.html"><img src="assets/img/LaProvenceLogo.png" alt="La Provence" style="width: 150px; height: auto;"></a>
+    <span class="label-caps" style="color:rgba(251,221,144,0.5)">Lista de Casamento</span>
+  </nav>
+
+  <!-- ─── HERO ─── -->
+  <div class="public-hero" id="public-hero">
+    <div class="public-hero-content">
+      <span class="label-caps">Voce esta na lista de</span>
+      <span class="script" id="hero-names">Carregando...</span>
+      <p id="hero-date"></p>
+      <div class="public-code" id="hero-code"></div>
+    </div>
+  </div>
+
+  <!-- ─── CATALOG ─── -->
+  <div class="public-catalog">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem">
+      <h2 style="font-size:1.1rem; font-weight:700; color:var(--verde); text-transform:uppercase; letter-spacing:0.1em">Escolha um presente</h2>
+      <div id="progress-info" style="font-size:0.78rem; color:var(--texto-suave)"></div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><span class="item-status-dot dot-available"></span> Disponivel</div>
+      <div class="legend-item"><span class="item-status-dot dot-purchased"></span> Ja presenteado</div>
+    </div>
+
+    <div class="public-filters" id="public-filters">
+      <button class="public-filter active" onclick="setPublicFilter('', this)">Todos</button>
+    </div>
+
+    <div class="catalog-grid" id="public-catalog-grid">
+      <!-- Preenchido via JS -->
+    </div>
+  </div>
+
+  <!-- ─── FOOTER ─── -->
+  <footer style="margin-top:4rem">
+    <div class="navbar-logo" style="flex-direction:column; align-items:center">
+      <img src="assets/img/LaProvenceLogo.png" alt="La Provence" style="width: 180px; height: auto;">
+    </div>
+    <div class="footer-links">
+      <a href="#">Politica de Privacidade</a>
+    </div>
+    <p>© 2024 La Provence Espaco. Todos os direitos reservados.</p>
+  </footer>
+
+  <!-- ─── MODAL COMPRA ─── -->
+  <div class="modal-overlay" id="modal-compra">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Presentear este item</h3>
+        <button class="modal-close" data-close-modal>&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="buy-item-preview" id="buy-preview"></div>
+
+        <div class="form-group">
+          <label>Seu nome completo</label>
+          <input type="text" id="buy-nome" placeholder="Como voce gostaria de ser identificado" />
+          <span class="form-error" id="buy-nome-err">Informe seu nome completo</span>
+        </div>
+        <div class="form-group">
+          <label>CPF</label>
+          <input type="text" id="buy-cpf" placeholder="000.000.000-00" maxlength="14" />
+          <span class="form-error" id="buy-cpf-err">CPF invalido</span>
+        </div>
+        <div class="form-group">
+          <label>Telefone</label>
+          <input type="text" id="buy-tel" placeholder="(00) 00000-0000" />
+          <span class="form-error" id="buy-tel-err">Informe seu telefone</span>
+        </div>
+        <div class="form-group">
+          <label>Forma de Pagamento</label>
+          <div class="payment-options">
+            <div class="payment-option selected" onclick="selectPagamento(this, 'Pix')">Pix</div>
+            <div class="payment-option" onclick="selectPagamento(this, 'Cartao')">Cartao</div>
+            <div class="payment-option" onclick="selectPagamento(this, 'Boleto')">Boleto</div>
+          </div>
+        </div>
+        <div style="background:rgba(0,48,13,0.04); border:1px solid rgba(0,48,13,0.1); border-radius:2px; padding:0.8rem 1rem; margin-top:0.5rem">
+          <p style="font-size:0.75rem; color:var(--texto-suave); font-weight:300; line-height:1.7">
+            Ao confirmar, seu presente sera registrado e os noivos serao notificados. O pagamento e processado de forma segura.
+          </p>
+        </div>
+        <span id="buy-error" class="form-error" style="margin-top:0.8rem; font-size:0.8rem"></span>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-dark btn-sm" data-close-modal>Cancelar</button>
+        <button class="btn btn-verde" onclick="confirmarCompra()">Confirmar Presente</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── MODAL SUCESSO ─── -->
+  <div class="modal-overlay" id="modal-sucesso">
+    <div class="modal" style="text-align:center">
+      <div class="modal-body" style="padding:3rem 2rem">
+        <span class="script" style="font-size:3rem; color:var(--ouro); display:block; margin-bottom:0.5rem">Obrigado!</span>
+        <h3 style="color:var(--verde); margin-bottom:1rem; font-size:1.1rem">Presente registrado com sucesso</h3>
+        <p style="font-size:0.85rem; color:var(--texto-suave); font-weight:300; line-height:1.8; margin-bottom:1.5rem">
+          Os noivos foram notificados sobre o seu carinho.<br>
+          Que seja um dia inesquecivel para todos!
+        </p>
+        <div style="background:var(--bege); border-radius:4px; padding:1.2rem; margin-bottom:1.5rem">
+          <div class="label-caps" style="margin-bottom:0.3rem">Item presenteado</div>
+          <div id="sucesso-item" style="font-weight:600; color:var(--verde)"></div>
+        </div>
+        <button class="btn btn-verde" onclick="closeModal('modal-sucesso')">Continuar na Lista</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const codigo = params.get('codigo');
+
+    let lista = null;
+    let currentItemId = null;
+    let pagamentoSelecionado = 'Pix';
+    let publicFilter = '';
+
+    if (!codigo) {
+      document.getElementById('public-hero').innerHTML = `
+        <div class="public-hero-content">
+          <span class="label-caps">Lista nao encontrada</span>
+          <span class="script">Codigo invalido</span>
+          <p>Verifique o link ou o codigo recebido dos noivos.</p>
+          <a href="index.html" class="btn btn-outline" style="margin-top:1rem">Voltar ao inicio</a>
+        </div>`;
+    } else {
+      lista = getListaByCodigo(codigo);
+      if (!lista) {
+        document.getElementById('hero-names').textContent = 'Lista nao encontrada';
+        document.getElementById('hero-code').textContent = codigo;
+      } else {
+        document.getElementById('hero-names').textContent = lista.nome_noivos;
+        document.title = lista.nome_noivos + ' — Lista de Casamento — La Provence';
+        if (lista.data_casamento) {
+          document.getElementById('hero-date').textContent = 'Casamento em ' + formatDate(lista.data_casamento);
+        }
+        document.getElementById('hero-code').textContent = 'Codigo: ' + lista.codigo;
+      }
+    }
+
+    maskPhone(document.getElementById('buy-tel'));
+    maskCPF(document.getElementById('buy-cpf'));
+
+    function setPublicFilter(setor, btn) {
+      publicFilter = setor;
+      document.querySelectorAll('.public-filter').forEach(f => f.classList.remove('active'));
+      btn.classList.add('active');
+      renderPublicCatalog();
+    }
+
+    function renderPublicCatalog() {
+      if (!lista) return;
+      const grid = document.getElementById('public-catalog-grid');
+      const catalogo = getCatalogo();
+      const compras = getComprasByLista(lista.id);
+
+      const setores = [...new Set(lista.itens.map(id => {
+        const item = catalogo.find(c => c.id === id);
+        return item ? item.setor : null;
+      }).filter(Boolean))];
+
+      // Update filters
+      const filtersEl = document.getElementById('public-filters');
+      filtersEl.innerHTML = `<button class="public-filter ${publicFilter === '' ? 'active' : ''}" onclick="setPublicFilter('', this)">Todos</button>`;
+      setores.forEach(s => {
+        filtersEl.innerHTML += `<button class="public-filter ${publicFilter === s ? 'active' : ''}" onclick="setPublicFilter('${s}', this)">${s}</button>`;
+      });
+
+      let itens = lista.itens.map(id => catalogo.find(c => c.id === id)).filter(Boolean);
+      if (publicFilter) itens = itens.filter(i => i.setor === publicFilter);
+
+      const total = lista.itens.length;
+      const presenteados = compras.length;
+      document.getElementById('progress-info').textContent = `${presenteados} de ${total} presentes escolhidos`;
+
+      if (itens.length === 0) {
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><p>Nenhum item nesta categoria.</p></div>`;
+        return;
+      }
+
+      grid.innerHTML = itens.map(item => {
+        const compra = compras.find(c => c.item_id === item.id);
+        return `
+          <div class="item-card${compra ? ' purchased' : ''}">
+            ${compra ? `<div class="purchased-overlay"><span class="purchased-stamp">Presenteado</span></div>` : ''}
+            <div class="item-card-setor">${item.setor}</div>
+            <div class="item-card-body">
+              <h4>${item.nome}</h4>
+              <div class="tamanho">${item.tamanho}</div>
+              <div class="preco">${formatMoney(item.preco)}</div>
+              ${!compra ? `
+                <button class="btn btn-verde btn-sm" onclick="abrirCompra('${item.id}')">Presentear</button>
+              ` : `
+                <span style="font-size:0.72rem; color:var(--texto-suave)">Ja foi presenteado</span>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function abrirCompra(itemId) {
+      const item = getItemById(itemId);
+      if (!item) return;
+
+      // Check if already purchased (real-time)
+      const compra = getComprasByItem(lista.id, itemId);
+      if (compra) {
+        toast('Este item acabou de ser presenteado por outra pessoa.', 'error');
+        renderPublicCatalog();
+        return;
+      }
+
+      currentItemId = itemId;
+      document.getElementById('buy-preview').innerHTML = `
+        <h4>${item.nome}</h4>
+        <div style="font-size:0.75rem; color:var(--texto-suave); margin-bottom:0.5rem">${item.tamanho} · ${item.setor}</div>
+        <div class="buy-item-price">${formatMoney(item.preco)}</div>
+      `;
+      // Clear form
+      document.getElementById('buy-nome').value = '';
+      document.getElementById('buy-cpf').value = '';
+      document.getElementById('buy-tel').value = '';
+      document.querySelectorAll('.payment-option').forEach(p => p.classList.remove('selected'));
+      document.querySelectorAll('.payment-option')[0].classList.add('selected');
+      pagamentoSelecionado = 'Pix';
+      document.querySelectorAll('.form-error').forEach(e => e.classList.remove('show'));
+      openModal('modal-compra');
+    }
+
+    function selectPagamento(el, tipo) {
+      document.querySelectorAll('.payment-option').forEach(p => p.classList.remove('selected'));
+      el.classList.add('selected');
+      pagamentoSelecionado = tipo;
+    }
+
+    function confirmarCompra() {
+      const nome = document.getElementById('buy-nome').value.trim();
+      const cpf = document.getElementById('buy-cpf').value.trim();
+      const tel = document.getElementById('buy-tel').value.trim();
+      const errEl = document.getElementById('buy-error');
+
+      let ok = true;
+      document.querySelectorAll('.form-error').forEach(e => e.classList.remove('show'));
+      errEl.classList.remove('show');
+
+      if (!nome) { document.getElementById('buy-nome-err').classList.add('show'); ok = false; }
+      if (!validateCPF(cpf)) { document.getElementById('buy-cpf-err').classList.add('show'); ok = false; }
+      if (!tel || tel.replace(/\D/g,'').length < 10) { document.getElementById('buy-tel-err').classList.add('show'); ok = false; }
+      if (!ok) return;
+
+      try {
+        const item = getItemById(currentItemId);
+        registrarCompra(lista.id, currentItemId, {
+          nome, cpf, telefone: tel,
+          valor: item.preco,
+          pagamento: pagamentoSelecionado,
+        });
+        closeModal('modal-compra');
+        document.getElementById('sucesso-item').textContent = item.nome;
+        openModal('modal-sucesso');
+        renderPublicCatalog();
+      } catch (e) {
+        errEl.textContent = e.message;
+        errEl.classList.add('show');
+        renderPublicCatalog();
+      }
+    }
+
+    renderPublicCatalog();
+    initModals();
+  </script>
+</body>
+</html>

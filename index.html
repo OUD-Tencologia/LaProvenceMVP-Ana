@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>La Provence — Lista de Casamento</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/main.css" />
+    <link rel="stylesheet" href="css/index.css" />
+    <link rel="icon" href="assets/img/CrownIcon.png" type="image/png">
+  </head>
+  <body>
+    <!-- ─── NAVBAR ─────────────────────────────── -->
+    <nav class="navbar" id="navbar">
+      <a href="index.html" class="navbar-logo">
+        <img src="assets/img/LaProvenceLogo.png" alt="La Provence" style="width: 180px; height: auto;">
+      </a>
+      <div class="navbar-nav">
+        <a href="#como-funciona">Como Funciona</a>
+        <a href="#listas">Nossas Listas</a>
+        <a href="auth.html" id="nav-entrar">Entrar</a>
+        <a
+          href="auth.html?modo=criar"
+          class="btn btn-primary"
+          style="border-radius: 2px; font-size: 0.72rem; padding: 0.7rem 1.6rem; letter-spacing: 0.18em; box-shadow: 0 0 0 2px rgba(251,221,144,0.35)"
+          >Criar Lista</a
+        >
+      </div>
+    </nav>
+
+    <!-- ─── HERO ──────────────────────────────── -->
+    <section class="hero">
+      <div class="hero-bg" style="background-image: url('assets/img/hero1.png');"></div>
+      <div class="hero-overlay"></div>
+      <div class="hero-content">
+        <span class="label-caps">La Provence — Lista de Casamento</span>
+        <h1>Monte a lista</h1>
+        <span class="script-title">dos seus sonhos</span>
+        <p>
+          Cada presente escolhido com cuidado. Cada detalhe pensado para o lar
+          que voces estao construindo juntos. Simples para voces, especial para
+          quem ama voces.
+        </p>
+        <div class="hero-access-bar">
+          <div class="hero-access-col hero-access-noivos">
+            <span class="hero-access-label">Sou noivo(a)</span>
+            <a href="auth.html?modo=criar" class="btn btn-primary">Crie sua lista</a>
+          </div>
+          <div class="hero-access-divider"></div>
+          <div class="hero-access-col hero-access-convidado">
+            <span class="hero-access-label">Sou convidado</span>
+            <div class="hero-access-input-row">
+              <input type="text" id="access-code" placeholder="Codigo da lista" maxlength="8" />
+              <button class="btn btn-outline" onclick="acessarLista()">Acessar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── COMO FUNCIONA ─────────────────────── -->
+    <section class="steps-section" id="como-funciona">
+      <div class="section-header" style="padding-top: 3rem">
+        <span class="label-caps" style="color: rgba(251, 221, 144, 0.55)"
+          >Simples como deve ser</span
+        >
+        <span class="script">Como funciona</span>
+        <h2 style="color: var(--ouro-claro)">
+          Tres passos para a lista perfeita
+        </h2>
+        <p>
+          Do primeiro clique ao dia mais especial. Nos cuidamos de cada detalhe.
+        </p>
+      </div>
+      <div
+        class="ornament-center ornament"
+        style="max-width: 280px; margin: -1rem auto 3rem"
+      >
+        <span style="color: rgba(251, 221, 144, 0.3); font-size: 0.8rem"
+          >&#10022;</span
+        >
+      </div>
+      <div class="steps-grid">
+        <div class="step-item">
+          <div class="step-number">1</div>
+          <h3>Escolham juntos</h3>
+          <p>
+            Navegue pelo nosso catalogo curado e adicione os itens que fazem
+            sentido para o lar dos sonhos de voces. Comece do zero ou use uma de
+            nossas listas pre-montadas.
+          </p>
+        </div>
+        <div class="step-item">
+          <div class="step-number">2</div>
+          <h3>Compartilhem</h3>
+          <p>
+            Com um codigo unico, seus convidados acessam a lista diretamente
+            pelo link ou WhatsApp. Sem complicacao, sem downloads, sem cadastro
+            para eles.
+          </p>
+        </div>
+        <div class="step-item">
+          <div class="step-number">3</div>
+          <h3>Recebam com amor</h3>
+          <p>
+            Cada presente escolhido e registrado em tempo real. Voces acompanham
+            tudo pelo painel e seus convidados tem a certeza de que o presente
+            chegara com significado.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── LISTAS PRE-MONTADAS ───────────────── -->
+    <section class="templates-section" id="listas">
+      <div class="section-header">
+        <span class="script">Nossas Listas</span>
+        <h2>Escolha seu <strong>ponto de partida</strong></h2>
+        <p>
+          Listas pensadas com carinho para diferentes momentos. Personalize como
+          quiser depois.
+        </p>
+      </div>
+      <div class="ornament-center ornament">
+        <span style="color: var(--ouro); font-size: 0.85rem">&#10022;</span>
+      </div>
+      <div class="templates-grid" id="templates-grid">
+        <!-- Renderizado via JS -->
+      </div>
+    </section>
+
+    <!-- ─── COMO MONTAR SUA LISTA ───────────────── -->
+    <section class="wedding-gallery">
+      <div class="section-header" style="padding-top:0; margin-bottom:3rem">
+        <span class="label-caps">Guia prático</span>
+        <h2>Como montar <strong>sua lista?</strong></h2>
+        <p>Seis dicas pensadas para vocês escolherem com calma, carinho e alegria.</p>
+      </div>
+      <div class="wg-container">
+
+        <!-- Coluna Esquerda: foto com arco + ornamentos -->
+        <div class="wg-left">
+          <div class="wg-arch-wrapper">
+            <img src="assets/img/royalelement1.png" class="wg-ornament wg-ornament-tl" alt="" />
+            <img src="assets/img/royalelement1.png" class="wg-ornament wg-ornament-tr" alt="" />
+            <img src="assets/img/royalelement3.png" class="wg-ornament wg-ornament-b"  alt="" />
+            <img src="./assets/img/couplewedding.png" class="wg-main-img" alt="Casal de noivos" />
+          </div>
+        </div>
+
+        <!-- Coluna Direita: 6 cards de passo a passo -->
+        <div class="wg-right">
+          <div class="wg-grid">
+            <div class="wg-step-card">
+              <div class="wg-step-num">1</div>
+              <h4>Converse sobre o lar</h4>
+              <p>Alinhem prioridades antes de adicionar qualquer item: estilos, essenciais, prioridades.</p>
+            </div>
+            <div class="wg-step-card">
+              <div class="wg-step-num">2</div>
+              <h4>Varie os valores</h4>
+              <p>Inclua itens de diferentes faixas de preço para que todos possam presentear com carinho.</p>
+            </div>
+            <div class="wg-step-card">
+              <div class="wg-step-num">3</div>
+              <h4>Pense em cada cômodo</h4>
+              <p>Cozinha, sala, quarto, banheiro — percorra o lar e garanta cobertura completa.</p>
+            </div>
+            <div class="wg-step-card">
+              <div class="wg-step-num">4</div>
+              <h4>Não se limite</h4>
+              <p>Adicione mais itens do que espera receber. Dá mais opções e aumenta as chances.</p>
+            </div>
+            <div class="wg-step-card">
+              <div class="wg-step-num">5</div>
+              <h4>Compartilhe cedo</h4>
+              <p>Divulgue com 2 meses de antecedência para os convidados planejarem com calma.</p>
+            </div>
+            <div class="wg-step-card">
+              <div class="wg-step-num">6</div>
+              <h4>Acompanhe em tempo real</h4>
+              <p>Pelo painel, vocês sabem exatamente o que foi presenteado — sem surpresas!</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ─── POR QUE LA PROVENCE ───────────────── -->
+    <section class="why-section">
+      <div class="section-header">
+        <span class="label-caps">Nosso compromisso</span>
+        <h2>Uma experiencia <strong>pensada nos detalhes</strong></h2>
+      </div>
+      <div class="why-grid">
+        <div class="why-item">
+          <div class="why-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1-7l6.6-6.6-1.4-1.4-5.2 5.2-2.6-2.6-1.4 1.4L11 15z"
+              />
+            </svg>
+          </div>
+          <div>
+            <h4>Atualizacao em tempo real</h4>
+            <p>
+              Assim que um presente e escolhido, ele sai da lista
+              instantaneamente. Sem duplicidades, sem confusao.
+            </p>
+          </div>
+        </div>
+        <div class="why-item">
+          <div class="why-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M18 8h1a4 4 0 0 1 0 8h-1v2a1 1 0 0 1-2 0V6a1 1 0 0 1 2 0v2zm0 6h1a2 2 0 0 0 0-4h-1v4zM4 6a1 1 0 0 1 2 0v2h2V6a1 1 0 0 1 2 0v2h1a4 4 0 0 1 0 8H5a1 1 0 0 1-1-1V6zm2 8h6a2 2 0 0 0 0-4H6v4z"
+              />
+            </svg>
+          </div>
+          <div>
+            <h4>Acesso simples para convidados</h4>
+            <p>
+              Sem cadastro, sem app. Basta o link ou o codigo. Qualquer pessoa,
+              qualquer dispositivo.
+            </p>
+          </div>
+        </div>
+        <div class="why-item">
+          <div class="why-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-1 14l-3-3 1.41-1.41L11 12.17l4.59-4.58L17 9l-6 6z"
+              />
+            </svg>
+          </div>
+          <div>
+            <h4>Privacidade e seguranca</h4>
+            <p>
+              Seus dados e os de seus convidados protegidos com criptografia.
+              Conformidade total com a LGPD.
+            </p>
+          </div>
+        </div>
+        <div class="why-item">
+          <div class="why-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 0 0-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"
+              />
+            </svg>
+          </div>
+          <div>
+            <h4>Compartilhe pelo WhatsApp</h4>
+            <p>
+              Com um clique, envie o link da lista para todos os seus convidados
+              pelo WhatsApp ou qualquer canal.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    
+
+    <!-- ─── CTA ───────────────────────────────── -->
+    <section class="cta-section">
+      <div class="section-header">
+        <span class="label-caps" style="color: rgba(251, 221, 144, 0.55)"
+          >O grande dia se aproxima</span
+        >
+        <span class="script" style="color: var(--ouro-claro)"
+          >Comece agora</span
+        >
+        <h2 style="color: var(--branco)">
+          Prontos para montar a lista <strong>dos sonhos?</strong>
+        </h2>
+        <p>
+          Gratuito, elegante e pensado para tornar esse momento ainda mais
+          especial.
+        </p>
+      </div>
+      <a href="auth.html?modo=criar" class="btn btn-primary btn-lg"
+        >Criar Nossa Lista Gratuitamente</a
+      >
+    </section>
+
+    <!-- ─── FOOTER ─────────────────────────────── -->
+    <footer>
+      <div
+        class="navbar-logo"
+        style="flex-direction: column; align-items: center"
+      >
+        <img src="assets/img/LaProvenceLogo.png" alt="La Provence" style="width: 180px; height: auto;">
+      </div>
+      <div class="footer-links">
+        <a href="#">Politica de Privacidade</a>
+        <a href="#">Termos de Uso</a>
+        <a href="gestor.html">Area do Gestor</a>
+      </div>
+      <p>© 2026 La Provence Espaco. Todos os direitos reservados.</p>
+    </footer>
+
+    <!-- ─── WHATSAPP POPUP ─── -->
+    <div class="wa-bubble" id="wa-bubble" onclick="toggleWaPopup()">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.558 4.114 1.532 5.841L.057 23.882l6.198-1.625A11.96 11.96 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.795 9.795 0 0 1-4.997-1.367l-.358-.213-3.677.964.981-3.594-.234-.369A9.795 9.795 0 0 1 2.182 12C2.182 6.579 6.579 2.182 12 2.182S21.818 6.579 21.818 12 17.421 21.818 12 21.818z"/></svg>
+    </div>
+    <div class="wa-popup" id="wa-popup">
+      <div class="wa-popup-header">
+        <div style="display:flex; align-items:center; gap:0.8rem">
+          <div style="width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center">
+            <svg viewBox="0 0 24 24" fill="white" width="22" height="22"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.558 4.114 1.532 5.841L.057 23.882l6.198-1.625A11.96 11.96 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.795 9.795 0 0 1-4.997-1.367l-.358-.213-3.677.964.981-3.594-.234-.369A9.795 9.795 0 0 1 2.182 12C2.182 6.579 6.579 2.182 12 2.182S21.818 6.579 21.818 12 17.421 21.818 12 21.818z"/></svg>
+          </div>
+          <div>
+            <div style="font-weight:700; font-size:0.85rem">La Provence</div>
+            <div style="font-size:0.68rem; opacity:0.75">Online agora</div>
+          </div>
+        </div>
+        <button onclick="toggleWaPopup()" style="background:none; border:none; color:white; cursor:pointer; font-size:1.2rem; opacity:0.7; line-height:1">&times;</button>
+      </div>
+      <div class="wa-popup-body">
+        <div class="wa-popup-msg">
+          Oi! 👋 Pronto para montar a lista de casamento dos sonhos? Fale com a gente pelo WhatsApp e tire todas as suas dúvidas!
+        </div>
+      </div>
+      <div class="wa-popup-footer">
+        <a href="https://wa.me/5500000000000?text=Ola!%20Tenho%20interesse%20na%20Lista%20de%20Casamento%20La%20Provence." target="_blank" class="wa-popup-btn">
+          Iniciar conversa
+          <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+      // Render template cards
+      function renderTemplates() {
+        const grid = document.getElementById("templates-grid");
+        const premontadas = getPremontadas();
+        grid.innerHTML = premontadas
+          .map((p) => {
+            const img = p.img || 'assets/img/dishesTemplate1.png';
+            return `
+          <a href="auth.html?modo=criar&template=${p.id}" class="template-card">
+            <span class="template-card-badge${p.popular ? " popular" : ""}">${p.badge}</span>
+            <div class="template-card-img" style="background-image: url('${img}');"></div>
+            <div class="template-card-body">
+              <span class="label-caps">${p.itens.length} itens selecionados</span>
+              <h3>${p.nome}</h3>
+              <p>${p.descricao}</p>
+              <span class="btn btn-verde btn-sm" style="pointer-events:none">Escolher esta lista</span>
+            </div>
+          </a>
+        `;
+          })
+          .join("");
+      }
+
+      function acessarLista() {
+        const codigo = document
+          .getElementById("access-code")
+          .value.trim()
+          .toUpperCase();
+        if (!codigo) {
+          toast("Digite o codigo da lista.", "error");
+          return;
+        }
+        const lista = getListaByCodigo(codigo);
+        if (!lista) {
+          toast("Lista nao encontrada. Verifique o codigo.", "error");
+          return;
+        }
+        window.location.href = "lista.html?codigo=" + codigo;
+      }
+
+      document
+        .getElementById("access-code")
+        .addEventListener("keydown", (e) => {
+          if (e.key === "Enter") acessarLista();
+        });
+
+      // Update nav based on auth
+      const user = getCurrentUser();
+      if (user) {
+        const navEntrar = document.getElementById("nav-entrar");
+        navEntrar.textContent =
+          user.role === "gestor" ? "Painel do Gestor" : "Minha Lista";
+        navEntrar.href =
+          user.role === "gestor" ? "gestor.html" : "dashboard.html";
+      }
+
+      renderTemplates();
+
+      // WhatsApp popup
+      function toggleWaPopup() {
+        document.getElementById('wa-popup').classList.toggle('open');
+      }
+      // Auto-open after 5s
+      setTimeout(() => {
+        document.getElementById('wa-popup').classList.add('open');
+      }, 5000);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>La Provence — Entrar / Criar Conta</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/auth.css" />
+  <link rel="icon" href="assets/img/CrownIcon.png" type="image/png">
+</head>
+<body>
+
+  <div class="auth-page">
+    <!-- ─── LEFT IMAGE ─── -->
+    <div class="auth-left">
+      <div class="auth-left-logo">
+        <a href="index.html" style="text-decoration:none">
+          <img src="assets/img/LaProvenceLogo.png" alt="La Provence" style="width: 180px; height: auto;">
+        </a>
+      </div>
+      <div class="auth-left-content">
+        <span class="script">O amor merece</span>
+        <span class="script" style="font-size:2rem; margin-top:-0.5rem; display:block">ser celebrado</span>
+        <p>Monte, personalize e compartilhe a lista dos seus sonhos com quem voce ama.</p>
+        <p class="auth-left-quote">"Cada presente e um pedaco do nosso lar,<br>escolhido com carinho por quem nos ama."</p>
+      </div>
+    </div>
+
+    <!-- ─── RIGHT FORM ─── -->
+    <div class="auth-right">
+      <div class="auth-logo">
+        <img src="assets/img/LaProvenceLogo.png" alt="La Provence" style="width: 180px; height: auto;">
+      </div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab" id="tab-entrar" onclick="switchTab('entrar')">Entrar</button>
+        <button class="auth-tab" id="tab-criar" onclick="switchTab('criar')">Criar Conta</button>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <div id="form-entrar" class="auth-form">
+        <div class="form-group">
+          <label>E-mail</label>
+          <input type="email" id="login-email" placeholder="seu@email.com" />
+          <span class="form-error" id="login-email-err">E-mail invalido</span>
+        </div>
+        <div class="form-group">
+          <label>Senha</label>
+          <input type="password" id="login-senha" placeholder="Sua senha" />
+          <span class="form-error" id="login-senha-err">Senha incorreta</span>
+        </div>
+        <div style="margin-top:0.5rem; margin-bottom:1.5rem; text-align:right">
+          <a href="#" style="font-size:0.72rem; color:var(--verde); text-decoration:none">Esqueci minha senha</a>
+        </div>
+        <span id="login-error" class="form-error" style="margin-bottom:1rem; font-size:0.8rem"></span>
+        <button class="btn btn-verde" style="width:100%" onclick="handleLogin()">Entrar</button>
+        <div style="text-align:center">
+          <small style="font-size:0.7rem; color:var(--texto-suave)">
+            gestor@laprovence.com &nbsp;|&nbsp; Gestor@123
+          </small>
+        </div>
+      </div>
+
+      <!-- REGISTER FORM -->
+      <div id="form-criar" class="auth-form">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.8rem">
+          <div class="form-group" style="margin-bottom:0">
+            <label>Nome completo da noiva</label>
+            <input type="text" id="reg-nome-noiva" placeholder="Ex: Ana Souza" />
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>Nome completo do noivo</label>
+            <input type="text" id="reg-nome-noivo" placeholder="Ex: Lucas Lima" />
+          </div>
+        </div>
+        <span class="form-error" id="reg-nome-err">Informe o nome de ambos os noivos</span>
+        <div class="form-group">
+          <label>Seu e-mail</label>
+          <input type="email" id="reg-email" placeholder="seu@email.com" />
+          <span class="form-error" id="reg-email-err">E-mail invalido</span>
+        </div>
+        <div class="form-group">
+          <label>Telefone</label>
+          <input type="text" id="reg-tel" placeholder="(00) 00000-0000" />
+        </div>
+        <div class="form-group">
+          <label>Data do casamento</label>
+          <input type="date" id="reg-data" class="date-input" min="" />
+        </div>
+        <div class="form-group">
+          <label>Senha</label>
+          <input type="password" id="reg-senha" placeholder="Minimo 8 caracteres" />
+          <span class="form-error" id="reg-senha-err">Minimo 8 caracteres, 1 maiuscula e 1 numero</span>
+        </div>
+
+        <div style="margin-top: 1.5rem">
+          <p class="label-caps" style="margin-bottom:1rem">Deseja comecar com uma lista pre-montada?</p>
+          <div id="reg-templates"></div>
+          <p style="font-size:0.75rem; color:var(--texto-suave); margin-top:0.5rem">Opcional. Voce pode personalizar depois no catalogo.</p>
+        </div>
+
+        <div class="form-group" style="display:flex; align-items:flex-start; gap:0.6rem; margin-top:0.5rem">
+          <input type="checkbox" id="reg-lgpd" style="width:auto; margin-top:2px" />
+          <label for="reg-lgpd" style="font-size:0.72rem; text-transform:none; letter-spacing:0; color:var(--texto-suave); font-weight:400; cursor:pointer">
+            Li e aceito a <a href="#" style="color:var(--verde)">Politica de Privacidade</a> e o uso dos meus dados conforme descrito.
+          </label>
+        </div>
+        <span id="reg-error" class="form-error" style="margin-bottom:1rem; font-size:0.8rem"></span>
+        <button class="btn btn-verde" style="width:100%; margin-top:1rem" onclick="handleRegister()">Criar Conta</button>
+        
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const modo = params.get('modo');
+    const templateId = params.get('template');
+
+    function switchTab(t) {
+      document.getElementById('tab-entrar').classList.toggle('active', t === 'entrar');
+      document.getElementById('tab-criar').classList.toggle('active', t === 'criar');
+      document.getElementById('form-entrar').classList.toggle('active', t === 'entrar');
+      document.getElementById('form-criar').classList.toggle('active', t === 'criar');
+    }
+
+    // Set initial tab
+    switchTab(modo === 'criar' ? 'criar' : 'entrar');
+
+    // Phone mask
+    maskPhone(document.getElementById('reg-tel'));
+
+    function showErr(id, msg) {
+      const el = document.getElementById(id);
+      el.textContent = msg || el.textContent;
+      el.classList.add('show');
+    }
+    function clearErr(id) { document.getElementById(id).classList.remove('show'); }
+
+    function handleLogin() {
+      clearErr('login-email-err'); clearErr('login-senha-err'); clearErr('login-error');
+      const email = document.getElementById('login-email').value.trim();
+      const senha = document.getElementById('login-senha').value;
+      if (!email) { showErr('login-email-err', 'Informe seu e-mail'); return; }
+      if (!senha) { showErr('login-senha-err', 'Informe sua senha'); return; }
+      try {
+        const user = login(email, senha);
+        if (user.role === 'gestor') { window.location.href = 'gestor.html'; return; }
+        // noivo: check if has list
+        const lista = getListaByUser(user.id);
+        if (lista) { window.location.href = 'dashboard.html'; }
+        else { window.location.href = 'dashboard.html'; }
+      } catch (e) {
+        const errEl = document.getElementById('login-error');
+        errEl.textContent = e.message;
+        errEl.classList.add('show');
+      }
+    }
+
+    function validateSenha(s) {
+      return s.length >= 8 && /[A-Z]/.test(s) && /[0-9]/.test(s);
+    }
+
+    // Set min date for wedding
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById('reg-data').min = tomorrow.toISOString().split('T')[0];
+
+    function renderSetupTemplates() {
+      const cont = document.getElementById('reg-templates');
+      const pms = getPremontadas();
+      cont.innerHTML = pms.map(p => `
+        <div class="template-card" data-template="${p.id}" onclick="selectTemplate(this, '${p.id}')" style="display:flex; align-items:center; padding:1rem 1.2rem; margin-bottom:0.6rem">
+          <div style="flex:1">
+            <div class="label-caps" style="color:var(--ouro)">${p.badge}</div>
+            <strong style="font-size:0.88rem; color:var(--verde)">${p.nome}</strong>
+            <div style="font-size:0.75rem; color:var(--texto-suave); margin-top:0.2rem">${p.itens.length} itens pre-selecionados</div>
+          </div>
+          <div style="width:18px; height:18px; border-radius:50%; border:2px solid var(--verde); flex-shrink:0; transition:background 0.2s" class="radio-circle"></div>
+        </div>
+      `).join('') + `
+        <div class="template-card" data-template="" onclick="selectTemplate(this, '')" style="display:flex; align-items:center; padding:1rem 1.2rem; margin-bottom:0.6rem">
+          <div style="flex:1">
+            <strong style="font-size:0.88rem; color:var(--verde)">Comecar do zero</strong>
+            <div style="font-size:0.75rem; color:var(--texto-suave); margin-top:0.2rem">Adicione os itens pelo catalogo depois</div>
+          </div>
+          <div style="width:18px; height:18px; border-radius:50%; border:2px solid var(--verde); flex-shrink:0; transition:background 0.2s" class="radio-circle"></div>
+        </div>
+      `;
+    }
+
+    let selectedTemplate = null;
+    function selectTemplate(el, id) {
+      document.querySelectorAll('.auth-form .template-card').forEach(c => {
+        c.classList.remove('selected');
+        c.querySelector('.radio-circle').style.background = '';
+      });
+      el.classList.add('selected');
+      el.querySelector('.radio-circle').style.background = 'var(--verde)';
+      selectedTemplate = id || null;
+    }
+
+
+    function handleRegister() {
+      clearErr('reg-nome-err'); clearErr('reg-email-err'); clearErr('reg-senha-err'); clearErr('reg-error');
+      const nomeNoiva = document.getElementById('reg-nome-noiva').value.trim();
+      const nomeNoivo = document.getElementById('reg-nome-noivo').value.trim();
+      const nome = nomeNoiva && nomeNoivo ? nomeNoiva + ' & ' + nomeNoivo : (nomeNoiva || nomeNoivo);
+      const email = document.getElementById('reg-email').value.trim();
+      const tel = document.getElementById('reg-tel').value.trim();
+      const data = document.getElementById('reg-data').value;
+      const senha = document.getElementById('reg-senha').value;
+      const lgpd = document.getElementById('reg-lgpd').checked;
+
+      let ok = true;
+      if (!nomeNoiva || !nomeNoivo) { showErr('reg-nome-err', 'Informe o nome de ambos os noivos'); ok = false; }
+      if (!email || !email.includes('@')) { showErr('reg-email-err', 'E-mail invalido'); ok = false; }
+      if (!validateSenha(senha)) { showErr('reg-senha-err'); ok = false; }
+      if (!data) {
+        const errEl = document.getElementById('reg-error');
+        errEl.textContent = 'Informe a data do casamento.';
+        errEl.classList.add('show');
+        ok = false;
+      }
+      if (!lgpd) {
+        const errEl = document.getElementById('reg-error');
+        errEl.textContent = 'Voce precisa aceitar a politica de privacidade.';
+        errEl.classList.add('show');
+        ok = false;
+      }
+      if (!ok) return;
+
+      try {
+        const user = register(nome, email, senha, tel);
+        
+        let itens = [];
+        if (selectedTemplate) {
+          const pm = getPremontadas().find(p => p.id === selectedTemplate);
+          if (pm) itens = pm.itens;
+        }
+        
+        criarLista(user.id, nome, tel, data, itens);
+        window.location.href = 'dashboard.html?novo=1';
+
+      } catch (e) {
+        const errEl = document.getElementById('reg-error');
+        errEl.textContent = e.message;
+        errEl.classList.add('show');
+      }
+    }
+
+    renderSetupTemplates();
+
+    // Enter key support
+    document.getElementById('login-senha').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+    document.getElementById('reg-senha').addEventListener('keydown', e => { if (e.key === 'Enter') handleRegister(); });
+
+    // Redirect if already logged in
+    const user = getCurrentUser();
+    if (user) {
+      window.location.href = user.role === 'gestor' ? 'gestor.html' : 'dashboard.html';
+    }
+  </script>
+</body>
+</html>

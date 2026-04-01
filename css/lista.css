@@ -1,0 +1,96 @@
+/* ─── PUBLIC LIST PAGE SPECIFIC ─── */
+body { background: var(--bege); }
+.public-navbar {
+  background: var(--verde);
+  padding: 1rem 4%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.public-navbar .script { font-size: 1.6rem; color: var(--ouro-claro); }
+.public-navbar a { text-decoration: none; }
+.public-catalog { padding: 3rem 4%; max-width: 1200px; margin: 0 auto; }
+.public-filters {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+.public-filter {
+  padding: 0.45rem 1rem;
+  border-radius: 20px;
+  background: var(--branco);
+  border: 1px solid rgba(0,48,13,0.12);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+  cursor: pointer;
+  transition: all 0.25s;
+  letter-spacing: 0.06em;
+}
+.public-filter:hover, .public-filter.active {
+  background: var(--verde);
+  color: var(--ouro-claro);
+  border-color: var(--verde);
+}
+.buy-item-preview {
+  background: var(--bege-suave);
+  border-radius: 4px;
+  padding: 1.2rem;
+  margin-bottom: 1.5rem;
+}
+.buy-item-preview h4 { font-size: 1rem; color: var(--verde); margin-bottom: 0.3rem; }
+.buy-item-price { font-size: 1.3rem; font-weight: 700; color: var(--ouro); }
+.payment-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.payment-option {
+  padding: 0.6rem;
+  border: 1px solid rgba(0,48,13,0.15);
+  border-radius: 2px;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+  cursor: pointer;
+  transition: all 0.25s;
+  background: var(--branco);
+}
+.payment-option:hover, .payment-option.selected {
+  border-color: var(--verde);
+  color: var(--verde);
+  background: rgba(0,48,13,0.05);
+}
+.purchased-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,48,13,0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+.purchased-stamp {
+  background: var(--verde);
+  color: var(--ouro-claro);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.8rem;
+  border-radius: 2px;
+}
+.item-card { position: relative; }
+.legend {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  margin-bottom: 2rem;
+  font-size: 0.75rem;
+  color: var(--texto-suave);
+}
+.legend-item { display: flex; align-items: center; gap: 0.5rem; }

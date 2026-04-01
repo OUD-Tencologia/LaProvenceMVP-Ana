@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>La Provence — Story para Instagram</title>
+  <link rel="icon" href="assets/img/CrownIcon.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/main.css" />
+  <style>
+    body { background: var(--bege); }
+    .story-layout {
+      margin-left: 240px;
+      padding: 2.5rem 3rem;
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 3rem;
+      align-items: start;
+    }
+    .story-canvas-wrap {
+      position: sticky;
+      top: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+    canvas {
+      width: 100%;
+      max-width: 360px;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 20px 60px rgba(0,48,13,0.3);
+      display: block;
+    }
+    .template-selector {
+      display: flex;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .tpl-btn {
+      padding: 0.5rem 1.2rem;
+      border-radius: 20px;
+      border: 2px solid rgba(0,48,13,0.15);
+      background: var(--branco);
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--texto-suave);
+    }
+    .tpl-btn.active, .tpl-btn:hover {
+      border-color: var(--verde);
+      color: var(--verde);
+      background: rgba(0,48,13,0.05);
+    }
+    .photo-upload-label {
+      display: block;
+      width: 100%;
+      padding: 2rem;
+      border: 2px dashed rgba(0,48,13,0.2);
+      border-radius: 4px;
+      text-align: center;
+      cursor: pointer;
+      color: var(--texto-suave);
+      font-size: 0.8rem;
+      font-weight: 300;
+      transition: all 0.2s;
+    }
+    .photo-upload-label:hover { border-color: var(--ouro); color: var(--verde); }
+    .photo-preview {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--ouro);
+      display: none;
+      margin: 0 auto 0.5rem;
+    }
+    @media (max-width: 900px) {
+      .story-layout { grid-template-columns: 1fr; margin-left: 0; padding: 1.5rem; }
+      .story-canvas-wrap { position: static; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <a href="index.html" style="text-decoration:none">
+          <img src="assets/img/LaProvenceLogo.png" alt="La Provence" style="width:150px;height:auto;">
+        </a>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-section-label">Menu</div>
+        <a href="dashboard.html">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+          Minha Lista
+        </a>
+        <a href="catalogo.html">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>
+          Catalogo de Itens
+        </a>
+        <a href="story.html" class="active">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 3L5 6.99h3V14h2V6.99h3L9 3zm7 14.01V10h-2v7.01h-3L15 21l4-3.99h-3z"/></svg>
+          Story Instagram
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-avatar" id="avatar-initials">?</div>
+          <div class="sidebar-user-info">
+            <small>Noivos</small>
+            <span id="sidebar-username">...</span>
+          </div>
+        </div>
+        <div style="margin-top:0.8rem">
+          <a href="#" onclick="logout(); return false" style="font-size:0.7rem; color:rgba(251,221,144,0.4); text-decoration:none; letter-spacing:0.1em; text-transform:uppercase">Sair</a>
+        </div>
+      </div>
+    </aside>
+
+    <div class="story-layout">
+      <!-- Left: controls -->
+      <div>
+        <div class="page-header" style="margin-bottom:2rem">
+          <div class="page-header-text">
+            <span class="label-caps">Compartilhe com estilo</span>
+            <h1>Story para Instagram</h1>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:1.5rem">
+          <div class="label-caps" style="margin-bottom:1rem">Escolha o Template</div>
+          <div class="template-selector">
+            <button class="tpl-btn active" onclick="setTemplate(0, this)">Provence Verde</button>
+            <button class="tpl-btn" onclick="setTemplate(1, this)">Campestre Bege</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:1.5rem">
+          <div class="label-caps" style="margin-bottom:1rem">Foto dos Noivos</div>
+          <img id="photo-preview" class="photo-preview" alt="Foto dos noivos" />
+          <label class="photo-upload-label" for="photo-input">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="margin-bottom:0.5rem; opacity:0.4"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+            <div>Clique para adicionar foto dos noivos</div>
+            <div style="font-size:0.72rem; margin-top:0.3rem; opacity:0.6">JPG, PNG — será exibida em recorte circular</div>
+          </label>
+          <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhoto(this)">
+        </div>
+
+        <div class="card" style="margin-bottom:1.5rem">
+          <div class="label-caps" style="margin-bottom:1rem">Personalizar</div>
+          <div class="form-group">
+            <label>Nome dos Noivos</label>
+            <input type="text" id="story-nome" placeholder="Ex: Ana &amp; Lucas" oninput="renderStory()">
+          </div>
+          <div class="form-group">
+            <label>Data do Casamento</label>
+            <input type="text" id="story-data" placeholder="Ex: 15 de Outubro de 2025" oninput="renderStory()">
+          </div>
+          <div class="form-group">
+            <label>Codigo da Lista</label>
+            <input type="text" id="story-codigo" placeholder="Ex: ABC123" oninput="renderStory()">
+          </div>
+        </div>
+
+        <button class="btn btn-verde" style="width:100%" onclick="downloadStory()">Baixar Story (1080×1920px)</button>
+      </div>
+
+      <!-- Right: preview canvas -->
+      <div class="story-canvas-wrap">
+        <div class="label-caps" style="color:var(--texto-suave); margin-bottom:0.5rem">Preview</div>
+        <canvas id="story-canvas" width="1080" height="1920"></canvas>
+        <p style="font-size:0.72rem; color:var(--texto-suave); font-weight:300; text-align:center">Preview em escala reduzida · Baixe para ver em resolução completa (1080×1920px)</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    const storyParams = new URLSearchParams(window.location.search);
+    const isGestor = storyParams.get('gestor') === '1';
+    const storyCodigoParam = storyParams.get('codigo');
+
+    // Allow gestor or noivo
+    const user = getCurrentUser();
+    if (!user || (user.role !== 'noivo' && user.role !== 'gestor')) {
+      window.location.href = 'auth.html';
+    }
+
+    if (user.role === 'gestor') {
+      document.getElementById('sidebar-username').textContent = 'Gestor';
+      document.getElementById('avatar-initials').textContent = 'G';
+    } else {
+      document.getElementById('sidebar-username').textContent = user.nome.split(' ')[0];
+      document.getElementById('avatar-initials').textContent = user.nome.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase();
+    }
+
+    // Pre-fill: if gestor with codigo param, use that lista; else use noivo's lista
+    let lista = null;
+    if (storyCodigoParam) {
+      lista = getListaByCodigo(storyCodigoParam);
+    } else if (user.role === 'noivo') {
+      lista = getListaByUser(user.id);
+    }
+    if (lista) {
+      document.getElementById('story-nome').value = lista.nome_noivos;
+      document.getElementById('story-codigo').value = lista.codigo;
+      if (lista.data_casamento) {
+        const d = new Date(lista.data_casamento + 'T00:00:00');
+        document.getElementById('story-data').value = d.toLocaleDateString('pt-BR', { day:'numeric', month:'long', year:'numeric' });
+      }
+    }
+
+    const TEMPLATES = [
+      { bg: '#00300D', fg: '#FBDD90', accent: '#EBAB0A', pattern: 'verde' },
+      { bg: '#F5EDD8', fg: '#00300D', accent: '#EBAB0A', pattern: 'bege' },
+    ];
+    let currentTemplate = 0;
+    let photoImg = null;
+
+    function setTemplate(idx, btn) {
+      currentTemplate = idx;
+      document.querySelectorAll('.tpl-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderStory();
+    }
+
+    function handlePhoto(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          photoImg = img;
+          const preview = document.getElementById('photo-preview');
+          preview.src = e.target.result;
+          preview.style.display = 'block';
+          renderStory();
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function renderStory() {
+      const canvas = document.getElementById('story-canvas');
+      const ctx = canvas.getContext('2d');
+      const W = 1080, H = 1920;
+      const tpl = TEMPLATES[currentTemplate];
+      const nome = document.getElementById('story-nome').value || 'Seus Nomes';
+      const data = document.getElementById('story-data').value || 'Data do Casamento';
+      const codigo = document.getElementById('story-codigo').value || '';
+
+      // Background
+      ctx.fillStyle = tpl.bg;
+      ctx.fillRect(0, 0, W, H);
+
+      // Ornamental border
+      ctx.strokeStyle = tpl.accent;
+      ctx.lineWidth = 3;
+      ctx.globalAlpha = 0.35;
+      ctx.strokeRect(60, 60, W - 120, H - 120);
+      ctx.globalAlpha = 0.15;
+      ctx.strokeRect(80, 80, W - 160, H - 160);
+      ctx.globalAlpha = 1;
+
+      // Top decorative line
+      ctx.fillStyle = tpl.accent;
+      ctx.fillRect(W/2 - 120, 200, 240, 2);
+
+      // Photo circle (centered upper area)
+      const cx = W / 2, cy = 520, r = 200;
+      if (photoImg) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        // Draw image cover-fit
+        const scale = Math.max((r*2) / photoImg.width, (r*2) / photoImg.height);
+        const sw = photoImg.width * scale, sh = photoImg.height * scale;
+        ctx.drawImage(photoImg, cx - sw/2, cy - sh/2, sw, sh);
+        ctx.restore();
+        // Circle border
+        ctx.strokeStyle = tpl.accent;
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r + 4, 0, Math.PI * 2);
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = tpl.accent;
+        ctx.globalAlpha = 0.15;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = tpl.accent;
+        ctx.lineWidth = 4;
+        ctx.globalAlpha = 0.4;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        // Camera icon placeholder
+        ctx.fillStyle = tpl.fg;
+        ctx.globalAlpha = 0.3;
+        ctx.font = 'bold 80px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('📷', cx, cy + 28);
+        ctx.globalAlpha = 1;
+      }
+
+      // "La Provence" branding
+      ctx.fillStyle = tpl.accent;
+      ctx.font = '500 52px "Great Vibes", cursive, serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('La Provence', W/2, 820);
+
+      // "Lista de Casamento" label
+      ctx.fillStyle = tpl.fg;
+      ctx.globalAlpha = 0.55;
+      ctx.font = '600 32px Montserrat, sans-serif';
+      ctx.letterSpacing = '8px';
+      ctx.fillText('LISTA DE CASAMENTO', W/2, 900);
+      ctx.globalAlpha = 1;
+
+      // Divider
+      ctx.fillStyle = tpl.accent;
+      ctx.fillRect(W/2 - 80, 940, 160, 2);
+
+      // Couple name
+      ctx.fillStyle = tpl.fg;
+      ctx.font = '300 90px "Great Vibes", cursive, serif';
+      ctx.fillText(nome, W/2, 1080);
+
+      // Wedding date
+      ctx.fillStyle = tpl.fg;
+      ctx.globalAlpha = 0.7;
+      ctx.font = '400 36px Montserrat, sans-serif';
+      ctx.fillText(data, W/2, 1180);
+      ctx.globalAlpha = 1;
+
+      // Divider bottom
+      ctx.fillStyle = tpl.accent;
+      ctx.fillRect(W/2 - 80, 1230, 160, 2);
+
+      // Code
+      if (codigo) {
+        ctx.fillStyle = tpl.fg;
+        ctx.globalAlpha = 0.5;
+        ctx.font = '600 28px Montserrat, sans-serif';
+        ctx.fillText('ACESSE COM O CODIGO', W/2, 1310);
+        ctx.globalAlpha = 1;
+        // Badge wider: 500px wide
+        ctx.fillStyle = tpl.bg === '#00300D' ? '#EBAB0A' : '#00300D';
+        ctx.fillRect(W/2 - 250, 1335, 500, 90);
+        ctx.fillStyle = tpl.bg === '#00300D' ? '#00300D' : '#FBDD90';
+        ctx.font = 'bold 56px Montserrat, sans-serif';
+        ctx.fillText(codigo, W/2, 1400);
+      }
+
+      // Bottom URL hint
+      ctx.fillStyle = tpl.fg;
+      ctx.globalAlpha = 0.35;
+      ctx.font = '300 28px Montserrat, sans-serif';
+      ctx.fillText('laprovence.com.br/lista', W/2, 1820);
+      ctx.globalAlpha = 1;
+    }
+
+    function downloadStory() {
+      renderStory();
+      const canvas = document.getElementById('story-canvas');
+      const link = document.createElement('a');
+      link.download = 'story-laprovence.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    renderStory();
+  </script>
+</body>
+</html>
