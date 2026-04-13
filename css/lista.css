@@ -94,3 +94,10 @@ body { background: var(--bege); }
   color: var(--texto-suave);
 }
 .legend-item { display: flex; align-items: center; gap: 0.5rem; }
+
+@media (max-width: 600px) {
+  .public-navbar { flex-wrap: wrap; gap: 0.5rem; }
+  .public-navbar .label-caps { font-size: 0.62rem; }
+  .public-catalog { padding: 1.5rem 4%; }
+  .payment-options { grid-template-columns: 1fr 1fr 1fr; }
+}

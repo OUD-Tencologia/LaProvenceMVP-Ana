@@ -1,189 +1,333 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>La Provence — Catalogo de Itens</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/main.css" />
-  <link rel="icon" href="assets/img/CrownIcon.png" type="image/png">
-</head>
-<body>
-  <div class="app-layout">
-
-    <!-- ─── SIDEBAR ─── -->
-    <aside class="sidebar">
-      <div class="sidebar-logo">
-        <a href="index.html" style="text-decoration:none">
-          <img src="assets/img/LaProvenceLogo.png" alt="La Provence" style="width: 150px; height: auto;">
-        </a>
-      </div>
-      <nav class="sidebar-nav">
-        <div class="sidebar-section-label">Menu</div>
-        <a href="dashboard.html">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
-          Minha Lista
-        </a>
-        <a href="catalogo.html" class="active">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>
-          Catalogo de Itens
-        </a>
-        <div class="sidebar-section-label">Compartilhar</div>
-        <a href="story.html">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 3L5 6.99h3V14h2V6.99h3L9 3zm7 14.01V10h-2v7.01h-3L15 21l4-3.99h-3z"/></svg>
-          Story Instagram
-        </a>
-        <a href="javascript:void(0)" onclick="compartilharWhatsApp()">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.558 4.114 1.532 5.841L.057 23.882l6.198-1.625A11.96 11.96 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.795 9.795 0 0 1-4.997-1.367l-.358-.213-3.677.964.981-3.594-.234-.369A9.795 9.795 0 0 1 2.182 12C2.182 6.579 6.579 2.182 12 2.182S21.818 6.579 21.818 12 17.421 21.818 12 21.818z"/></svg>
-          Compartilhar
-        </a>
-      </nav>
-      <div class="sidebar-footer">
-        <div class="sidebar-user">
-          <div class="sidebar-avatar" id="avatar-initials">?</div>
-          <div class="sidebar-user-info">
-            <small>Noivos</small>
-            <span id="sidebar-username">...</span>
-          </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>La Provence — Catálogo de Itens</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/main.css" />
+    <link rel="icon" href="assets/img/CrownIcon.png" type="image/png" />
+  </head>
+  <body>
+    <div class="app-layout">
+      <!-- ─── SIDEBAR ─── -->
+      <aside class="sidebar">
+        <div class="sidebar-logo">
+          <a href="index.html" style="text-decoration: none">
+            <img
+              src="assets/img/LaProvenceDecor-Logo.png"
+              alt="La Provence"
+              style="width: 150px; height: auto"
+            />
+          </a>
         </div>
-        <div style="margin-top:0.8rem">
-          <a href="#" onclick="logout(); return false" style="font-size:0.7rem; color:rgba(251,221,144,0.4); text-decoration:none; letter-spacing:0.1em; text-transform:uppercase">Sair</a>
-        </div>
-      </div>
-    </aside>
-
-    <!-- ─── MAIN ─── -->
-    <main class="main-content">
-      <div class="page-header">
-        <div class="page-header-text">
-          <span class="label-caps">Escolha com cuidado</span>
-          <h1>Catalogo de Presentes</h1>
-        </div>
-        <div class="search-bar">
-          <input type="text" id="search-input" placeholder="Buscar item..." oninput="renderCatalog()" />
-          <button>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-          </button>
-        </div>
-      </div>
-
-      <div class="catalog-layout">
-        <!-- Filters -->
-        <div class="catalog-filters">
-          <h3>Filtrar por Setor</h3>
-          <button class="filter-chip active" onclick="setFilter('', this)">Todos os itens</button>
-          <button class="filter-chip" onclick="setFilter('Cozinha', this)">Cozinha</button>
-          <button class="filter-chip" onclick="setFilter('Sala de Estar', this)">Sala de Estar</button>
-          <button class="filter-chip" onclick="setFilter('Quarto', this)">Quarto</button>
-          <button class="filter-chip" onclick="setFilter('Banho', this)">Banho</button>
-          <div style="margin-top:1.5rem; padding-top:1.2rem; border-top:1px solid rgba(0,48,13,0.08)">
-            <div class="label-caps" style="color:var(--ouro); margin-bottom:0.5rem; font-size:0.6rem">Minha Lista</div>
-            <div id="lista-count" style="font-size:0.8rem; color:var(--verde); font-weight:500">0 itens</div>
-            <div style="margin-top:0.8rem">
-              <a href="dashboard.html" class="btn btn-verde btn-sm" style="width:100%">Ver Lista</a>
+        <nav class="sidebar-nav">
+          <div class="sidebar-section-label">Menu</div>
+          <a href="dashboard.html">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"
+              />
+            </svg>
+            Minha Lista
+          </a>
+          <a href="catalogo.html" class="active">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"
+              />
+            </svg>
+            Catálogo de Itens
+          </a>
+          <div class="sidebar-section-label">Compartilhar</div>
+          <a href="story.html">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M9 3L5 6.99h3V14h2V6.99h3L9 3zm7 14.01V10h-2v7.01h-3L15 21l4-3.99h-3z"
+              />
+            </svg>
+            Story Instagram
+          </a>
+          <a href="javascript:void(0)" onclick="compartilharWhatsApp()">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"
+              />
+              <path
+                d="M12 0C5.373 0 0 5.373 0 12c0 2.123.558 4.114 1.532 5.841L.057 23.882l6.198-1.625A11.96 11.96 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.795 9.795 0 0 1-4.997-1.367l-.358-.213-3.677.964.981-3.594-.234-.369A9.795 9.795 0 0 1 2.182 12C2.182 6.579 6.579 2.182 12 2.182S21.818 6.579 21.818 12 17.421 21.818 12 21.818z"
+              />
+            </svg>
+            Compartilhar
+          </a>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="sidebar-user">
+            <div class="sidebar-avatar" id="avatar-initials">?</div>
+            <div class="sidebar-user-info">
+              <small>Noivos</small>
+              <span id="sidebar-username">...</span>
             </div>
           </div>
+          <div style="margin-top: 0.8rem">
+            <a
+              href="#"
+              onclick="
+                logout();
+                return false;
+              "
+              style="
+                font-size: 0.7rem;
+                color: rgba(251, 221, 144, 0.4);
+                text-decoration: none;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+              "
+              >Sair</a
+            >
+          </div>
+        </div>
+      </aside>
+
+      <!-- ─── MAIN ─── -->
+      <main class="main-content">
+        <div class="page-header">
+          <div class="page-header-text">
+            <h1>Catálogo de Presentes</h1>
+          </div>
+          <div class="search-bar">
+            <input
+              type="text"
+              id="search-input"
+              placeholder="Buscar item..."
+              oninput="renderCatalog()"
+            />
+            <button>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path
+                  d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+                />
+              </svg>
+            </button>
+          </div>
+          <select
+            id="sort-select"
+            class="sort-select"
+            onchange="renderCatalog()"
+            style="margin-left: 1rem; height: 100%"
+          >
+            <option value="padrao">Ordenar por Padrão</option>
+            <option value="menor">Menor Preço</option>
+            <option value="maior">Maior Preço</option>
+            <option value="az">A - Z</option>
+          </select>
         </div>
 
-        <!-- Grid -->
-        <div>
-          <div class="catalog-grid" id="catalog-grid">
+        <div class="catalog-layout">
+          <!-- Filters -->
+          <div class="catalog-filters">
+            <h3>Filtrar por Categoria</h3>
+            <button class="filter-chip active" onclick="setFilter('', this)">
+              Todos os itens
+            </button>
+            <button class="filter-chip" onclick="setFilter('Mesa posta', this)">
+              Mesa posta
+            </button>
+            <button class="filter-chip" onclick="setFilter('Prataria', this)">
+              Prataria
+            </button>
+            <button class="filter-chip" onclick="setFilter('Adornos', this)">
+              Adornos
+            </button>
+            <button class="filter-chip" onclick="setFilter('Aromas', this)">
+              Aromas
+            </button>
+            <button class="filter-chip" onclick="setFilter('Mobiliário', this)">
+              Mobiliário
+            </button>
+            <button class="filter-chip" onclick="setFilter('Vasos', this)">
+              Vasos
+            </button>
+            <button
+              class="filter-chip"
+              onclick="setFilter('Complementos', this)"
+            >
+              Complementos
+            </button>
+            <div
+              style="
+                margin-top: 1.5rem;
+                padding-top: 1.2rem;
+                border-top: 1px solid rgba(0, 48, 13, 0.08);
+              "
+            >
+              <div
+                class="label-caps"
+                style="
+                  color: var(--ouro);
+                  margin-bottom: 0.5rem;
+                  font-size: 0.6rem;
+                "
+              >
+                Minha Lista
+              </div>
+              <div
+                id="lista-count"
+                style="font-size: 0.8rem; color: var(--verde); font-weight: 500"
+              >
+                0 itens
+              </div>
+              <div style="margin-top: 0.8rem">
+                <a
+                  href="dashboard.html"
+                  class="btn btn-verde btn-sm"
+                  style="width: 100%"
+                  >Ver Lista</a
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- Grid -->
+          <div>
+            <div class="catalog-grid" id="catalog-grid">
+              <!-- Preenchido via JS -->
+            </div>
+          </div>
+
+          <!-- Mini Cart -->
+          <div class="mini-cart" id="mini-cart">
             <!-- Preenchido via JS -->
           </div>
         </div>
+      </main>
+    </div>
 
-        <!-- Mini Cart -->
-        <div class="mini-cart" id="mini-cart">
-            <!-- Preenchido via JS -->
+    <!-- ─── MODAL DETALHE ITEM ─── -->
+    <div class="modal-overlay" id="modal-item-detalhe">
+      <div class="modal" style="max-width: 600px">
+        <div class="modal-header">
+          <h3>Detalhes do Item</h3>
+          <button class="modal-close" data-close-modal>&times;</button>
         </div>
+        <div class="modal-body" id="modal-item-detalhe-body"></div>
+        <div class="modal-footer" id="modal-item-detalhe-footer"></div>
       </div>
-    </main>
-  </div>
+    </div>
 
-  <script src="js/app.js"></script>
-  <script>
-    const user = requireAuth('noivo');
-    if (!user) throw new Error('Not authorized');
+    <script src="js/app.js"></script>
+    <script>
+      const user = requireAuth("noivo");
+      if (!user) throw new Error("Not authorized");
 
-    document.getElementById('sidebar-username').textContent = user.nome.split(' ')[0];
-    document.getElementById('avatar-initials').textContent = user.nome.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase();
+      document.getElementById("sidebar-username").textContent =
+        user.nome.split(" ")[0];
+      document.getElementById("avatar-initials").textContent = user.nome
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase();
 
-    let activeFilter = '';
+      let activeFilter = "";
 
-    function setFilter(setor, btn) {
-      activeFilter = setor;
-      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-      btn.classList.add('active');
-      renderCatalog();
-    }
-
-    function getLista() { return getListaByUser(user.id); }
-
-    function isInLista(itemId) {
-      const lista = getLista();
-      return lista && lista.itens.includes(itemId);
-    }
-
-    function toggleItem(itemId) {
-      let lista = getLista();
-      if (!lista) {
-        lista = criarLista(user.id, user.nome, '', '', []);
+      function setFilter(setor, btn) {
+        activeFilter = setor;
+        document
+          .querySelectorAll(".filter-chip")
+          .forEach((c) => c.classList.remove("active"));
+        btn.classList.add("active");
+        renderCatalog();
       }
-      const listas = getListas();
-      const idx = listas.findIndex(l => l.id === lista.id);
-      if (listas[idx].itens.includes(itemId)) {
-        const compra = getComprasByItem(lista.id, itemId);
-        if (compra) { toast('Este item ja foi presenteado e nao pode ser removido.', 'error'); return; }
-        listas[idx].itens = listas[idx].itens.filter(id => id !== itemId);
-        saveListas(listas);
-        toast('Item removido da lista.');
-      } else {
-        listas[idx].itens.push(itemId);
-        saveListas(listas);
-        toast('Item adicionado a lista!');
-      }
-      updateListaCount();
-      // Re-render only the button
-      const btn = document.querySelector(`[data-item="${itemId}"]`);
-      if (btn) {
-        const inList = listas[idx].itens.includes(itemId);
-        btn.textContent = inList ? 'Remover' : 'Adicionar';
-        btn.className = inList ? 'btn btn-sm' : 'btn btn-verde btn-sm';
-        btn.style.background = inList ? 'rgba(0,48,13,0.08)' : '';
-        btn.style.color = inList ? 'var(--verde)' : '';
-        btn.closest('.item-card').style.outline = inList ? '2px solid var(--ouro)' : '';
-      }
-      renderMiniCart();
-    }
 
-    function renderMiniCart() {
-      const cart = document.getElementById('mini-cart');
-      if (!cart) return;
-      const lista = getLista();
-      const itens = lista ? lista.itens.map(id => getItemById(id)).filter(Boolean) : [];
-      const total = itens.reduce((s, i) => s + i.preco, 0);
+      function getLista() {
+        return getListaByUser(user.id);
+      }
 
-      if (itens.length === 0) {
-        cart.innerHTML = `
+      function isInLista(itemId) {
+        const lista = getLista();
+        return lista && lista.itens.includes(itemId);
+      }
+
+      function toggleItem(itemId) {
+        let lista = getLista();
+        if (!lista) {
+          lista = criarLista(user.id, user.nome, "", "", []);
+        }
+        const listas = getListas();
+        const idx = listas.findIndex((l) => l.id === lista.id);
+        if (listas[idx].itens.includes(itemId)) {
+          const compra = getComprasByItem(lista.id, itemId);
+          if (compra) {
+            toast(
+              "Este item já foi presenteado e não pode ser removido.",
+              "error",
+            );
+            return;
+          }
+          listas[idx].itens = listas[idx].itens.filter((id) => id !== itemId);
+          saveListas(listas);
+          toast("Item removido da lista.");
+        } else {
+          listas[idx].itens.push(itemId);
+          saveListas(listas);
+          toast("Item adicionado à lista!");
+        }
+        updateListaCount();
+        // Re-render only the button
+        const btn = document.querySelector(`[data-item="${itemId}"]`);
+        if (btn) {
+          const inList = listas[idx].itens.includes(itemId);
+          btn.textContent = inList ? "Remover" : "Adicionar";
+          btn.className = inList ? "btn btn-sm" : "btn btn-verde btn-sm";
+          btn.style.background = inList ? "rgba(0,48,13,0.08)" : "";
+          btn.style.color = inList ? "var(--verde)" : "";
+          btn.closest(".item-card").style.outline = inList
+            ? "2px solid var(--ouro)"
+            : "";
+        }
+        renderMiniCart();
+      }
+
+      function renderMiniCart() {
+        const cart = document.getElementById("mini-cart");
+        if (!cart) return;
+        const lista = getLista();
+        const itens = lista
+          ? lista.itens.map((id) => getItemById(id)).filter(Boolean)
+          : [];
+        const total = itens.reduce((s, i) => s + i.preco, 0);
+
+        if (itens.length === 0) {
+          cart.innerHTML = `
           <div class="mini-cart-header">
             <h4>Minha Lista</h4>
             <span class="mini-cart-count">0 itens</span>
           </div>
           <div class="mini-cart-empty">
             <span class="script">Lista vazia</span>
-            <p>Adicione itens do catalogo para comecar sua lista dos sonhos.</p>
+            <p>Adicione itens do catálogo para começar sua lista dos sonhos.</p>
           </div>`;
-        return;
-      }
+          return;
+        }
 
-      cart.innerHTML = `
+        cart.innerHTML = `
         <div class="mini-cart-header">
           <h4>Minha Lista</h4>
-          <span class="mini-cart-count">${itens.length} item${itens.length !== 1 ? 's' : ''}</span>
+          <span class="mini-cart-count">${itens.length} item${itens.length !== 1 ? "s" : ""}</span>
         </div>
         <div class="mini-cart-items">
-          ${itens.map(item => `
+          ${itens
+            .map(
+              (item) => `
             <div class="mini-cart-item">
               <div class="mini-cart-item-info">
                 <div class="mini-cart-item-name" title="${item.nome}">${item.nome}</div>
@@ -192,7 +336,9 @@
               </div>
               <button class="mini-cart-remove" onclick="toggleItem('${item.id}')" title="Remover">&#215;</button>
             </div>
-          `).join('')}
+          `,
+            )
+            .join("")}
         </div>
         <div class="mini-cart-footer">
           <div class="mini-cart-total-row">
@@ -201,66 +347,111 @@
           </div>
           <a href="dashboard.html" class="btn btn-verde btn-sm" style="width:100%; text-align:center">Ver Lista Completa</a>
         </div>`;
-    }
+      }
 
-    function updateListaCount() {
-      const lista = getLista();
-      const cnt = lista ? lista.itens.length : 0;
-      document.getElementById('lista-count').textContent = cnt + ' item' + (cnt !== 1 ? 's' : '');
-    }
+      function updateListaCount() {
+        const lista = getLista();
+        const cnt = lista ? lista.itens.length : 0;
+        document.getElementById("lista-count").textContent =
+          cnt + " item" + (cnt !== 1 ? "s" : "");
+      }
 
-    function renderCatalog() {
-      const grid = document.getElementById('catalog-grid');
-      const search = document.getElementById('search-input').value.trim().toLowerCase();
-      const catalogo = getCatalogo().filter(i => i.status === 'Ativo');
-      const lista = getLista();
+      function renderCatalog() {
+        const grid = document.getElementById("catalog-grid");
+        const search = document
+          .getElementById("search-input")
+          .value.trim()
+          .toLowerCase();
+        const catalogo = getCatalogo().filter((i) => i.status === "Ativo");
+        const lista = getLista();
 
-      let filtered = catalogo;
-      if (activeFilter) filtered = filtered.filter(i => i.setor === activeFilter);
-      if (search) filtered = filtered.filter(i =>
-        i.nome.toLowerCase().includes(search) ||
-        i.descricao.toLowerCase().includes(search) ||
-        i.setor.toLowerCase().includes(search)
-      );
+        let filtered = catalogo;
+        if (activeFilter)
+          filtered = filtered.filter((i) => i.setor === activeFilter);
+        if (search)
+          filtered = filtered.filter(
+            (i) =>
+              i.nome.toLowerCase().includes(search) ||
+              i.descricao.toLowerCase().includes(search) ||
+              i.setor.toLowerCase().includes(search),
+          );
 
-      if (filtered.length === 0) {
-        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1; padding:3rem">
+        const sortVal = document.getElementById("sort-select").value;
+        if (sortVal === "menor") filtered.sort((a, b) => a.preco - b.preco);
+        else if (sortVal === "maior")
+          filtered.sort((a, b) => b.preco - a.preco);
+        else if (sortVal === "az")
+          filtered.sort((a, b) => a.nome.localeCompare(b.nome));
+
+        if (filtered.length === 0) {
+          grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1; padding:3rem">
           <span class="script">Hmm...</span>
           <p>Nenhum item encontrado para esta busca ou filtro.</p>
         </div>`;
-        return;
-      }
+          return;
+        }
 
-      grid.innerHTML = filtered.map(item => {
-        const inList = lista && lista.itens.includes(item.id);
-        return `
-          <div class="item-card" style="${inList ? 'outline:2px solid var(--ouro);' : ''}">
-            ${item.img
-              ? `<div style="height:130px; background:url('${item.img}') center/cover no-repeat; position:relative">
-                   <span style="position:absolute; bottom:0.5rem; left:0.5rem; background:var(--verde); color:var(--ouro-claro); font-size:0.58rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; padding:0.2rem 0.5rem; border-radius:2px">${item.setor}</span>
-                 </div>`
-              : `<div style="background:var(--bege); padding:0.55rem 1rem; font-size:0.62rem; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--verde); border-bottom:1px solid rgba(0,48,13,0.07)">${item.setor}</div>`
-            }
+        grid.innerHTML = filtered
+          .map((item) => {
+            const inList = lista && lista.itens.includes(item.id);
+            return `
+          <div class="item-card" style="${inList ? "outline:2px solid var(--ouro);" : ""}">
+            <div style="cursor:pointer" onclick="openItemDetailModal('${item.id}')">
+              ${renderItemPhoto(item, "cat")}
+            </div>
             <div class="item-card-body">
-              <h4>${item.nome}</h4>
+              <div style="font-size:0.58rem; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--texto-suave); margin-bottom:0.3rem">${item.marca || ""}</div>
+              <h4 style="cursor:pointer" onclick="openItemDetailModal('${item.id}')">${item.nome}</h4>
               <div class="tamanho">${item.tamanho}</div>
               <div class="preco">${formatMoney(item.preco)}</div>
               <div class="estoque">${item.estoque} em estoque</div>
               <button
-                class="btn btn-sm ${inList ? '' : 'btn-verde'}"
-                style="${inList ? 'background:rgba(0,48,13,0.08); color:var(--verde);' : ''}"
+                class="btn btn-sm ${inList ? "" : "btn-verde"}"
+                style="${inList ? "background:rgba(0,48,13,0.08); color:var(--verde);" : ""}"
                 data-item="${item.id}"
                 onclick="toggleItem('${item.id}')"
-              >${inList ? 'Remover' : 'Adicionar'}</button>
+              >${inList ? "Remover" : "Adicionar"}</button>
             </div>
           </div>
         `;
-      }).join('');
-    }
+          })
+          .join("");
+      }
 
-    updateListaCount();
-    renderCatalog();
-    renderMiniCart();
-  </script>
-</body>
+      function openItemDetailModal(itemId) {
+        const item = getItemById(itemId);
+        if (!item) return;
+        const inList = isInLista(item.id);
+
+        let carouselHtml = renderItemPhoto(item, "detalhe");
+
+        document.getElementById("modal-item-detalhe-body").innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:1.5rem">
+          <div style="width:100%; max-width:400px; margin:0 auto;">
+            ${carouselHtml}
+          </div>
+          <div>
+            <div style="font-size:0.7rem; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--texto-suave); margin-bottom:0.3rem">${item.setor} ${item.marca ? "· " + item.marca : ""}</div>
+            <h4 style="font-size:1.4rem; color:var(--verde); margin-bottom:0.5rem">${item.nome}</h4>
+            <div style="font-size:0.85rem; color:var(--texto-suave); margin-bottom:1rem">${item.tamanho} | Qtd: ${item.quantidade || 1}</div>
+            <p style="font-size:0.9rem; line-height:1.6; color:var(--texto); margin-bottom:1rem">${item.descricao || "Sem descrição detalhada."}</p>
+            <div style="font-size:1.5rem; font-weight:700; color:var(--ouro); margin-bottom:1rem">${formatMoney(item.preco)}</div>
+          </div>
+        </div>
+      `;
+
+        document.getElementById("modal-item-detalhe-footer").innerHTML = `
+        <button class="btn btn-outline-dark btn-sm" onclick="closeModal('modal-item-detalhe')">Fechar</button>
+        <button class="btn btn-sm ${inList ? "" : "btn-verde"}" style="${inList ? "background:rgba(0,48,13,0.08); color:var(--verde);" : ""}" onclick="toggleItem('${item.id}'); document.getElementById('modal-detail-action-btn').textContent = isInLista('${item.id}') ? 'Remover' : 'Adicionar'; document.getElementById('modal-detail-action-btn').className = isInLista('${item.id}') ? 'btn btn-sm' : 'btn btn-verde btn-sm'; document.getElementById('modal-detail-action-btn').style.background = isInLista('${item.id}') ? 'rgba(0,48,13,0.08)' : ''; document.getElementById('modal-detail-action-btn').style.color = isInLista('${item.id}') ? 'var(--verde)' : '';" id="modal-detail-action-btn">${inList ? "Remover" : "Adicionar"}</button>
+      `;
+
+        openModal("modal-item-detalhe");
+      }
+
+      updateListaCount();
+      renderCatalog();
+      renderMiniCart();
+      initModals();
+    </script>
+  </body>
 </html>

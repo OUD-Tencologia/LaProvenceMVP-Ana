@@ -1,11 +1,13 @@
 /* ─── AUTH PAGE SPECIFIC ─── */
-body { background: var(--branco); }
+body {
+  background: var(--branco);
+}
 .auth-left {
-  background-image: url('https://images.unsplash.com/photo-1606800052052-a08af7148866?w=900&q=85');
+  background-image: url("../assets/img/wedding2.png");
 }
 .auth-left-quote {
   font-size: 0.75rem;
-  color: rgba(251,221,144,0.5);
+  color: rgba(251, 221, 144, 0.5);
   font-style: italic;
   font-weight: 300;
   margin-top: 2rem;
@@ -17,7 +19,19 @@ body { background: var(--branco); }
   left: 2.5rem;
   z-index: 2;
 }
-.auth-form .template-card { cursor: pointer; margin-bottom: 1rem; border: 1px solid rgba(0,48,13,0.1); border-radius: 4px; }
-.auth-form .template-card:hover { box-shadow: 0 8px 24px var(--sombra); }
-.auth-form .template-card.selected { border-color: var(--ouro); outline: 2px solid var(--ouro); }
-.date-input { font-family: 'Montserrat', sans-serif; }
+.auth-form .template-card {
+  cursor: pointer;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(0, 48, 13, 0.1);
+  border-radius: 4px;
+}
+.auth-form .template-card:hover {
+  box-shadow: 0 8px 24px var(--sombra);
+}
+.auth-form .template-card.selected {
+  border-color: var(--ouro);
+  outline: 2px solid var(--ouro);
+}
+.date-input {
+  font-family: "Montserrat", sans-serif;
+}

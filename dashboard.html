@@ -1,121 +1,192 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>La Provence — Minha Lista</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/main.css" />
-  <link rel="stylesheet" href="css/dashboard.css" />
-  <link rel="icon" href="assets/img/CrownIcon.png" type="image/png">
-</head>
-<body>
-  <div class="app-layout">
-
-    <!-- ─── SIDEBAR ─── -->
-    <aside class="sidebar">
-      <div class="sidebar-logo">
-        <a href="index.html" style="text-decoration:none">
-          <img src="assets/img/LaProvenceLogo.png" alt="La Provence" style="width: 150px; height: auto;">
-        </a>
-      </div>
-      <nav class="sidebar-nav">
-        <div class="sidebar-section-label">Menu</div>
-        <a href="dashboard.html" class="active">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
-          Minha Lista
-        </a>
-        <a href="catalogo.html">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>
-          Catalogo de Itens
-        </a>
-        <div class="sidebar-section-label">Compartilhar</div>
-        <a href="story.html">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 3L5 6.99h3V14h2V6.99h3L9 3zm7 14.01V10h-2v7.01h-3L15 21l4-3.99h-3z"/></svg>
-          Story Instagram
-        </a>
-        <a href="javascript:void(0)" onclick="compartilharWhatsApp()">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.558 4.114 1.532 5.841L.057 23.882l6.198-1.625A11.96 11.96 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.795 9.795 0 0 1-4.997-1.367l-.358-.213-3.677.964.981-3.594-.234-.369A9.795 9.795 0 0 1 2.182 12C2.182 6.579 6.579 2.182 12 2.182S21.818 6.579 21.818 12 17.421 21.818 12 21.818z"/></svg>
-          Compartilhar
-        </a>
-      </nav>
-      <div class="sidebar-footer">
-        <div class="sidebar-user">
-          <div class="sidebar-avatar" id="avatar-initials">?</div>
-          <div class="sidebar-user-info">
-            <small>Noivos</small>
-            <span id="sidebar-username">Carregando...</span>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>La Provence — Minha Lista</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/main.css" />
+    <link rel="stylesheet" href="css/dashboard.css" />
+    <link rel="icon" href="assets/img/CrownIcon.png" type="image/png" />
+  </head>
+  <body>
+    <div class="app-layout">
+      <!-- ─── SIDEBAR ─── -->
+      <aside class="sidebar">
+        <div class="sidebar-logo">
+          <a href="index.html" style="text-decoration: none">
+            <img
+              src="assets/img/LaProvenceDecor-Logo.png"
+              alt="La Provence"
+              style="width: 150px; height: auto"
+            />
+          </a>
+        </div>
+        <nav class="sidebar-nav">
+          <div class="sidebar-section-label">Menu</div>
+          <a href="dashboard.html" class="active">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"
+              />
+            </svg>
+            Minha Lista
+          </a>
+          <a href="catalogo.html">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"
+              />
+            </svg>
+            Catálogo de Itens
+          </a>
+          <div class="sidebar-section-label">Compartilhar</div>
+          <a href="story.html">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M9 3L5 6.99h3V14h2V6.99h3L9 3zm7 14.01V10h-2v7.01h-3L15 21l4-3.99h-3z"
+              />
+            </svg>
+            Story Instagram
+          </a>
+          <a href="javascript:void(0)" onclick="compartilharWhatsApp()">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"
+              />
+              <path
+                d="M12 0C5.373 0 0 5.373 0 12c0 2.123.558 4.114 1.532 5.841L.057 23.882l6.198-1.625A11.96 11.96 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.795 9.795 0 0 1-4.997-1.367l-.358-.213-3.677.964.981-3.594-.234-.369A9.795 9.795 0 0 1 2.182 12C2.182 6.579 6.579 2.182 12 2.182S21.818 6.579 21.818 12 17.421 21.818 12 21.818z"
+              />
+            </svg>
+            Compartilhar
+          </a>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="sidebar-user">
+            <div class="sidebar-avatar" id="avatar-initials">?</div>
+            <div class="sidebar-user-info">
+              <small>Noivos</small>
+              <span id="sidebar-username">Carregando...</span>
+            </div>
+          </div>
+          <div style="margin-top: 0.8rem">
+            <a
+              href="#"
+              onclick="
+                logout();
+                return false;
+              "
+              style="
+                font-size: 0.7rem;
+                color: rgba(251, 221, 144, 0.4);
+                text-decoration: none;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+              "
+              >Sair</a
+            >
           </div>
         </div>
-        <div style="margin-top:0.8rem">
-          <a href="#" onclick="logout(); return false" style="font-size:0.7rem; color:rgba(251,221,144,0.4); text-decoration:none; letter-spacing:0.1em; text-transform:uppercase">Sair</a>
+      </aside>
+
+      <!-- ─── MAIN ─── -->
+      <main class="main-content">
+        <div class="page-header">
+          <div class="page-header-text">
+            <span class="label-caps">Bem-vindos</span>
+            <h1 id="page-title">Minha Lista</h1>
+          </div>
+          <a href="catalogo.html" class="btn btn-verde">Adicionar Itens</a>
         </div>
-      </div>
-    </aside>
 
-    <!-- ─── MAIN ─── -->
-    <main class="main-content">
-      <div class="page-header">
-        <div class="page-header-text">
-          <span class="label-caps">Bem-vindos</span>
-          <h1 id="page-title">Minha Lista</h1>
+        <!-- Lista summary -->
+        <div id="lista-content">
+          <!-- Preenchido via JS -->
         </div>
-        <a href="catalogo.html" class="btn btn-verde">Adicionar Itens</a>
-      </div>
+      </main>
+    </div>
 
-      <!-- Lista summary -->
-      <div id="lista-content">
-        <!-- Preenchido via JS -->
-      </div>
-    </main>
-  </div>
-
-  <!-- ─── MODAL COMPRA DETALHE ─── -->
-  <div class="modal-overlay" id="modal-compra">
-    <div class="modal">
-      <div class="modal-header">
-        <h3>Detalhe do Presente</h3>
-        <button class="modal-close" data-close-modal>&times;</button>
-      </div>
-      <div class="modal-body" id="modal-compra-body"></div>
-      <div class="modal-footer">
-        <button class="btn btn-outline-dark btn-sm" data-close-modal>Fechar</button>
+    <!-- ─── MODAL COMPRA DETALHE ─── -->
+    <div class="modal-overlay" id="modal-compra">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>Detalhe do Presente</h3>
+          <button class="modal-close" data-close-modal>&times;</button>
+        </div>
+        <div class="modal-body" id="modal-compra-body"></div>
+        <div class="modal-footer">
+          <button class="btn btn-outline-dark btn-sm" data-close-modal>
+            Fechar
+          </button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <script src="js/app.js"></script>
-  <script>
-    const user = requireAuth('noivo');
-    if (!user) throw new Error('Not authorized');
+    <script src="js/app.js"></script>
+    <script>
+      const user = requireAuth("noivo");
+      if (!user) throw new Error("Not authorized");
 
-    // Sidebar
-    document.getElementById('sidebar-username').textContent = user.nome.split(' ')[0];
-    document.getElementById('avatar-initials').textContent = user.nome.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase();
+      // Sidebar
+      document.getElementById("sidebar-username").textContent =
+        user.nome.split(" ")[0];
+      document.getElementById("avatar-initials").textContent = user.nome
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase();
 
-    function compartilharWhatsApp() {
-      const lista = getListaByUser(user.id);
-      if (!lista) { toast('Crie sua lista primeiro.', 'error'); return; }
-      const msg = encodeURIComponent(
-        'Oi! ' + lista.nome_noivos + ' estao se casando e montaram a lista de presentes no La Provence.\n\n' +
-        'Acesse aqui: ' + window.location.origin + '/lista.html?codigo=' + lista.codigo + '\n\n' +
-        'Ou use o codigo: ' + lista.codigo
-      );
-      window.open('https://wa.me/?text=' + msg, '_blank');
-    }
+      function compartilharWhatsApp() {
+        const lista = getListaByUser(user.id);
+        if (!lista) {
+          toast("Crie sua lista primeiro.", "error");
+          return;
+        }
+        const msg = encodeURIComponent(
+          "Oi! " +
+            lista.nome_noivos +
+            " estão se casando e montaram a lista de presentes no La Provence.\n\n" +
+            "Acesse aqui: " +
+            window.location.origin +
+            "/lista.html?codigo=" +
+            lista.codigo +
+            "\n\n" +
+            "Ou use o código: " +
+            lista.codigo,
+        );
+        window.open("https://wa.me/?text=" + msg, "_blank");
+      }
 
-    function copiarCodigo(codigo) {
-      navigator.clipboard.writeText(codigo).then(() => toast('Codigo copiado!')).catch(() => {
-        toast('Codigo: ' + codigo);
-      });
-    }
+      function copiarCodigo(codigo) {
+        navigator.clipboard
+          .writeText(codigo)
+          .then(() => toast("Código copiado com sucesso!"))
+          .catch(() => {
+            toast("Código: " + codigo);
+          });
+      }
 
-    function verDetalhesCompra(itemId, listaId) {
-      const compra = getComprasByItem(listaId, itemId);
-      const item = getItemById(itemId);
-      if (!compra || !item) return;
-      document.getElementById('modal-compra-body').innerHTML = `
+      function copiarLink() {
+        const lista = getListaByUser(user.id);
+        if (!lista) return;
+        const url =
+          window.location.origin + "/lista.html?codigo=" + lista.codigo;
+        navigator.clipboard
+          .writeText(url)
+          .then(() => toast("Link copiado com sucesso!"))
+          .catch(() => toast("Erro ao copiar o link", "error"));
+      }
+
+      function verDetalhesCompra(itemId, listaId) {
+        const compra = getComprasByItem(listaId, itemId);
+        const item = getItemById(itemId);
+        if (!compra || !item) return;
+        document.getElementById("modal-compra-body").innerHTML = `
         <div class="label-caps" style="margin-bottom:0.5rem">Item Presenteado</div>
         <h4 style="font-size:1.1rem; color:var(--verde); margin-bottom:1.5rem">${item.nome}</h4>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem">
@@ -125,7 +196,7 @@
           </div>
           <div>
             <div class="label-caps" style="font-size:0.6rem; margin-bottom:0.2rem">Telefone</div>
-            <div style="font-size:0.9rem">${compra.telefone || '—'}</div>
+            <div style="font-size:0.9rem">${compra.telefone || "—"}</div>
           </div>
           <div>
             <div class="label-caps" style="font-size:0.6rem; margin-bottom:0.2rem">Valor</div>
@@ -137,63 +208,88 @@
           </div>
           <div style="grid-column:1/-1">
             <div class="label-caps" style="font-size:0.6rem; margin-bottom:0.2rem">Data da compra</div>
-            <div style="font-size:0.9rem">${new Date(compra.data_compra).toLocaleString('pt-BR')}</div>
+            <div style="font-size:0.9rem">${new Date(compra.data_compra).toLocaleString("pt-BR")}</div>
           </div>
         </div>
       `;
-      openModal('modal-compra');
-    }
+        openModal("modal-compra");
+      }
 
-    function removerItem(listaId, itemId) {
-      const listas = getListas();
-      const idx = listas.findIndex(l => l.id === listaId);
-      if (idx === -1) return;
-      const compra = getComprasByItem(listaId, itemId);
-      if (compra) { toast('Nao e possivel remover um item ja presenteado.', 'error'); return; }
-      listas[idx].itens = listas[idx].itens.filter(id => id !== itemId);
-      saveListas(listas);
-      renderDashboard();
-      toast('Item removido da lista.');
-    }
+      function removerItem(listaId, itemId) {
+        const listas = getListas();
+        const idx = listas.findIndex((l) => l.id === listaId);
+        if (idx === -1) return;
+        const compra = getComprasByItem(listaId, itemId);
+        if (compra) {
+          toast("Não é possível remover um item já presenteado.", "error");
+          return;
+        }
+        listas[idx].itens = listas[idx].itens.filter((id) => id !== itemId);
+        saveListas(listas);
+        renderDashboard();
+        toast("Item removido da lista.");
+      }
 
-    function renderDashboard() {
-      const lista = getListaByUser(user.id);
-      const cont = document.getElementById('lista-content');
-      const params = new URLSearchParams(window.location.search);
+      function renderDashboard() {
+        const lista = getListaByUser(user.id);
+        const cont = document.getElementById("lista-content");
+        const params = new URLSearchParams(window.location.search);
 
-      if (!lista) {
-        cont.innerHTML = `
+        if (!lista) {
+          cont.innerHTML = `
           <div class="empty-state">
             <span class="script">Bem-vindos</span>
-            <p>Crie sua lista para comecar a receber presentes com amor.</p>
+            <p>Crie sua lista para começar a receber presentes com amor.</p>
             <a href="catalogo.html" class="btn btn-verde">Criar Minha Lista</a>
           </div>
         `;
-        return;
-      }
+          return;
+        }
 
-      document.getElementById('page-title').textContent = lista.nome_noivos;
+        document.getElementById("page-title").textContent = lista.nome_noivos;
 
-      // Stats
-      const compras = getComprasByLista(lista.id);
-      const totalItens = lista.itens.length;
-      const comprados = lista.itens.filter(id => getComprasByItem(lista.id, id)).length;
-      const pct = totalItens > 0 ? Math.round((comprados / totalItens) * 100) : 0;
-      const diasRestantes = lista.data_casamento
-        ? Math.max(0, Math.ceil((new Date(lista.data_casamento + 'T00:00:00') - new Date()) / (1000 * 60 * 60 * 24)))
-        : null;
-      const valorTotal = compras.reduce((s, c) => s + Number(c.valor_pago), 0);
+        // Stats
+        const compras = getComprasByLista(lista.id);
+        const totalItens = lista.itens.length;
+        const comprados = lista.itens.filter((id) => {
+          const c = getComprasByItem(lista.id, id);
+          return (
+            c &&
+            (c.status_pagamento === "Aprovado" ||
+              c.status_pagamento === "Confirmado")
+          );
+        }).length;
+        const pct =
+          totalItens > 0 ? Math.round((comprados / totalItens) * 100) : 0;
+        const diasRestantes = lista.data_casamento
+          ? Math.max(
+              0,
+              Math.ceil(
+                (new Date(lista.data_casamento + "T00:00:00") - new Date()) /
+                  (1000 * 60 * 60 * 24),
+              ),
+            )
+          : null;
+        const valorTotal = compras.reduce((s, c) => {
+          if (
+            c.status_pagamento === "Aprovado" ||
+            c.status_pagamento === "Confirmado"
+          )
+            return s + Number(c.valor_pago);
+          return s;
+        }, 0);
 
-      cont.innerHTML = `
+        cont.innerHTML = `
         <!-- Summary Card -->
         <div class="list-summary-card">
           <div class="label-caps" style="color:rgba(251,221,144,0.45); margin-bottom:0.3rem">Lista de Casamento</div>
           <div class="summary-noivos">${lista.nome_noivos}</div>
-          ${lista.data_casamento ? `<div class="summary-meta">Casamento em ${formatDate(lista.data_casamento)}</div>` : ''}
+          ${lista.data_casamento ? `<div class="summary-meta">Casamento em ${formatDate(lista.data_casamento)}</div>` : ""}
           <div class="summary-code-row">
             <div class="summary-code" onclick="copiarCodigo('${lista.codigo}')" title="Clique para copiar">${lista.codigo}</div>
-            ${diasRestantes !== null ? `<span class="days-badge">${diasRestantes} dias</span>` : ''}
-            <button onclick="compartilharWhatsApp()" class="btn btn-outline btn-sm">Compartilhar no WhatsApp</button>
+            ${diasRestantes !== null ? `<span class="days-badge">${diasRestantes} dias</span>` : ""}
+            <button onclick="copiarLink()" class="btn btn-outline btn-sm">Copiar Link</button>
+            <button onclick="compartilharWhatsApp()" class="btn btn-outline btn-sm">WhatsApp</button>
           </div>
         </div>
 
@@ -212,7 +308,7 @@
           <div class="stat-card">
             <span class="label-caps">A presentear</span>
             <div class="value">${totalItens - comprados}</div>
-            <div class="sub">ainda disponiveis</div>
+            <div class="sub">ainda disponíveis</div>
           </div>
           <div class="stat-card">
             <span class="label-caps">Total recebido</span>
@@ -230,6 +326,16 @@
           <div class="progress-bar" style="height:8px">
             <div class="progress-fill" style="width:${pct}%"></div>
           </div>
+          ${pct >= 80 && pct < 100 ? `<div style="margin-top:0.8rem; font-size:0.75rem; font-weight:600; color:var(--ouro); text-align:right; animation: heroFadeIn 0.8s ease;">✨ Faltam poucos presentes para completar a lista!</div>` : ''}
+          ${pct === 100 && totalItens > 0 ? `<div style="margin-top:0.8rem; font-size:0.75rem; font-weight:700; color:#27ae60; text-align:right; animation: heroFadeIn 0.8s ease;">🎉 Lista completada com sucesso!</div>` : ''}
+        </div>
+
+        <!-- Welcome Message Card -->
+        <div class="card" style="margin-bottom:2rem">
+          <h3 style="font-size:0.88rem; font-weight:700; color:var(--verde); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.5rem">Mensagem aos Convidados</h3>
+          <p style="font-size:0.8rem; color:var(--texto-suave); margin-bottom:1rem">Escreva uma mensagem especial que aparecerá no topo da sua lista pública para todos os convidados.</p>
+          <textarea id="welcome-msg" style="width:100%; min-height:80px; padding:0.8rem; border:1px solid rgba(0,48,13,0.15); border-radius:2px; font-family:inherit; font-size:0.85rem; margin-bottom:1rem; outline:none; resize:vertical" placeholder="Ex: Queridos amigos e familiares, estamos muito felizes em compartilhar este momento com vocês...">${lista.mensagem_boas_vindas || ""}</textarea>
+          <button class="btn btn-verde btn-sm" onclick="salvarMensagemBemVindo('${lista.id}')">Salvar Mensagem</button>
         </div>
 
         <!-- Items Cards -->
@@ -238,46 +344,65 @@
             <h3 style="font-size:0.88rem; font-weight:700; color:var(--verde); text-transform:uppercase; letter-spacing:0.1em">Itens da Lista</h3>
             <a href="catalogo.html" class="btn btn-outline-dark btn-sm">Adicionar Itens</a>
           </div>
-          ${totalItens === 0 ? `
+          ${
+            totalItens === 0
+              ? `
             <div class="empty-state" style="padding:2rem">
-              <p>Nenhum item na lista ainda. Explore o catalogo e adicione os presentes que desejam.</p>
-              <a href="catalogo.html" class="btn btn-verde btn-sm">Ver Catalogo</a>
+              <p>Nenhum item na lista ainda. Explore o catálogo e adicione os presentes que desejam.</p>
+              <a href="catalogo.html" class="btn btn-verde btn-sm">Ver Catálogo</a>
             </div>
-          ` : `
+          `
+              : `
             <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:1rem">
-              ${lista.itens.map(itemId => {
-                const item = getItemById(itemId);
-                if (!item) return '';
-                const compra = getComprasByItem(lista.id, itemId);
-                return `
-                  <div style="border:1px solid rgba(0,48,13,0.08); border-radius:4px; overflow:hidden; opacity:${compra ? '0.65' : '1'}; position:relative">
+              ${lista.itens
+                .map((itemId) => {
+                  const item = getItemById(itemId);
+                  if (!item) return "";
+                  const compra = getComprasByItem(lista.id, itemId);
+                  const hasCompraFinalizada =
+                    compra &&
+                    (compra.status_pagamento === "Aprovado" ||
+                      compra.status_pagamento === "Confirmado");
+                  return `
+                  <div style="border:1px solid rgba(0,48,13,0.08); border-radius:4px; overflow:hidden; opacity:${hasCompraFinalizada ? "0.65" : "1"}; position:relative">
                     <div style="background:var(--bege); padding:0.6rem 0.9rem; font-size:0.6rem; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--texto-suave); display:flex; align-items:center; justify-content:space-between">
                       <span>${item.setor}</span>
                       <span style="display:inline-flex; align-items:center; gap:0.3rem">
-                        <span class="item-status-dot ${compra ? 'dot-purchased' : 'dot-available'}"></span>
-                        ${compra ? 'Presenteado' : 'Disponivel'}
+                        <span class="item-status-dot ${hasCompraFinalizada ? "dot-purchased" : "dot-available"}"></span>
+                        ${hasCompraFinalizada ? "Presenteado" : "Disponível"}
                       </span>
                     </div>
+                    ${renderItemPhoto(item, "dash")}
                     <div style="padding:0.9rem">
                       <div style="font-size:0.82rem; font-weight:700; color:var(--verde); margin-bottom:0.2rem; line-height:1.3">${item.nome}</div>
                       <div style="font-size:0.7rem; color:var(--texto-suave); margin-bottom:0.6rem">${item.tamanho}</div>
                       <div style="font-size:1rem; font-weight:700; color:var(--ouro); margin-bottom:0.8rem">${formatMoney(item.preco)}</div>
-                      ${compra
-                        ? `<button class="btn btn-outline-dark btn-sm" style="width:100%" onclick="verDetalhesCompra('${itemId}', '${lista.id}')">Ver Detalhes</button>`
-                        : `<button class="btn btn-sm" style="width:100%; background:rgba(220,50,50,0.08); color:#c0392b; border:none" onclick="removerItem('${lista.id}', '${itemId}')">Remover</button>`
+                      ${
+                        hasCompraFinalizada
+                          ? `<button class="btn btn-outline-dark btn-sm" style="width:100%" onclick="verDetalhesCompra('${itemId}', '${lista.id}')">Ver Detalhes</button>`
+                          : `<button class="btn btn-sm" style="width:100%; background:rgba(220,50,50,0.08); color:#c0392b; border:none" onclick="removerItem('${lista.id}', '${itemId}')">Remover</button>`
                       }
                     </div>
                   </div>
                 `;
-              }).join('')}
+                })
+                .join("")}
             </div>
-          `}
+          `
+          }
         </div>
       `;
-    }
+      }
 
-    renderDashboard();
-    initModals();
-  </script>
-</body>
+      function salvarMensagemBemVindo(listaId) {
+        const msg = document.getElementById("welcome-msg").value.trim();
+        salvarMensagemLista(listaId, msg);
+        toast("Mensagem salva com sucesso!");
+      }
+
+      renderDashboard();
+      initModals();
+      checkNewPurchases(user);
+    </script>
+  </body>
 </html>
