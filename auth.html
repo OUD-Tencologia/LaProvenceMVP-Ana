@@ -209,7 +209,17 @@
 
           <div class="form-group" style="margin-top: 0.5rem">
             <label
-              >Foto do Casal <span style="color: var(--ouro)">*</span></label
+              >Foto do Casal
+              <span
+                style="
+                  font-size: 0.7em;
+                  color: var(--texto-suave);
+                  font-weight: normal;
+                  text-transform: none;
+                  letter-spacing: normal;
+                "
+                >(Opcional)</span
+              ></label
             >
             <input
               type="file"
@@ -490,10 +500,6 @@
         }
         if (!validateSenha(senha)) {
           showErr("reg-senha-err");
-          ok = false;
-        }
-        if (!fotoBase64) {
-          showErr("reg-foto-err", "Adicione uma foto do casal");
           ok = false;
         }
         if (!data) {
