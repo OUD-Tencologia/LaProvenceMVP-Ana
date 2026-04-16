@@ -1,8 +1,18 @@
 /* ─── DASHBOARD PAGE SPECIFIC ─── */
-.setup-modal-body .template-card { cursor: pointer; margin-bottom: 1rem; }
-.setup-modal-body .template-card:hover { box-shadow: 0 8px 24px var(--sombra-forte); }
-.setup-modal-body .template-card.selected { border-color: var(--ouro); outline: 2px solid var(--ouro); }
-.date-input { font-family: 'Montserrat', sans-serif; }
+.setup-modal-body .template-card {
+  cursor: pointer;
+  margin-bottom: 1rem;
+}
+.setup-modal-body .template-card:hover {
+  box-shadow: 0 8px 24px var(--sombra-forte);
+}
+.setup-modal-body .template-card.selected {
+  border-color: var(--ouro);
+  outline: 2px solid var(--ouro);
+}
+.date-input {
+  font-family: "Montserrat", sans-serif;
+}
 .list-summary-card {
   background: linear-gradient(135deg, var(--verde) 0%, var(--verde-medio) 100%);
   border-radius: 4px;
@@ -12,31 +22,50 @@
   overflow: hidden;
 }
 .list-summary-card::before {
-  content: '';
+  content: "";
   position: absolute;
   right: -2rem;
   top: -2rem;
   width: 160px;
   height: 160px;
   border-radius: 50%;
-  border: 1px solid rgba(251,221,144,0.1);
+  border: 1px solid rgba(251, 221, 144, 0.1);
 }
 .list-summary-card::after {
-  content: '';
+  content: "";
   position: absolute;
   right: 1rem;
   top: 1rem;
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  border: 1px solid rgba(251,221,144,0.07);
+  border: 1px solid rgba(251, 221, 144, 0.07);
 }
-.summary-noivos { font-family: 'Great Vibes', cursive; font-size: 2.5rem; color: var(--ouro-claro); line-height: 1; }
-.summary-meta { font-size: 0.78rem; color: rgba(251,221,144,0.6); margin-top: 0.5rem; }
-.summary-code-row { display: flex; align-items: center; gap: 1rem; margin-top: 1.2rem; flex-wrap: wrap; }
+.summary-noivos {
+  font-family: "Great Vibes", cursive;
+  font-size: 2.5rem;
+  color: var(--ouro-claro);
+  line-height: 1;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 8px;
+  text-decoration-color: rgba(251, 221, 144, 0.4);
+}
+.summary-meta {
+  font-size: 0.78rem;
+  color: rgba(251, 221, 144, 0.6);
+  margin-top: 0.5rem;
+}
+.summary-code-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.2rem;
+  flex-wrap: wrap;
+}
 .summary-code {
-  background: rgba(251,221,144,0.12);
-  border: 1px solid rgba(251,221,144,0.22);
+  background: rgba(251, 221, 144, 0.12);
+  border: 1px solid rgba(251, 221, 144, 0.22);
   border-radius: 2px;
   padding: 0.5rem 1.2rem;
   font-size: 1.3rem;
@@ -46,7 +75,9 @@
   cursor: pointer;
   transition: background 0.3s;
 }
-.summary-code:hover { background: rgba(251,221,144,0.2); }
+.summary-code:hover {
+  background: rgba(251, 221, 144, 0.2);
+}
 .days-badge {
   background: var(--ouro);
   color: var(--verde);

@@ -141,20 +141,24 @@
         .slice(0, 2)
         .toUpperCase();
 
+      function getListaUrl(codigo) {
+        const base = window.location.href.replace(/[^/]*(\?.*)?$/, "");
+        return base + "lista.html?codigo=" + codigo;
+      }
+
       function compartilharWhatsApp() {
         const lista = getListaByUser(user.id);
         if (!lista) {
           toast("Crie sua lista primeiro.", "error");
           return;
         }
+        const url = getListaUrl(lista.codigo);
         const msg = encodeURIComponent(
           "Oi! " +
             lista.nome_noivos +
             " estão se casando e montaram a lista de presentes no La Provence.\n\n" +
             "Acesse aqui: " +
-            window.location.origin +
-            "/lista.html?codigo=" +
-            lista.codigo +
+            url +
             "\n\n" +
             "Ou use o código: " +
             lista.codigo,
@@ -174,8 +178,7 @@
       function copiarLink() {
         const lista = getListaByUser(user.id);
         if (!lista) return;
-        const url =
-          window.location.origin + "/lista.html?codigo=" + lista.codigo;
+        const url = getListaUrl(lista.codigo);
         navigator.clipboard
           .writeText(url)
           .then(() => toast("Link copiado com sucesso!"))

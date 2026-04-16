@@ -92,6 +92,18 @@
         </div>
       </aside>
 
+      <!-- ─── MOBILE HEADER ─── -->
+      <div class="mobile-header">
+        <button class="sidebar-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open'); document.querySelector('.sidebar-overlay').classList.toggle('open')">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+          </svg>
+        </button>
+        <img src="assets/img/LaProvenceDecor-Logo.png" alt="La Provence" style="height:36px; width:auto;" />
+        <div style="width:22px"></div>
+      </div>
+      <div class="sidebar-overlay" onclick="document.querySelector('.sidebar').classList.remove('open'); document.querySelector('.sidebar-overlay').classList.remove('open')"></div>
+
       <!-- ─── MAIN ─── -->
       <main class="main-content">
         <div class="page-header">
@@ -131,74 +143,35 @@
           </select>
         </div>
 
-        <div class="catalog-layout">
-          <!-- Filters -->
-          <div class="catalog-filters">
-            <h3>Filtrar por Categoria</h3>
-            <button class="filter-chip active" onclick="setFilter('', this)">
-              Todos os itens
-            </button>
-            <button class="filter-chip" onclick="setFilter('Mesa posta', this)">
-              Mesa posta
-            </button>
-            <button class="filter-chip" onclick="setFilter('Prataria', this)">
-              Prataria
-            </button>
-            <button class="filter-chip" onclick="setFilter('Adornos', this)">
-              Adornos
-            </button>
-            <button class="filter-chip" onclick="setFilter('Aromas', this)">
-              Aromas
-            </button>
-            <button class="filter-chip" onclick="setFilter('Mobiliário', this)">
-              Mobiliário
-            </button>
-            <button class="filter-chip" onclick="setFilter('Vasos', this)">
-              Vasos
-            </button>
-            <button
-              class="filter-chip"
-              onclick="setFilter('Complementos', this)"
-            >
-              Complementos
-            </button>
-            <div
-              style="
-                margin-top: 1.5rem;
-                padding-top: 1.2rem;
-                border-top: 1px solid rgba(0, 48, 13, 0.08);
-              "
-            >
-              <div
-                class="label-caps"
-                style="
-                  color: var(--ouro);
-                  margin-bottom: 0.5rem;
-                  font-size: 0.6rem;
-                "
-              >
-                Minha Lista
-              </div>
-              <div
-                id="lista-count"
-                style="font-size: 0.8rem; color: var(--verde); font-weight: 500"
-              >
-                0 itens
-              </div>
-              <div style="margin-top: 0.8rem">
-                <a
-                  href="dashboard.html"
-                  class="btn btn-verde btn-sm"
-                  style="width: 100%"
-                  >Ver Lista</a
-                >
-              </div>
-            </div>
-          </div>
-
-          <!-- Grid -->
+        <div class="catalog-layout" style="grid-template-columns: 1fr 300px;">
+          <!-- Main: filter bar + grid -->
           <div>
-            <div class="catalog-grid" id="catalog-grid">
+            <!-- Horizontal filter bar (desktop) -->
+            <div class="cat-filter-bar">
+              <button class="cat-filter active" data-setor="" onclick="setFilter('', this)">Todos</button>
+              <button class="cat-filter" data-setor="Mesa posta" onclick="setFilter('Mesa posta', this)">Mesa posta</button>
+              <button class="cat-filter" data-setor="Prataria" onclick="setFilter('Prataria', this)">Prataria</button>
+              <button class="cat-filter" data-setor="Adornos" onclick="setFilter('Adornos', this)">Adornos</button>
+              <button class="cat-filter" data-setor="Aromas" onclick="setFilter('Aromas', this)">Aromas</button>
+              <button class="cat-filter" data-setor="Mobiliário" onclick="setFilter('Mobiliário', this)">Mobiliário</button>
+              <button class="cat-filter" data-setor="Vasos" onclick="setFilter('Vasos', this)">Vasos</button>
+              <button class="cat-filter" data-setor="Complementos" onclick="setFilter('Complementos', this)">Complementos</button>
+            </div>
+
+            <!-- Mobile category select -->
+            <select id="cat-filter-select" class="cat-filter-select" onchange="setFilterMobile(this.value)">
+              <option value="">Todas as categorias</option>
+              <option value="Mesa posta">Mesa posta</option>
+              <option value="Prataria">Prataria</option>
+              <option value="Adornos">Adornos</option>
+              <option value="Aromas">Aromas</option>
+              <option value="Mobiliário">Mobiliário</option>
+              <option value="Vasos">Vasos</option>
+              <option value="Complementos">Complementos</option>
+            </select>
+
+            <!-- Grid -->
+            <div class="catalog-grid catalog-grid-large" id="catalog-grid">
               <!-- Preenchido via JS -->
             </div>
           </div>
@@ -242,9 +215,21 @@
       function setFilter(setor, btn) {
         activeFilter = setor;
         document
-          .querySelectorAll(".filter-chip")
+          .querySelectorAll(".cat-filter")
           .forEach((c) => c.classList.remove("active"));
         btn.classList.add("active");
+        // Sync mobile select
+        const sel = document.getElementById("cat-filter-select");
+        if (sel) sel.value = setor || "";
+        renderCatalog();
+      }
+
+      function setFilterMobile(setor) {
+        activeFilter = setor;
+        // Sync desktop pills via data-setor
+        document.querySelectorAll(".cat-filter").forEach((c) => {
+          c.classList.toggle("active", c.dataset.setor === setor);
+        });
         renderCatalog();
       }
 
@@ -352,8 +337,8 @@
       function updateListaCount() {
         const lista = getLista();
         const cnt = lista ? lista.itens.length : 0;
-        document.getElementById("lista-count").textContent =
-          cnt + " item" + (cnt !== 1 ? "s" : "");
+        const el = document.getElementById("lista-count");
+        if (el) el.textContent = cnt + " item" + (cnt !== 1 ? "s" : "");
       }
 
       function renderCatalog() {

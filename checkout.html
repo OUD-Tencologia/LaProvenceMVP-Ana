@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>La Provence — Finalizar Presente</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/main.css" />
+    <link rel="icon" href="assets/img/CrownIcon.png" type="image/png" />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { background: #fff; font-family: "Montserrat", sans-serif; min-height: 100vh; color: #1c1c1c; }
+
+      /* ── Navbar ── */
+      .co-navbar {
+        background: var(--verde);
+        padding: 1rem 5%;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+      .co-navbar img { height: 38px; width: auto; }
+
+      /* ── Error / not-found screen ── */
+      .co-error-screen {
+        max-width: 480px;
+        margin: 5rem auto;
+        text-align: center;
+        padding: 0 5%;
+      }
+
+      /* ── Main container ── */
+      .co-page {
+        display: grid;
+        grid-template-columns: 1.55fr 1fr;
+        min-height: calc(100vh - 62px);
+      }
+
+      /* ── LEFT: Form column ── */
+      .co-form-col {
+        padding: 3rem 3.5rem 3rem 5%;
+        background: #fff;
+      }
+      .co-form-title {
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--texto-suave);
+        margin-bottom: 1rem;
+        margin-top: 1.8rem;
+      }
+      .co-form-title:first-child { margin-top: 0; }
+
+      /* Fields */
+      .co-field {
+        width: 100%;
+        padding: 0.85rem 1rem;
+        border: 1.5px solid rgba(0,0,0,0.12);
+        border-radius: 8px;
+        font-family: "Montserrat", sans-serif;
+        font-size: 0.85rem;
+        color: var(--texto);
+        background: #fff;
+        outline: none;
+        transition: border-color 0.2s;
+        margin-bottom: 0.75rem;
+        display: block;
+      }
+      .co-field:focus { border-color: var(--verde); }
+      .co-field::placeholder { color: #aaa; }
+      .co-field-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+      }
+      .co-field-row .co-field { margin-bottom: 0; }
+      .co-field-row-wrap { margin-bottom: 0.75rem; }
+
+      /* Error label */
+      .co-err-label {
+        display: none;
+        font-size: 0.7rem;
+        color: #c0392b;
+        margin-top: -0.5rem;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+      }
+      .co-err-label.show { display: block; }
+
+      /* Payment tiles */
+      .co-tiles {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.7rem;
+        margin-bottom: 1.2rem;
+      }
+      .co-tile {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.9rem 1.1rem;
+        border: 1.5px solid rgba(0,0,0,0.12);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: #fff;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--texto);
+        text-align: center;
+      }
+      .co-tile:hover { border-color: var(--verde); background: rgba(0,48,13,0.03); }
+      .co-tile.selected {
+        border-color: var(--verde);
+        background: rgba(0,48,13,0.05);
+        color: var(--verde);
+      }
+
+      /* Installments */
+      .co-parcelas-box {
+        display: none;
+        border: 1.5px solid rgba(0,48,13,0.12);
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 1.2rem;
+      }
+      .co-parcelas-box.visible { display: block; }
+      .co-parcela-opt {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1.1rem;
+        cursor: pointer;
+        transition: background 0.15s;
+        border-bottom: 1px solid rgba(0,48,13,0.07);
+      }
+      .co-parcela-opt:last-child { border-bottom: none; }
+      .co-parcela-opt:hover { background: rgba(0,48,13,0.04); }
+      .co-parcela-opt.selected { background: rgba(0,48,13,0.06); }
+      .co-parcela-opt input[type="radio"] { accent-color: var(--verde); margin-right: 0.7rem; }
+      .co-parcela-label { font-size: 0.82rem; font-weight: 600; color: var(--verde); flex: 1; }
+      .co-parcela-value { font-size: 0.82rem; font-weight: 600; color: var(--texto-suave); }
+      .co-parcela-badge {
+        font-size: 0.62rem;
+        font-weight: 700;
+        color: #27ae60;
+        letter-spacing: 0.06em;
+        margin-left: 0.6rem;
+      }
+
+      /* Submit button */
+      .co-submit-btn {
+        width: 100%;
+        padding: 1rem 1.5rem;
+        background: var(--verde);
+        color: var(--ouro-claro);
+        border: none;
+        border-radius: 8px;
+        font-family: "Montserrat", sans-serif;
+        font-size: 0.82rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: background 0.25s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
+        margin-top: 0.5rem;
+      }
+      .co-submit-btn:hover { background: var(--verde-medio); }
+      .co-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+      .co-submit-btn svg { flex-shrink: 0; }
+
+      .co-secure {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        margin-top: 0.85rem;
+        font-size: 0.62rem;
+        color: #aaa;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .co-global-err {
+        font-size: 0.75rem;
+        color: #c0392b;
+        font-weight: 600;
+        margin-top: 0.6rem;
+        display: none;
+        text-align: center;
+      }
+      .co-global-err.show { display: block; }
+
+      /* ── RIGHT: Summary column ── */
+      .co-summary-col {
+        background: #f4f5f8;
+        padding: 3rem 5% 3rem 2.5rem;
+        display: flex;
+        flex-direction: column;
+      }
+      .co-summary-total-lbl {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--texto-suave);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-bottom: 0.4rem;
+      }
+      .co-summary-total-amount {
+        font-size: 2.6rem;
+        font-weight: 800;
+        color: var(--verde);
+        line-height: 1.1;
+        margin-bottom: 0.6rem;
+      }
+      .co-summary-total-amount sup {
+        font-size: 1.1rem;
+        font-weight: 700;
+        vertical-align: super;
+      }
+      .co-summary-total-amount .cents {
+        font-size: 1.5rem;
+        font-weight: 700;
+      }
+      .co-secure-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.65rem;
+        font-weight: 600;
+        color: var(--texto-suave);
+        letter-spacing: 0.06em;
+        margin-bottom: 1.4rem;
+      }
+      .co-secure-badge svg { color: #27ae60; }
+      .co-divider {
+        height: 1px;
+        background: rgba(0,0,0,0.1);
+        margin: 1rem 0;
+      }
+      .co-summary-subtitle {
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--texto-suave);
+        margin-bottom: 1rem;
+      }
+
+      /* Product row in summary */
+      .co-product-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.9rem;
+        margin-bottom: 0.5rem;
+      }
+      .co-product-thumb {
+        width: 72px;
+        height: 72px;
+        border-radius: 8px;
+        flex-shrink: 0;
+        overflow: hidden;
+        background: rgba(0,48,13,0.08);
+      }
+      /* Override item-carousel styles inside the thumb */
+      .co-product-thumb .item-carousel {
+        width: 72px !important;
+        height: 72px !important;
+        border-radius: 8px;
+        pointer-events: none;
+      }
+      .co-product-thumb .item-carousel img,
+      .co-product-thumb .item-carousel .carousel-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      /* Arrow buttons hidden inside thumb */
+      .co-product-thumb .carousel-btn { display: none !important; }
+      .co-product-info { flex: 1; min-width: 0; }
+      .co-product-name {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--verde);
+        line-height: 1.3;
+        margin-bottom: 0.2rem;
+      }
+      .co-product-variant {
+        font-size: 0.68rem;
+        color: var(--texto-suave);
+      }
+      .co-product-price {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--texto);
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .co-summary-line {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.8rem;
+        color: var(--texto-suave);
+        margin-bottom: 0.45rem;
+      }
+      .co-summary-line.total {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--verde);
+        margin-top: 0.2rem;
+      }
+      .co-summary-line.total span:last-child { color: var(--verde); }
+
+      /* ── Success screen ── */
+      .co-success-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: #fff;
+        z-index: 100;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        padding: 5%;
+        text-align: center;
+      }
+      .co-success-overlay.show { display: flex; }
+      .co-success-overlay .script { font-size: 4rem; color: var(--ouro); display: block; margin-bottom: 0.5rem; }
+      .co-success-overlay h2 { font-size: 1.3rem; color: var(--verde); margin-bottom: 0.8rem; }
+      .co-success-overlay p { font-size: 0.85rem; color: var(--texto-suave); font-weight: 300; line-height: 1.7; max-width: 400px; margin: 0 auto 1.5rem; }
+      .co-success-item-box { background: var(--bege); border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 1.5rem; font-size: 0.85rem; color: var(--verde); font-weight: 600; max-width: 380px; width: 100%; }
+
+      /* ── Responsive ── */
+      @media (max-width: 820px) {
+        .co-form-col { padding: 2.5rem 4%; }
+        .co-summary-col { padding: 2.5rem 4%; }
+      }
+      @media (max-width: 640px) {
+        .co-page { grid-template-columns: 1fr; }
+        .co-summary-col { order: -1; padding: 2rem 5%; }
+        .co-form-col { padding: 2rem 5%; }
+        .co-field-row { grid-template-columns: 1fr; gap: 0; }
+        .co-field-row .co-field { margin-bottom: 0.75rem; }
+        .co-tiles { grid-template-columns: 1fr 1fr; }
+        .co-summary-total-amount { font-size: 2rem; }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navbar -->
+    <nav class="co-navbar">
+      <a href="index.html">
+        <img src="assets/img/LaProvenceDecor-Logo.png" alt="La Provence" />
+      </a>
+    </nav>
+
+    <!-- Error / not-found screen -->
+    <div class="co-error-screen" id="co-error-screen" style="display:none">
+      <span class="label-caps" style="color:var(--ocre)">Item não disponível</span>
+      <p style="color:var(--texto-suave); margin-top:0.6rem; font-size:0.88rem; line-height:1.7" id="co-error-msg">O item ou a lista solicitada não está mais disponível.</p>
+      <a href="javascript:history.back()" class="btn btn-verde btn-sm" style="margin-top:1.2rem">Voltar</a>
+    </div>
+
+    <!-- Main layout -->
+    <div class="co-page" id="co-page">
+      <!-- LEFT: Form -->
+      <div class="co-form-col">
+
+        <div class="co-form-title">Informações do Presenteador</div>
+
+        <input type="text" class="co-field" id="co-nome" placeholder="Nome completo" autocomplete="name" />
+        <div class="co-err-label" id="co-nome-err">Informe seu nome completo</div>
+
+        <div class="co-field-row co-field-row-wrap">
+          <input type="text" class="co-field" id="co-cpf" placeholder="CPF: 000.000.000-00" maxlength="14" inputmode="numeric" />
+          <input type="text" class="co-field" id="co-tel" placeholder="Telefone: (00) 00000-0000" autocomplete="tel" />
+        </div>
+        <div style="display:flex; gap:1rem; margin-top:-0.5rem; margin-bottom:0.75rem">
+          <div class="co-err-label" id="co-cpf-err" style="flex:1">CPF inválido</div>
+          <div class="co-err-label" id="co-tel-err" style="flex:1">Telefone inválido</div>
+        </div>
+
+        <div class="co-form-title">Forma de Pagamento</div>
+
+        <div class="co-tiles">
+          <div class="co-tile selected" id="tile-pix" onclick="selectPgto(this,'Pix')">
+            Pix
+          </div>
+          <div class="co-tile" id="tile-cartao" onclick="selectPgto(this,'Cartão')">
+            Cartão de Crédito
+          </div>
+        </div>
+
+        <!-- Parcelamento (visible when Cartão selected) -->
+        <div class="co-parcelas-box" id="co-parcelas">
+          <div class="co-parcela-opt selected" onclick="selectParcela(this,1)" id="parc-1">
+            <input type="radio" name="parcela" checked />
+            <span class="co-parcela-label">1x</span>
+            <span class="co-parcela-value" id="parc-val-1">—</span>
+            <span class="co-parcela-badge">sem juros</span>
+          </div>
+          <div class="co-parcela-opt" onclick="selectParcela(this,2)" id="parc-2">
+            <input type="radio" name="parcela" />
+            <span class="co-parcela-label">2x</span>
+            <span class="co-parcela-value" id="parc-val-2">—</span>
+            <span class="co-parcela-badge">sem juros</span>
+          </div>
+          <div class="co-parcela-opt" onclick="selectParcela(this,3)" id="parc-3">
+            <input type="radio" name="parcela" />
+            <span class="co-parcela-label">3x</span>
+            <span class="co-parcela-value" id="parc-val-3">—</span>
+            <span class="co-parcela-badge">sem juros</span>
+          </div>
+        </div>
+
+        <div class="co-global-err" id="co-global-err"></div>
+
+        <button class="co-submit-btn" id="co-submit-btn" onclick="confirmarCheckout()">
+          Confirmar Presente
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+        </button>
+
+        <div class="co-secure">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+          Transação segura · Dados protegidos
+        </div>
+      </div>
+
+      <!-- RIGHT: Order Summary -->
+      <div class="co-summary-col">
+        <div class="co-summary-total-lbl">Valor do Presente</div>
+        <div class="co-summary-total-amount" id="co-total-display">—</div>
+
+        <div class="co-secure-badge">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="#27ae60"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+          Pagamento Seguro
+        </div>
+
+        <div class="co-divider"></div>
+
+        <div class="co-summary-subtitle">Resumo do Pedido</div>
+
+        <div class="co-product-row" id="co-product-row">
+          <!-- Filled by JS -->
+        </div>
+
+        <div class="co-divider"></div>
+
+        <div class="co-summary-line">
+          <span>Subtotal</span>
+          <span id="co-subtotal-val">—</span>
+        </div>
+        <div class="co-summary-line total">
+          <span>Total</span>
+          <span id="co-total-val">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success overlay -->
+    <div class="co-success-overlay" id="co-success-overlay">
+      <span class="script">Obrigado!</span>
+      <h2>Presente registrado com sucesso</h2>
+      <p>Seu presente foi registrado. Para finalizar o pagamento, nossa equipe entrará em contato com total segurança.</p>
+      <div class="co-success-item-box" id="co-success-item-name"></div>
+      <a id="co-success-wa-btn" href="#" target="_blank" class="btn btn-verde" style="max-width:340px; width:100%; margin-bottom:0.8rem">
+        Finalizar pelo WhatsApp
+      </a>
+      <a href="javascript:history.back()" class="btn btn-outline-dark btn-sm" style="max-width:340px; width:100%">
+        Voltar à lista
+      </a>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const itemId = params.get("itemId");
+      const codigo = params.get("codigo");
+
+      let item = null;
+      let lista = null;
+      let pgtoSelecionado = "Pix";
+      let parcelasSelecionadas = 1;
+
+      function showError(msg) {
+        document.getElementById("co-page").style.display = "none";
+        const errScreen = document.getElementById("co-error-screen");
+        errScreen.style.display = "block";
+        document.getElementById("co-error-msg").textContent = msg;
+      }
+
+      if (!itemId || !codigo) {
+        window.location.href = "index.html";
+      } else {
+        item = getItemById(itemId);
+        lista = getListaByCodigo(codigo);
+
+        if (!item || !lista) {
+          showError("O item ou a lista solicitada não está mais disponível.");
+        } else {
+          const compra = getComprasByItem(lista.id, itemId);
+          if (compra) {
+            showError("Este item já foi presenteado. Volte à lista para escolher outro presente.");
+            document.querySelector(".co-error-screen a").href = "lista.html?codigo=" + codigo;
+          } else {
+            renderSummary();
+          }
+        }
+      }
+
+      function formatPriceSplit(valor) {
+        const str = formatMoney(valor); // "R$ 1.200,00"
+        const match = str.match(/^(R\$\s*[\d\.]+),([\d]+)$/);
+        if (!match) return { main: str, cents: "" };
+        return { main: match[1], cents: "," + match[2] };
+      }
+
+      function renderSummary() {
+        if (!item) return;
+
+        // Total amount display (split cents)
+        const { main, cents } = formatPriceSplit(item.preco);
+        document.getElementById("co-total-display").innerHTML =
+          `<sup>R$</sup> ${main.replace("R$","").trim()}<span class="cents">${cents}</span>`;
+
+        // Subtotal and total
+        const fmt = formatMoney(item.preco);
+        document.getElementById("co-subtotal-val").textContent = fmt;
+        document.getElementById("co-total-val").textContent = fmt;
+
+        // Parcelamento values
+        for (let i = 1; i <= 3; i++) {
+          const v = item.preco / i;
+          document.getElementById("parc-val-" + i).textContent = formatMoney(v) + " / parcela";
+        }
+
+        // Product row — use the same renderItemPhoto used everywhere else
+        const thumbHtml = `<div class="co-product-thumb">${renderItemPhoto(item, 'co')}</div>`;
+
+        document.getElementById("co-product-row").innerHTML = `
+          ${thumbHtml}
+          <div class="co-product-info">
+            <div class="co-product-name">${item.nome}</div>
+            <div class="co-product-variant">${item.setor}${item.tamanho ? " · " + item.tamanho : ""}</div>
+            <div class="co-product-variant" style="margin-top:0.2rem; color:var(--texto-suave); font-size:0.65rem">Lista de ${lista.nome_noivos}</div>
+          </div>
+          <div class="co-product-price">${fmt}</div>
+        `;
+      }
+
+      function selectPgto(el, tipo) {
+        document.querySelectorAll(".co-tile").forEach(t => t.classList.remove("selected"));
+        el.classList.add("selected");
+        pgtoSelecionado = tipo;
+        const parcelasBox = document.getElementById("co-parcelas");
+        if (tipo === "Cartão") {
+          parcelasBox.classList.add("visible");
+        } else {
+          parcelasBox.classList.remove("visible");
+          parcelasSelecionadas = 1;
+        }
+      }
+
+      function selectParcela(el, num) {
+        document.querySelectorAll(".co-parcela-opt").forEach(o => {
+          o.classList.remove("selected");
+          o.querySelector("input").checked = false;
+        });
+        el.classList.add("selected");
+        el.querySelector("input").checked = true;
+        parcelasSelecionadas = num;
+      }
+
+      function confirmarCheckout() {
+        const nome = document.getElementById("co-nome").value.trim();
+        const cpf  = document.getElementById("co-cpf").value.trim();
+        const tel  = document.getElementById("co-tel").value.trim();
+        const errEl = document.getElementById("co-global-err");
+
+        // Clear errors
+        document.querySelectorAll(".co-err-label").forEach(e => e.classList.remove("show"));
+        errEl.classList.remove("show");
+
+        let ok = true;
+        if (!nome) { document.getElementById("co-nome-err").classList.add("show"); ok = false; }
+        if (!validateCPF(cpf)) { document.getElementById("co-cpf-err").classList.add("show"); ok = false; }
+        if (!tel || tel.replace(/\D/g,"").length < 10) { document.getElementById("co-tel-err").classList.add("show"); ok = false; }
+        if (!ok) return;
+
+        try {
+          registrarCompra(lista.id, item.id, {
+            nome,
+            cpf,
+            telefone: tel,
+            valor: item.preco,
+            pagamento: pgtoSelecionado + (pgtoSelecionado === "Cartão" ? " " + parcelasSelecionadas + "x" : ""),
+          });
+
+          // Success
+          const overlay = document.getElementById("co-success-overlay");
+          overlay.classList.add("show");
+          document.getElementById("co-success-item-name").textContent = item.nome + " — " + formatMoney(item.preco);
+
+          const parcelaTxt = pgtoSelecionado === "Cartão"
+            ? ` em ${parcelasSelecionadas}x de ${formatMoney(item.preco / parcelasSelecionadas)}`
+            : "";
+          const msg = encodeURIComponent(
+            `Olá! Sou ${nome} e acabei de reservar o presente "${item.nome}" (${formatMoney(item.preco)}${parcelaTxt}) da lista de ${lista.nome_noivos}.\n\nForma de pagamento: ${pgtoSelecionado}${pgtoSelecionado === "Cartão" ? " " + parcelasSelecionadas + "x" : ""}.\n\nCódigo da lista: ${lista.codigo}`
+          );
+          document.getElementById("co-success-wa-btn").href = "https://wa.me/5565996828577?text=" + msg;
+
+        } catch (e) {
+          errEl.textContent = e.message;
+          errEl.classList.add("show");
+        }
+      }
+
+      maskPhone(document.getElementById("co-tel"));
+      maskCPF(document.getElementById("co-cpf"));
+    </script>
+  </body>
+</html>

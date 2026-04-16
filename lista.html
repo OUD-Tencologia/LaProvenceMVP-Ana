@@ -86,31 +86,14 @@
         </div>
       </div>
 
-      <div
-        style="
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 1.5rem;
-          gap: 1rem;
-          flex-wrap: wrap;
-        "
-      >
+      <div class="public-filter-row">
         <div
           class="public-filters"
           id="public-filters"
-          style="
-            margin-bottom: 0;
-            flex: 1;
-            overflow-x: auto;
-            white-space: nowrap;
-            display: flex;
-            gap: 0.5rem;
-          "
         ></div>
         <select
           id="sort-select"
-          class="sort-select"
+          class="sort-select public-sort-select"
           onchange="renderPublicCatalog()"
         >
           <option value="padrao">Padrão</option>
@@ -120,7 +103,10 @@
         </select>
       </div>
 
-      <div class="catalog-grid" id="public-catalog-grid">
+      <!-- Mobile category select -->
+      <select id="public-cat-select" class="cat-filter-select" onchange="setPublicFilterMobile(this.value)" style="display:none; margin-bottom:1rem"></select>
+
+      <div class="catalog-grid catalog-grid-large" id="public-catalog-grid">
         <!-- Preenchido via JS -->
       </div>
     </div>
@@ -207,12 +193,22 @@
             style="margin-top: 0.8rem; font-size: 0.8rem"
           ></span>
         </div>
-        <div class="modal-footer">
-          <button class="btn btn-outline-dark btn-sm" data-close-modal>
-            Cancelar
-          </button>
-          <button class="btn btn-verde" onclick="confirmarCompra()">
-            Confirmar Presente
+        <div class="modal-footer" style="flex-direction:column; gap:0.6rem; align-items:stretch">
+          <div style="display:flex; gap:0.6rem">
+            <button class="btn btn-outline-dark btn-sm" data-close-modal style="flex:1">
+              Cancelar
+            </button>
+            <button class="btn btn-verde" onclick="confirmarCompra()" style="flex:2">
+              Confirmar Presente
+            </button>
+          </div>
+          <button
+            class="btn btn-checkout"
+            id="modal-pagar-online-btn"
+            onclick="irParaCheckout(currentItemId)"
+            style="width:100%; display:none"
+          >
+            💳 Pagar Diretamente Online
           </button>
         </div>
       </div>
@@ -345,6 +341,17 @@
           .querySelectorAll(".public-filter")
           .forEach((f) => f.classList.remove("active"));
         btn.classList.add("active");
+        // Sync mobile select
+        const sel = document.getElementById("public-cat-select");
+        if (sel) sel.value = setor;
+        renderPublicCatalog();
+      }
+
+      function setPublicFilterMobile(setor) {
+        publicFilter = setor;
+        document.querySelectorAll(".public-filter").forEach((f) => {
+          f.classList.toggle("active", f.dataset.setor === setor);
+        });
         renderPublicCatalog();
       }
 
@@ -376,15 +383,23 @@
           "Complementos",
         ];
         const filtersEl = document.getElementById("public-filters");
-        filtersEl.innerHTML = `<button class="public-filter ${publicFilter === "" ? "active" : ""}" onclick="setPublicFilter('', this)">Todos</button>`;
+        filtersEl.innerHTML = `<button class="public-filter ${publicFilter === "" ? "active" : ""}" data-setor="" onclick="setPublicFilter('', this)">Todos</button>`;
         const sortedSetores = [...setores].sort((a, b) => {
           const ia = setorOrder.indexOf(a),
             ib = setorOrder.indexOf(b);
           return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
         });
         sortedSetores.forEach((s) => {
-          filtersEl.innerHTML += `<button class="public-filter ${publicFilter === s ? "active" : ""}" onclick="setPublicFilter('${s}', this)">${s}</button>`;
+          filtersEl.innerHTML += `<button class="public-filter ${publicFilter === s ? "active" : ""}" data-setor="${s}" onclick="setPublicFilter('${s}', this)">${s}</button>`;
         });
+
+        // Update mobile select options
+        const sel = document.getElementById("public-cat-select");
+        if (sel) {
+          sel.innerHTML = `<option value="">Todas as categorias</option>` +
+            sortedSetores.map(s => `<option value="${s}" ${publicFilter === s ? "selected" : ""}>${s}</option>`).join("");
+          sel.value = publicFilter;
+        }
 
         let itens = lista.itens
           .map((id) => catalogo.find((c) => c.id === id))
@@ -417,7 +432,7 @@
               <div style="font-size:0.58rem; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--texto-suave); margin-bottom:0.3rem">Valor Livre</div>
               <h4>Presentear com Crédito</h4>
               <div class="tamanho">Os noivos escolhem o presente</div>
-              <div class="preco" style="color:var(--texto-suave); font-size:0.85rem">A partir de R$ 50,00</div>
+              <div class="preco" style="color:var(--texto-suave); font-size:0.85rem">A partir de R$ 600,00</div>
               <button class="btn btn-verde btn-sm" style="margin-top:auto" onclick="abrirCompraVale()">Presentear</button>
             </div>
           </div>
@@ -450,12 +465,8 @@
               <div class="preco">${formatMoney(item.preco)}</div>
               ${
                 !compra
-                  ? `
-                <button class="btn btn-verde btn-sm" onclick="abrirCompra('${item.id}')">Presentear</button>
-              `
-                  : `
-                <span style="font-size:0.72rem; color:var(--texto-suave)">${isPendente ? "Em processamento" : "Já foi presenteado"}</span>
-              `
+                  ? `<button class="btn btn-verde btn-sm" style="margin-top:auto" onclick="abrirCompra('${item.id}')">Presentear</button>`
+                  : `<span style="font-size:0.72rem; color:var(--texto-suave)">${isPendente ? "Em processamento" : "Já foi presenteado"}</span>`
               }
             </div>
           </div>
@@ -488,7 +499,13 @@
 
         document.getElementById("modal-item-detalhe-footer").innerHTML = `
         <button class="btn btn-outline-dark btn-sm" onclick="closeModal('modal-item-detalhe')">Fechar</button>
-        ${!compra ? `<button class="btn btn-verde btn-sm" onclick="abrirCompra('${item.id}'); closeModal('modal-item-detalhe');">Presentear</button>` : `<span style="font-size:0.8rem; color:var(--texto-suave); padding:0.5rem">Já presenteado</span>`}
+        ${!compra
+          ? `<div style="display:flex; gap:0.5rem; flex-wrap:wrap">
+               <button class="btn btn-verde btn-sm" onclick="abrirCompra('${item.id}'); closeModal('modal-item-detalhe');">Presentear</button>
+               <button class="btn btn-checkout btn-sm" onclick="irParaCheckout('${item.id}')">Pagar Online</button>
+             </div>`
+          : `<span style="font-size:0.8rem; color:var(--texto-suave); padding:0.5rem">Já presenteado</span>`
+        }
       `;
 
         openModal("modal-item-detalhe");
@@ -500,7 +517,7 @@
           <h4 style="color:var(--verde); font-size:1.1rem; margin-bottom:0.3rem">Cartão Vale-Presente</h4>
           <div style="font-size:0.75rem; color:var(--texto-suave); margin-bottom:1rem">Defina o valor com o qual deseja presentear os noivos:</div>
           <div class="form-group" style="margin-bottom:0">
-             <input type="text" id="buy-vale-valor" inputmode="numeric" placeholder="R$ 100" style="font-size:1.2rem; font-weight:700; color:var(--ouro);">
+             <input type="text" id="buy-vale-valor" inputmode="numeric" placeholder="R$ 600" style="font-size:1.2rem; font-weight:700; color:var(--ouro);">
           </div>
         `;
         document.getElementById("buy-nome").value = "";
@@ -517,6 +534,8 @@
           .querySelectorAll(".form-error")
           .forEach((e) => e.classList.remove("show"));
         maskCurrency(document.getElementById("buy-vale-valor"));
+        // Hide "Pagar Online" for vale-presente (no checkout page for it)
+        document.getElementById("modal-pagar-online-btn").style.display = "none";
         openModal("modal-compra");
       }
 
@@ -555,6 +574,8 @@
         document
           .querySelectorAll(".form-error")
           .forEach((e) => e.classList.remove("show"));
+        // Show "Pagar Online" only for real items (not vale-presente)
+        document.getElementById("modal-pagar-online-btn").style.display = "block";
         openModal("modal-compra");
       }
 
@@ -597,9 +618,9 @@
             const valInput = document.getElementById("buy-vale-valor");
             const rawVal = valInput ? valInput.value.replace(/\D/g, "") : "0";
             const val = parseInt(rawVal, 10) || 0;
-            if (isNaN(val) || val < 50) {
+            if (isNaN(val) || val < 600) {
               errEl.textContent =
-                "O valor mínimo para o vale-presente é R$ 50,00.";
+                "O valor mínimo para o vale-presente é R$ 600,00.";
               errEl.classList.add("show");
               return;
             }
@@ -674,6 +695,17 @@
           errEl.classList.add("show");
           renderPublicCatalog();
         }
+      }
+
+      function irParaCheckout(itemId) {
+        if (!lista) return;
+        const base = window.location.href.replace(/[^/]*(\?.*)?$/, "");
+        window.location.href =
+          base +
+          "checkout.html?itemId=" +
+          itemId +
+          "&codigo=" +
+          lista.codigo;
       }
 
       renderPublicCatalog();
