@@ -357,16 +357,32 @@ section {
   background: var(--verde);
   position: relative;
   overflow: hidden;
+  /* começa "fechado" — arco colapsado no topo */
+  clip-path: ellipse(55% 0% at 50% 0%);
+  transition: clip-path 1.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+/* linha dourada decorativa revelada junto com o arco */
 .steps-section::before {
   content: "";
   position: absolute;
-  top: -1px;
-  left: 0;
-  right: 0;
-  height: 80px;
-  background: var(--bege);
-  clip-path: ellipse(60% 100% at 50% 0%);
+  top: 1.4rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(260px, 60vw);
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(251, 221, 144, 0.55),
+    transparent
+  );
+  pointer-events: none;
+}
+
+.steps-section.active {
+  /* arco se expande revelando toda a section */
+  clip-path: ellipse(120% 130% at 50% 0%);
 }
 .steps-section .section-header h2,
 .steps-section .section-header .script {
@@ -1494,9 +1510,9 @@ footer {
   text-decoration-thickness: 2px;
   text-underline-offset: 8px;
   text-decoration-color: rgba(251, 221, 144, 0.4);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 .public-hero .label-caps {
   margin-bottom: 0.8rem;

@@ -1,0 +1,228 @@
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import useStore from '../store/useStore';
+import { useToast } from '../hooks/useToast';
+import Toast from '../components/ui/Toast';
+import { maskPhone, validatePassword } from '../utils/validators';
+
+export default function Auth() {
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
+  const { currentUser, login, register, criarLista, getPremontadas } = useStore();
+  const { toasts, toast } = useToast();
+
+  const modo = params.get('modo');
+  const templateParam = params.get('template');
+
+  const [tab, setTab] = useState(modo === 'criar' ? 'criar' : 'entrar');
+  const [selectedTemplate, setSelectedTemplate] = useState(templateParam || null);
+  const [fotoBase64, setFotoBase64] = useState(null);
+
+  const [loginForm, setLoginForm] = useState({ email: '', senha: '' });
+  const [loginErrors, setLoginErrors] = useState({});
+
+  const [regForm, setRegForm] = useState({ nomeNoiva: '', nomeNoivo: '', email: '', tel: '', data: '', senha: '', lgpd: false });
+  const [regErrors, setRegErrors] = useState({});
+
+  const premontadas = getPremontadas();
+
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const minDate = tomorrow.toISOString().split('T')[0];
+
+  useEffect(() => {
+    if (currentUser) navigate(currentUser.role === 'gestor' ? '/admin' : '/dashboard');
+  }, [currentUser, navigate]);
+
+  function handleLogin() {
+    const errs = {};
+    if (!loginForm.email) errs.email = 'Informe seu e-mail';
+    if (!loginForm.senha) errs.senha = 'Informe sua senha';
+    setLoginErrors(errs);
+    if (Object.keys(errs).length) return;
+    try {
+      const user = login(loginForm.email, loginForm.senha);
+      navigate(user.role === 'gestor' ? '/admin' : '/dashboard');
+    } catch (e) {
+      setLoginErrors({ geral: e.message });
+    }
+  }
+
+  function handleRegister() {
+    const errs = {};
+    if (!regForm.nomeNoiva || !regForm.nomeNoivo) errs.nome = 'Informe o nome de ambos os noivos';
+    if (!regForm.email || !regForm.email.includes('@')) errs.email = 'E-mail inválido';
+    if (!validatePassword(regForm.senha)) errs.senha = 'Mínimo 8 caracteres, 1 maiúscula e 1 número';
+    if (!regForm.data) errs.geral = 'Informe a data do casamento.';
+    if (!regForm.lgpd) errs.geral = 'Você precisa aceitar a política de privacidade.';
+    setRegErrors(errs);
+    if (Object.keys(errs).length) return;
+
+    const nome = `${regForm.nomeNoiva} & ${regForm.nomeNoivo}`;
+    try {
+      const novoUser = register(nome, regForm.email, regForm.senha, regForm.tel);
+      let itens = [];
+      if (selectedTemplate) {
+        const pm = premontadas.find((p) => p.id === selectedTemplate);
+        if (pm) itens = pm.itens;
+      }
+      criarLista(novoUser.id, nome, regForm.tel, regForm.data, itens, fotoBase64);
+      navigate('/dashboard?novo=1');
+    } catch (e) {
+      const msg = e.message.toLowerCase().includes('quota') || e.message.toLowerCase().includes('exceeded')
+        ? 'A memória do seu navegador está cheia. Tente limpar os dados do site ou escolha uma foto ainda menor.'
+        : e.message;
+      setRegErrors({ geral: msg });
+    }
+  }
+
+  function handleFotoUpload(e) {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 800;
+        let { width, height } = img;
+        if (width > height && width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
+        else if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        setFotoBase64(canvas.toDataURL('image/jpeg', 0.7));
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  return (
+    <>
+      <Toast toasts={toasts} />
+      <div className="auth-page">
+        <div className="auth-left">
+          <div className="auth-left-content">
+            <h1 className="script auth-title-script">O amor merece ser celebrado</h1>
+            <p>Monte, personalize e compartilhe a lista dos seus sonhos com quem você ama.</p>
+          </div>
+        </div>
+
+        <div className="auth-right">
+          <Link to="/" className="auth-back-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" /></svg>
+            Voltar
+          </Link>
+          <div className="auth-logo">
+            <img src="assets/img/LaProvenceDecor-Logo.png" alt="La Provence" style={{ width: 180, height: 'auto' }} />
+          </div>
+
+          <div className="auth-tabs">
+            <button className={`auth-tab${tab === 'entrar' ? ' active' : ''}`} onClick={() => setTab('entrar')}>Entrar</button>
+            <button className={`auth-tab${tab === 'criar' ? ' active' : ''}`} onClick={() => setTab('criar')}>Criar Conta</button>
+          </div>
+
+          {/* Login */}
+          <div className={`auth-form${tab === 'entrar' ? ' active' : ''}`}>
+            <div className="form-group">
+              <label>E-mail</label>
+              <input type="email" placeholder="seu@email.com" value={loginForm.email} onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} />
+              {loginErrors.email && <span className="form-error show">{loginErrors.email}</span>}
+            </div>
+            <div className="form-group">
+              <label>Senha</label>
+              <input type="password" placeholder="Sua senha" value={loginForm.senha} onChange={(e) => setLoginForm({ ...loginForm, senha: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} />
+              {loginErrors.senha && <span className="form-error show">{loginErrors.senha}</span>}
+            </div>
+            <div className="auth-forgot-row">
+              <a href="#" className="auth-forgot-link">Esqueci minha senha</a>
+            </div>
+            {loginErrors.geral && <span className="form-error show" style={{ marginBottom: '1rem', fontSize: '0.8rem' }}>{loginErrors.geral}</span>}
+            <button className="btn btn-verde" style={{ width: '100%' }} onClick={handleLogin}>Entrar</button>
+            <div className="auth-hint">
+              <small>gestor@laprovence.com &nbsp;|&nbsp; Gestor@123</small>
+            </div>
+          </div>
+
+          {/* Register */}
+          <div className={`auth-form${tab === 'criar' ? ' active' : ''}`}>
+            <div className="auth-names-grid">
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label>Nome completo da noiva</label>
+                <input type="text" placeholder="Ex: Ana Souza" value={regForm.nomeNoiva} onChange={(e) => setRegForm({ ...regForm, nomeNoiva: e.target.value })} />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label>Nome completo do noivo</label>
+                <input type="text" placeholder="Ex: Lucas Lima" value={regForm.nomeNoivo} onChange={(e) => setRegForm({ ...regForm, nomeNoivo: e.target.value })} />
+              </div>
+            </div>
+            {regErrors.nome && <span className="form-error show">{regErrors.nome}</span>}
+
+            <div className="form-group">
+              <label>Seu e-mail</label>
+              <input type="email" placeholder="seu@email.com" value={regForm.email} onChange={(e) => setRegForm({ ...regForm, email: e.target.value })} />
+              {regErrors.email && <span className="form-error show">{regErrors.email}</span>}
+            </div>
+            <div className="form-group">
+              <label>Telefone</label>
+              <input type="text" placeholder="(00) 00000-0000" value={regForm.tel} onChange={(e) => setRegForm({ ...regForm, tel: maskPhone(e.target.value) })} />
+            </div>
+            <div className="form-group">
+              <label>Data do casamento</label>
+              <input type="date" className="date-input" min={minDate} value={regForm.data} onChange={(e) => setRegForm({ ...regForm, data: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label>Senha</label>
+              <input type="password" placeholder="Mínimo 8 caracteres" value={regForm.senha} onChange={(e) => setRegForm({ ...regForm, senha: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && handleRegister()} />
+              {regErrors.senha && <span className="form-error show">{regErrors.senha}</span>}
+            </div>
+
+            <div className="auth-template-section">
+              <p className="label-caps" style={{ marginBottom: '1rem' }}>Deseja começar com uma lista pré-montada?</p>
+              {premontadas.map((p) => (
+                <div key={p.id} className={`template-card auth-template-opt${selectedTemplate === p.id ? ' selected' : ''}`} onClick={() => setSelectedTemplate(p.id)}>
+                  <div className="auth-template-opt__info">
+                    <div className="label-caps auth-template-opt__badge">{p.badge}</div>
+                    <strong className="auth-template-opt__name">{p.nome}</strong>
+                    <div className="auth-template-opt__count">{p.itens.length} itens pré-selecionados</div>
+                  </div>
+                  <div className={`auth-radio${selectedTemplate === p.id ? ' checked' : ''}`} />
+                </div>
+              ))}
+              <div className={`template-card auth-template-opt${selectedTemplate === '' ? ' selected' : ''}`} onClick={() => setSelectedTemplate('')}>
+                <div className="auth-template-opt__info">
+                  <strong className="auth-template-opt__name">Começar do zero</strong>
+                  <div className="auth-template-opt__count">Adicione os itens pelo catálogo depois</div>
+                </div>
+                <div className={`auth-radio${selectedTemplate === '' ? ' checked' : ''}`} />
+              </div>
+              <p className="auth-template-hint">Opcional. Você pode personalizar depois no catálogo.</p>
+            </div>
+
+            <div className="form-group" style={{ marginTop: '0.5rem' }}>
+              <label>Foto do Casal <span className="auth-foto-optional">(Opcional)</span></label>
+              <input type="file" id="reg-foto" accept="image/*" style={{ display: 'none' }} onChange={handleFotoUpload} />
+              {!fotoBase64 ? (
+                <label htmlFor="reg-foto" className="auth-photo-empty">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style={{ opacity: 0.4 }}><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z" /></svg>
+                  Clique para adicionar uma foto do casal
+                  <span className="auth-photo-empty__hint">JPG ou PNG · será usada no Story Instagram</span>
+                </label>
+              ) : (
+                <img src={fotoBase64} onClick={() => document.getElementById('reg-foto').click()} className="auth-photo-preview" alt="Preview" title="Clique para trocar a foto" />
+              )}
+            </div>
+
+            <div className="auth-lgpd-row form-group">
+              <input type="checkbox" id="reg-lgpd" checked={regForm.lgpd} onChange={(e) => setRegForm({ ...regForm, lgpd: e.target.checked })} style={{ width: 'auto', marginTop: 2 }} />
+              <label htmlFor="reg-lgpd" className="auth-lgpd-label">
+                Li e aceito a <a href="#" style={{ color: 'var(--verde)' }}>Política de Privacidade</a> e o uso dos meus dados conforme descrito.
+              </label>
+            </div>
+            {regErrors.geral && <span className="form-error show" style={{ marginBottom: '1rem', fontSize: '0.8rem' }}>{regErrors.geral}</span>}
+            <button className="btn btn-verde" style={{ width: '100%', marginTop: '1rem' }} onClick={handleRegister}>Criar Conta</button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
