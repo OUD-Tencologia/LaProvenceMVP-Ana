@@ -453,6 +453,44 @@
 /* --- Catalog page --- */
 .catalog-sort-select { margin-left: 1rem; height: 100%; }
 
+/* ── Responsive overrides ────────────────────── */
+@media (max-width: 768px) {
+  .story-modal-grid {
+    grid-template-columns: 1fr;
+  }
+  .story-canvas-preview {
+    order: -1;
+  }
+  .modal-info-header {
+    flex-wrap: wrap;
+  }
+  .modal-stats {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .admin-filter-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .admin-filter-row .search-bar {
+    max-width: 100%;
+  }
+}
+@media (max-width: 480px) {
+  .auth-names-grid {
+    grid-template-columns: 1fr;
+  }
+  .story-template-btns {
+    flex-direction: column;
+  }
+  .modal-info-header {
+    flex-direction: column;
+  }
+  .chips-row {
+    flex-wrap: wrap;
+  }
+}
+
 /* --- Auth additions --- */
 .auth-title-script    { font-size: clamp(3.5rem, 5vw, 4.8rem); line-height: 1; color: var(--ouro-claro); margin-bottom: 1rem; }
 .auth-foto-optional   { font-size: 0.7em; color: var(--texto-suave); font-weight: normal; text-transform: none; letter-spacing: normal; }
