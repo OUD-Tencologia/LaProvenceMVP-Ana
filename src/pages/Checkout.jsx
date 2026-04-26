@@ -1,41 +1,79 @@
-import { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import useStore from '../store/useStore';
-import { formatMoney } from '../utils/formatters';
-import { validateCPF, maskPhone, maskCPF } from '../utils/validators';
+import { useState, useEffect } from 'react'
+import { useSearchParams, useNavigate, Link } from 'react-router-dom'
+import { formatMoney } from '../utils/formatters'
+import { validateCPF, maskPhone, maskCPF } from '../utils/validators'
+import { catalogoService } from '../services/catalogo.js'
+import { listasService } from '../services/listas.js'
+import { comprasService } from '../services/compras.js'
 
 function formatPriceSplit(valor) {
-  const str = formatMoney(valor);
-  const match = str.match(/^(R\$\s*[\d.]+),([\d]+)$/);
-  if (!match) return { main: str, cents: '' };
-  return { main: match[1].replace('R$', '').trim(), cents: ',' + match[2] };
+  const str = formatMoney(valor)
+  const match = str.match(/^(R\$\s*[\d.]+),([\d]+)$/)
+  if (!match) return { main: str, cents: '' }
+  return { main: match[1].replace('R$', '').trim(), cents: `,${match[2]}` }
 }
 
 export default function Checkout() {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const itemId = searchParams.get('itemId');
-  const codigo = searchParams.get('codigo');
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const itemId = searchParams.get('itemId')
+  const codigo = searchParams.get('codigo')
 
-  const { getItemById, getListaByCodigo, getComprasByItem, registrarCompra } = useStore();
+  const [item, setItem] = useState(null)
+  const [lista, setLista] = useState(null)
+  const [compraExistente, setCompraExistente] = useState(null)
+  const [loadError, setLoadError] = useState(false)
+  const [loading, setLoading] = useState(true)
 
-  const [pgto, setPgto] = useState('Pix');
-  const [parcelas, setParcelas] = useState(1);
-  const [form, setForm] = useState({ nome: '', cpf: '', tel: '' });
-  const [errors, setErrors] = useState({});
-  const [globalErr, setGlobalErr] = useState('');
-  const [success, setSuccess] = useState(null);
+  const [pgto, setPgto] = useState('Pix')
+  const [parcelas, setParcelas] = useState(1)
+  const [form, setForm] = useState({ nome: '', cpf: '', tel: '' })
+  const [errors, setErrors] = useState({})
+  const [globalErr, setGlobalErr] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [success, setSuccess] = useState(null)
 
   useEffect(() => {
-    if (!itemId || !codigo) navigate('/', { replace: true });
-  }, []);
+    if (!itemId || !codigo) { navigate('/', { replace: true }); return }
+    async function load() {
+      setLoading(true)
+      try {
+        const [cat, l] = await Promise.all([
+          catalogoService.getById(itemId),
+          listasService.getByCodigo(codigo),
+        ])
+        if (!cat || !l) { setLoadError(true); return }
+        setItem(cat)
+        setLista(l)
 
-  if (!itemId || !codigo) return null;
+        const compras = await comprasService.getByLista(l.id)
+        const existente = compras.find((c) => c.catalogo_id === itemId && c.status_pagamento !== 'Rejeitado')
+        setCompraExistente(existente || null)
+      } catch {
+        setLoadError(true)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [itemId, codigo, navigate])
 
-  const item = getItemById(itemId);
-  const lista = getListaByCodigo(codigo);
+  if (!itemId || !codigo) return null
 
-  if (!item || !lista) {
+  if (loading) {
+    return (
+      <>
+        <nav className="co-navbar">
+          <Link to="/"><img src="/assets/img/LaProvenceDecor-Logo.png" alt="La Provence" /></Link>
+        </nav>
+        <div className="co-error-screen">
+          <span className="label-caps">Carregando...</span>
+        </div>
+      </>
+    )
+  }
+
+  if (loadError || !item || !lista) {
     return (
       <>
         <nav className="co-navbar">
@@ -46,13 +84,12 @@ export default function Checkout() {
           <p style={{ color: 'var(--texto-suave)', marginTop: '0.6rem', fontSize: '0.88rem', lineHeight: 1.7 }}>
             O item ou a lista solicitada não está mais disponível.
           </p>
-          <button className="btn btn-verde btn-sm" style={{ marginTop: '1.2rem' }} onClick={() => navigate(-1)}>Voltar</button>
+          <button type="button" className="btn btn-verde btn-sm" style={{ marginTop: '1.2rem' }} onClick={() => navigate(-1)}>Voltar</button>
         </div>
       </>
-    );
+    )
   }
 
-  const compraExistente = getComprasByItem(lista.id, itemId);
   if (compraExistente) {
     return (
       <>
@@ -67,45 +104,50 @@ export default function Checkout() {
           <Link to={`/lista?codigo=${codigo}`} className="btn btn-verde btn-sm" style={{ marginTop: '1.2rem' }}>Voltar à lista</Link>
         </div>
       </>
-    );
+    )
   }
 
-  const { main, cents } = formatPriceSplit(item.preco);
-  const fmt = formatMoney(item.preco);
+  const { main, cents } = formatPriceSplit(item.preco)
+  const fmt = formatMoney(item.preco)
 
   function selectPgto(tipo) {
-    setPgto(tipo);
-    if (tipo !== 'Cartão') setParcelas(1);
+    setPgto(tipo)
+    if (tipo !== 'Cartão') setParcelas(1)
   }
 
-  function confirmar() {
-    const errs = {};
-    setGlobalErr('');
-    if (!form.nome.trim()) errs.nome = true;
-    if (!validateCPF(form.cpf)) errs.cpf = true;
-    if (!form.tel || form.tel.replace(/\D/g, '').length < 10) errs.tel = true;
-    setErrors(errs);
-    if (Object.keys(errs).length) return;
+  async function confirmar() {
+    const errs = {}
+    setGlobalErr('')
+    if (!form.nome.trim()) errs.nome = true
+    if (!validateCPF(form.cpf)) errs.cpf = true
+    if (!form.tel || form.tel.replace(/\D/g, '').length < 10) errs.tel = true
+    setErrors(errs)
+    if (Object.keys(errs).length) return
 
+    setSubmitting(true)
     try {
-      const pgtoStr = pgto === 'Cartão' ? `Cartão ${parcelas}x` : 'Pix';
-      registrarCompra(lista.id, item.id, {
-        nome: form.nome.trim(),
+      const pgtoStr = pgto === 'Cartão' ? `Cartão ${parcelas}x` : 'Pix'
+      await comprasService.create({
+        listas_id: lista.id,
+        catalogo_id: item.id,
+        nome_convidado: form.nome.trim(),
         cpf: form.cpf,
         telefone: form.tel,
-        valor: item.preco,
-        pagamento: pgtoStr,
-      });
+        valor_pago: item.preco,
+        forma_pagamento: pgtoStr,
+      })
 
       const parcelaTxt = pgto === 'Cartão'
         ? ` em ${parcelas}x de ${formatMoney(item.preco / parcelas)}`
-        : '';
+        : ''
       const msg = encodeURIComponent(
         `Olá! Sou ${form.nome.trim()} e acabei de reservar o presente "${item.nome}" (${fmt}${parcelaTxt}) da lista de ${lista.nome_noivos}.\n\nForma de pagamento: ${pgtoStr}.\n\nCódigo da lista: ${lista.codigo}`
-      );
-      setSuccess({ waHref: `https://wa.me/5565996828577?text=${msg}` });
+      )
+      setSuccess({ waHref: `https://wa.me/5565996828577?text=${msg}` })
     } catch (e) {
-      setGlobalErr(e.message);
+      setGlobalErr(e.message || 'Erro ao registrar compra. Tente novamente.')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -123,7 +165,7 @@ export default function Checkout() {
           Voltar à lista
         </Link>
       </div>
-    );
+    )
   }
 
   return (
@@ -174,30 +216,29 @@ export default function Checkout() {
           <div className="co-form-title">Forma de Pagamento</div>
 
           <div className="co-tiles">
-            <div className={`co-tile${pgto === 'Pix' ? ' selected' : ''}`} onClick={() => selectPgto('Pix')}>Pix</div>
-            <div className={`co-tile${pgto === 'Cartão' ? ' selected' : ''}`} onClick={() => selectPgto('Cartão')}>Cartão de Crédito</div>
+            <div className={`co-tile${pgto === 'Pix' ? ' selected' : ''}`} onClick={() => selectPgto('Pix')} onKeyDown={(e) => e.key === 'Enter' && selectPgto('Pix')} role="button" tabIndex={0}>Pix</div>
+            <div className={`co-tile${pgto === 'Cartão' ? ' selected' : ''}`} onClick={() => selectPgto('Cartão')} onKeyDown={(e) => e.key === 'Enter' && selectPgto('Cartão')} role="button" tabIndex={0}>Cartão de Crédito</div>
           </div>
 
-          {/* Installments — visible only for Cartão */}
           <div className={`co-parcelas-box${pgto === 'Cartão' ? ' visible' : ''}`}>
             {[1, 2, 3].map((n) => {
-              if (n > 1 && item.preco < 1000) return null;
+              if (n > 1 && item.preco < 1000) return null
               return (
-                <div key={n} className={`co-parcela-opt${parcelas === n ? ' selected' : ''}`} onClick={() => setParcelas(n)}>
+                <div key={n} className={`co-parcela-opt${parcelas === n ? ' selected' : ''}`} onClick={() => setParcelas(n)} onKeyDown={(e) => e.key === 'Enter' && setParcelas(n)} role="button" tabIndex={0}>
                   <input type="radio" name="parcela" readOnly checked={parcelas === n} />
                   <span className="co-parcela-label">{n}x</span>
                   <span className="co-parcela-value">{formatMoney(item.preco / n)} / parcela</span>
                   <span className="co-parcela-badge">sem juros</span>
                 </div>
-              );
+              )
             })}
           </div>
 
           {globalErr && <div className="co-global-err">{globalErr}</div>}
 
-          <button className="co-submit-btn" onClick={confirmar}>
-            Confirmar Presente
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z" /></svg>
+          <button type="button" className="co-submit-btn" onClick={confirmar} disabled={submitting}>
+            {submitting ? 'Registrando...' : 'Confirmar Presente'}
+            {!submitting && <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z" /></svg>}
           </button>
 
           <div className="co-secure">
@@ -249,5 +290,5 @@ export default function Checkout() {
         </div>
       </div>
     </>
-  );
+  )
 }

@@ -9,9 +9,14 @@ import Checkout from './pages/Checkout';
 import Admin from './pages/Admin';
 import Story from './pages/Story';
 
+const VALID_ROLES = ['noivo', 'gestor'];
+
 function PrivateRoute({ children, role }) {
-  const { currentUser } = useStore();
-  if (!currentUser) return <Navigate to="/auth" replace />;
+  const { currentUser, logout } = useStore();
+  if (!currentUser || !VALID_ROLES.includes(currentUser.role)) {
+    if (currentUser) logout();
+    return <Navigate to="/auth" replace />;
+  }
   if (role && currentUser.role !== role) {
     return <Navigate to={currentUser.role === 'gestor' ? '/admin' : '/dashboard'} replace />;
   }

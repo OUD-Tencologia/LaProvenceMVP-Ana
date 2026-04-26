@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/layout/Sidebar';
 import useStore from '../store/useStore';
+import { listasService } from '../services/listas.js';
 import { formatDate } from '../utils/formatters';
 
 const TEMPLATES = [
@@ -29,7 +30,7 @@ function drawWrappedText(ctx, text, x, startY, maxWidth, lineHeight) {
 
 export default function Story() {
   const navigate = useNavigate();
-  const { currentUser, getListaByUser } = useStore();
+  const { currentUser } = useStore();
 
   const canvasRef = useRef(null);
   const brandLogoRef = useRef(null);
@@ -59,19 +60,21 @@ export default function Story() {
     if (!currentUser) { navigate('/auth'); return; }
     if (currentUser.role !== 'noivo' && currentUser.role !== 'gestor') { navigate('/auth'); return; }
 
-    const lista = currentUser.role === 'noivo' ? getListaByUser(currentUser.id) : null;
-    if (lista) {
-      setNome(lista.nome_noivos || '');
-      setCodigo(lista.codigo || '');
-      if (lista.data_casamento) {
-        const d = new Date(lista.data_casamento + 'T00:00:00');
-        setData(d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }));
-      }
-      if (lista.foto_casal) {
-        const img = new Image();
-        img.onload = () => { photoImgRef.current = img; setPhotoSrc(lista.foto_casal); };
-        img.src = lista.foto_casal;
-      }
+    if (currentUser.role === 'noivo') {
+      listasService.getByUser(currentUser.id).then((lista) => {
+        if (!lista) return;
+        setNome(lista.nome_noivos || '');
+        setCodigo(lista.codigo || '');
+        if (lista.data_casamento) {
+          const d = new Date(lista.data_casamento + 'T00:00:00');
+          setData(d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }));
+        }
+        if (lista.foto_casal) {
+          const img = new Image();
+          img.onload = () => { photoImgRef.current = img; setPhotoSrc(lista.foto_casal); };
+          img.src = lista.foto_casal;
+        }
+      }).catch(() => {});
     }
 
     // Pre-load brand logo — uses refs inside renderStory, so no stale closure issue

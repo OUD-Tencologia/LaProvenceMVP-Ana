@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:localhost)",
+      "Bash(curl -s http://localhost:3333/listas/user/00000000-0000-0000-0000-000000000001 -H 'Authorization: Bearer faketoken')",
+      "Bash(pkill -f \"tsx watch\")",
+      "Bash(pkill -f \"ts-node\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('scripts',{}\\), indent=2\\)\\)\")",
+      "Bash(node_modules/.bin/tsx index.ts)",
+      "Read(//tmp/**)",
+      "Bash(curl -s \"http://localhost:3333/listas/codigo/XYZABC\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('message','?'\\), '|', d.get\\('code','?'\\)\\)\")",
+      "Bash(curl -s \"http://localhost:3333/listas/user/00000000-0000-0000-0000-000000000001\" -H \"Authorization: Bearer faketoken\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('message','?'\\)\\)\")",
+      "Bash(curl -s -X POST http://localhost:3333/users -H 'Content-Type: application/json' -d '{\"nome_noiva\":\"Ana\",\"nome_noivo\":\"Lucas\",\"email\":\"ana@teste.com\",\"telefone\":\"65999999999\",\"data_casamento\":\"2025-12-01\",\"password\":\"Teste1234\"}')",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d\\)\")",
+      "Bash(curl -s -X POST http://localhost:3333/login -H 'Content-Type: application/json' -d '{\"email\":\"ana@teste.com\",\"password\":\"Teste1234\"}')",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d, indent=2, default=str\\)\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); u=d.get\\('data',{}\\); print\\('codigo:', u.get\\('codigo'\\)\\); print\\('nome:', u.get\\('nome_noivos'\\)\\)\")",
+      "Bash(pkill -f \"node.*tsx.*index.ts\")",
+      "Bash(pkill -f \"tsx.*index.ts\")",
+      "Bash(~/.nvm/versions/node/v20.20.2/bin/node node_modules/.bin/tsx index.ts)",
+      "Bash(curl -s http://localhost:3666/)",
+      "Bash(curl -s http://localhost:3666/health)",
+      "Bash(curl -s http://localhost:3668/health)",
+      "Bash(echo \"PID: $!\")",
+      "Bash(xargs ls *)",
+      "Bash(pkill -f \"tsx index.ts\")",
+      "Bash(kill 444979)",
+      "Bash(echo \"PID: $!\" sleep 4)",
+      "Bash(curl -s http://localhost:3668/listas)",
+      "Bash(curl -s http://localhost:3668/catalogo)",
+      "Bash(curl -s -X DELETE http://localhost:3668/lista-itens/test-id -H \"Authorization: Bearer test\")",
+      "Bash(curl -s -X DELETE \"http://localhost:3668/lista-itens/00000000-0000-0000-0000-000000000000\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer eytest\")"
+    ],
+    "additionalDirectories": [
+      "/home/gabriel/Documents/ESTÁGIO/OunceData/la-provence/laprovence-api/src/modules/listas",
+      "/home/gabriel/Documents/ESTÁGIO/OunceData/la-provence/laprovence-api/src/modules/lista_itens",
+      "/home/gabriel/Documents/ESTÁGIO/OunceData/la-provence/laprovence-api/src/modules/catalogo"
+    ]
+  }
+}

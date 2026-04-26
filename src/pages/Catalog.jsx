@@ -1,64 +1,116 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import Sidebar from '../components/layout/Sidebar';
-import Modal from '../components/ui/Modal';
-import ItemCarousel from '../components/ui/ItemCarousel';
-import Toast from '../components/ui/Toast';
-import { useToast } from '../hooks/useToast';
-import { SkeletonGrid } from '../components/ui/Skeleton';
-import useStore from '../store/useStore';
-import { formatMoney } from '../utils/formatters';
-import { SETORES } from '../data/seed';
+import { useState, useEffect } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+import Sidebar from '../components/layout/Sidebar'
+import Modal from '../components/ui/Modal'
+import ItemCarousel from '../components/ui/ItemCarousel'
+import Toast from '../components/ui/Toast'
+import { useToast } from '../hooks/useToast'
+import { SkeletonGrid } from '../components/ui/Skeleton'
+import useStore from '../store/useStore'
+import { formatMoney } from '../utils/formatters'
+import { catalogoService } from '../services/catalogo.js'
+import { listasService } from '../services/listas.js'
+import { comprasService } from '../services/compras.js'
+import { SETOR_DISPLAY } from '../services/auth.js'
+
+const SETORES = Object.values(SETOR_DISPLAY)
 
 export default function Catalog() {
-  const navigate = useNavigate();
-  const { currentUser, getCatalogo, getListaByUser, criarLista, atualizarListaItens, getComprasByItem } = useStore();
-  const { toasts, toast } = useToast();
+  const navigate = useNavigate()
+  const { currentUser } = useStore()
+  const { toasts, toast } = useToast()
 
-  const [search, setSearch] = useState('');
-  const [sort, setSort] = useState('padrao');
-  const [setor, setSetor] = useState('');
-  const [detailItem, setDetailItem] = useState(null);
-  const [refresh, setRefresh] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [catalogo, setCatalogo] = useState([])
+  const [lista, setLista] = useState(null)
+  const [listaItens, setListaItens] = useState([])
+  const [compras, setCompras] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  useEffect(() => { const t = setTimeout(() => setLoading(false), 500); return () => clearTimeout(t); }, []);
+  const [search, setSearch] = useState('')
+  const [sort, setSort] = useState('padrao')
+  const [setor, setSetor] = useState('')
+  const [detailItem, setDetailItem] = useState(null)
+  const [toggling, setToggling] = useState(null)
 
   useEffect(() => {
-    if (!currentUser) { navigate('/auth'); return; }
-    if (currentUser.role !== 'noivo') { navigate('/admin'); }
-  }, [currentUser, navigate]);
+    if (!currentUser) { navigate('/auth'); return }
+    if (currentUser.role !== 'noivo') { navigate('/admin'); return }
+  }, [currentUser, navigate])
 
-  if (!currentUser) return null;
+  useEffect(() => {
+    if (!currentUser || currentUser.role !== 'noivo') return
+    async function load() {
+      setLoading(true)
+      try {
+        const cat = await catalogoService.getAll()
+        setCatalogo(cat.filter((i) => i.status === 'Ativo'))
 
-  const lista = getListaByUser(currentUser.id);
-  const catalogo = getCatalogo().filter((i) => i.status === 'Ativo');
+        let l = null
+        try { l = await listasService.getByUser(currentUser.id) } catch { /* sem lista */ }
+        setLista(l)
 
-  function toggleItem(itemId) {
-    let l = lista;
-    if (!l) l = criarLista(currentUser.id, currentUser.nome, '', '', []);
-    const inList = l.itens.includes(itemId);
-    if (inList) {
-      const compra = getComprasByItem(l.id, itemId);
-      if (compra) { toast('Este item já foi presenteado e não pode ser removido.', 'error'); return; }
-      toast('Item removido da lista.');
-    } else {
-      toast('Item adicionado à lista!');
+        if (l) {
+          const [itens, comprasData] = await Promise.all([
+            listasService.getItens(l.id),
+            comprasService.getByLista(l.id).catch(() => []),
+          ])
+          setListaItens(itens)
+          setCompras(comprasData)
+        }
+      } catch (e) {
+        toast(e.message, 'error')
+      } finally {
+        setLoading(false)
+      }
     }
-    atualizarListaItens(l.id, inList ? l.itens.filter((id) => id !== itemId) : [...l.itens, itemId]);
-    setRefresh((r) => r + 1);
+    load()
+  }, [currentUser?.id])
+
+  if (!currentUser) return null
+
+  async function toggleItem(catalogoId) {
+    if (!lista) {
+      toast('Volte ao painel para criar sua lista primeiro.', 'error')
+      return
+    }
+    if (toggling) return
+    setToggling(catalogoId)
+    try {
+      const listaItem = listaItens.find((li) => li.catalogo_id === catalogoId)
+      if (listaItem) {
+        const compra = compras.find((c) => c.catalogo_id === catalogoId)
+        if (compra) { toast('Este item já foi presenteado e não pode ser removido.', 'error'); return }
+        await listasService.removeItem(listaItem.id)
+        setListaItens((prev) => prev.filter((li) => li.id !== listaItem.id))
+        toast('Item removido da lista.')
+      } else {
+        const newLi = await listasService.addItem(lista.id, catalogoId)
+        const catalogoItem = catalogo.find((c) => c.id === catalogoId)
+        setListaItens((prev) => [...prev, { ...newLi, catalogo: catalogoItem, catalogo_id: catalogoId }])
+        toast('Item adicionado à lista!')
+      }
+    } catch (e) {
+      toast(e.message, 'error')
+    } finally {
+      setToggling(null)
+    }
   }
 
-  let filtered = [...catalogo];
-  if (setor) filtered = filtered.filter((i) => i.setor === setor);
-  if (search) filtered = filtered.filter((i) => i.nome.toLowerCase().includes(search.toLowerCase()) || i.descricao.toLowerCase().includes(search.toLowerCase()) || i.setor.toLowerCase().includes(search.toLowerCase()));
-  if (sort === 'menor') filtered.sort((a, b) => a.preco - b.preco);
-  else if (sort === 'maior') filtered.sort((a, b) => b.preco - a.preco);
-  else if (sort === 'az') filtered.sort((a, b) => a.nome.localeCompare(b.nome));
+  let filtered = [...catalogo]
+  if (setor) filtered = filtered.filter((i) => i.setor === setor)
+  if (search) filtered = filtered.filter((i) =>
+    i.nome.toLowerCase().includes(search.toLowerCase()) ||
+    (i.descricao || '').toLowerCase().includes(search.toLowerCase()) ||
+    i.setor.toLowerCase().includes(search.toLowerCase())
+  )
+  if (sort === 'menor') filtered.sort((a, b) => a.preco - b.preco)
+  else if (sort === 'maior') filtered.sort((a, b) => b.preco - a.preco)
+  else if (sort === 'az') filtered.sort((a, b) => a.nome.localeCompare(b.nome))
 
-  const listaAtualizada = getListaByUser(currentUser.id);
-  const listaItens = listaAtualizada ? listaAtualizada.itens.map((id) => catalogo.find((c) => c.id === id)).filter(Boolean) : [];
-  const listaTotal = listaItens.reduce((s, i) => s + i.preco, 0);
+  const listaItensComCatalogo = listaItens
+    .map((li) => li.catalogo ?? catalogo.find((c) => c.id === li.catalogo_id))
+    .filter(Boolean)
+  const listaTotal = listaItensComCatalogo.reduce((s, i) => s + (i.preco || 0), 0)
 
   return (
     <div className="app-layout">
@@ -70,7 +122,9 @@ export default function Catalog() {
           <div className="page-header-text"><h1>Catálogo de Presentes</h1></div>
           <div className="search-bar">
             <input type="text" placeholder="Buscar item..." value={search} onChange={(e) => setSearch(e.target.value)} />
-            <button><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" /></svg></button>
+            <button type="button">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" /></svg>
+            </button>
           </div>
           <select className="sort-select catalog-sort-select" value={sort} onChange={(e) => setSort(e.target.value)}>
             <option value="padrao">Ordenar por Padrão</option>
@@ -83,9 +137,9 @@ export default function Catalog() {
         <div className="catalog-layout" style={{ gridTemplateColumns: '1fr 300px' }}>
           <div>
             <div className="cat-filter-bar">
-              <button className={`cat-filter${setor === '' ? ' active' : ''}`} onClick={() => setSetor('')}>Todos</button>
+              <button type="button" className={`cat-filter${setor === '' ? ' active' : ''}`} onClick={() => setSetor('')}>Todos</button>
               {SETORES.map((s) => (
-                <button key={s} className={`cat-filter${setor === s ? ' active' : ''}`} onClick={() => setSetor(s)}>{s}</button>
+                <button type="button" key={s} className={`cat-filter${setor === s ? ' active' : ''}`} onClick={() => setSetor(s)}>{s}</button>
               ))}
             </div>
 
@@ -102,7 +156,7 @@ export default function Catalog() {
             ) : (
               <div className="catalog-grid catalog-grid-large">
                 {filtered.map((item) => {
-                  const inList = listaAtualizada?.itens.includes(item.id);
+                  const inList = listaItens.some((li) => li.catalogo_id === item.id)
                   return (
                     <div key={item.id} className="item-card" style={inList ? { outline: '2px solid var(--ouro)' } : {}}>
                       <div style={{ cursor: 'pointer' }} onClick={() => setDetailItem(item)}>
@@ -115,13 +169,15 @@ export default function Catalog() {
                         <div className="preco">{formatMoney(item.preco)}</div>
                         <div className="estoque">{item.estoque} em estoque</div>
                         <button
+                          type="button"
                           className={`btn btn-sm${inList ? '' : ' btn-verde'}`}
                           style={inList ? { background: 'rgba(0,48,13,0.08)', color: 'var(--verde)' } : {}}
+                          disabled={toggling === item.id}
                           onClick={() => toggleItem(item.id)}
                         >{inList ? 'Remover' : 'Adicionar'}</button>
                       </div>
                     </div>
-                  );
+                  )
                 })}
               </div>
             )}
@@ -140,16 +196,24 @@ export default function Catalog() {
             ) : (
               <>
                 <div className="mini-cart-items">
-                  {listaItens.map((item) => (
-                    <div key={item.id} className="mini-cart-item">
-                      <div className="mini-cart-item-info">
-                        <div className="mini-cart-item-name" title={item.nome}>{item.nome}</div>
-                        <div className="mini-cart-item-setor">{item.setor}</div>
-                        <div className="mini-cart-item-price">{formatMoney(item.preco)}</div>
+                  {listaItensComCatalogo.map((item) => {
+                    const li = listaItens.find((li) => li.catalogo_id === item.id)
+                    return (
+                      <div key={item.id} className="mini-cart-item">
+                        <div className="mini-cart-item-info">
+                          <div className="mini-cart-item-name" title={item.nome}>{item.nome}</div>
+                          <div className="mini-cart-item-setor">{item.setor}</div>
+                          <div className="mini-cart-item-price">{formatMoney(item.preco)}</div>
+                        </div>
+                        <button
+                          type="button"
+                          className="mini-cart-remove"
+                          onClick={() => li && toggleItem(item.id)}
+                          title="Remover"
+                        >&#215;</button>
                       </div>
-                      <button className="mini-cart-remove" onClick={() => toggleItem(item.id)} title="Remover">&#215;</button>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
                 <div className="mini-cart-footer">
                   <div className="mini-cart-total-row">
@@ -172,12 +236,14 @@ export default function Catalog() {
           maxWidth="600px"
           footer={
             <>
-              <button className="btn btn-outline-dark btn-sm" onClick={() => setDetailItem(null)}>Fechar</button>
+              <button type="button" className="btn btn-outline-dark btn-sm" onClick={() => setDetailItem(null)}>Fechar</button>
               <button
-                className={`btn btn-sm${listaAtualizada?.itens.includes(detailItem.id) ? '' : ' btn-verde'}`}
-                style={listaAtualizada?.itens.includes(detailItem.id) ? { background: 'rgba(0,48,13,0.08)', color: 'var(--verde)' } : {}}
-                onClick={() => { toggleItem(detailItem.id); setDetailItem(null); }}
-              >{listaAtualizada?.itens.includes(detailItem.id) ? 'Remover' : 'Adicionar'}</button>
+                type="button"
+                className={`btn btn-sm${listaItens.some((li) => li.catalogo_id === detailItem.id) ? '' : ' btn-verde'}`}
+                style={listaItens.some((li) => li.catalogo_id === detailItem.id) ? { background: 'rgba(0,48,13,0.08)', color: 'var(--verde)' } : {}}
+                disabled={toggling === detailItem.id}
+                onClick={() => { toggleItem(detailItem.id); setDetailItem(null) }}
+              >{listaItens.some((li) => li.catalogo_id === detailItem.id) ? 'Remover' : 'Adicionar'}</button>
             </>
           }
         >
@@ -196,5 +262,5 @@ export default function Catalog() {
         </Modal>
       )}
     </div>
-  );
+  )
 }

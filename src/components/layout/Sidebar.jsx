@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import useStore from '../../store/useStore';
+import { listasService } from '../../services/listas.js';
 
 const WA_ICON = (
   <svg viewBox="0 0 24 24" fill="currentColor">
@@ -13,7 +14,7 @@ export default function Sidebar({ role = 'noivo' }) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentUser, logout, getListaByUser } = useStore();
+  const { currentUser, logout } = useStore();
 
   const currentTab = new URLSearchParams(location.search).get('tab') || 'listas';
 
@@ -22,14 +23,17 @@ export default function Sidebar({ role = 'noivo' }) {
     navigate('/');
   }
 
-  function compartilharWhatsApp() {
-    const lista = getListaByUser(currentUser?.id);
-    if (!lista) return;
-    const url = window.location.origin + '/lista?codigo=' + lista.codigo;
-    const msg = encodeURIComponent(
-      `Oi! ${lista.nome_noivos} estão se casando e montaram a lista de presentes no La Provence.\n\nAcesse aqui: ${url}\n\nOu use o código: ${lista.codigo}`
-    );
-    window.open('https://wa.me/?text=' + msg, '_blank');
+  async function compartilharWhatsApp() {
+    if (!currentUser?.id) return;
+    try {
+      const lista = await listasService.getByUser(currentUser.id);
+      if (!lista) return;
+      const url = `${window.location.origin}/lista?codigo=${lista.codigo}`;
+      const msg = encodeURIComponent(
+        `Oi! ${lista.nome_noivos} estão se casando e montaram a lista de presentes no La Provence.\n\nAcesse aqui: ${url}\n\nOu use o código: ${lista.codigo}`
+      );
+      window.open(`https://wa.me/?text=${msg}`, '_blank');
+    } catch { /* silently fail */ }
   }
 
   const initials = currentUser?.nome?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() || '?';

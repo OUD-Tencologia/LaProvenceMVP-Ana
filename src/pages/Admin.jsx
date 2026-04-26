@@ -1,188 +1,190 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import Sidebar from '../components/layout/Sidebar';
-import Modal from '../components/ui/Modal';
-import Toast from '../components/ui/Toast';
-import InfoRow from '../components/ui/InfoRow';
-import StatusBadge from '../components/ui/StatusBadge';
-import { useToast } from '../hooks/useToast';
-import useStore from '../store/useStore';
-import { formatMoney, formatDate } from '../utils/formatters';
-import { SETORES } from '../data/seed';
+import { useState, useEffect, useRef } from 'react'
+import { useNavigate, useSearchParams, Link } from 'react-router-dom'
+import Sidebar from '../components/layout/Sidebar'
+import Modal from '../components/ui/Modal'
+import Toast from '../components/ui/Toast'
+import InfoRow from '../components/ui/InfoRow'
+import StatusBadge from '../components/ui/StatusBadge'
+import { useToast } from '../hooks/useToast'
+import useStore from '../store/useStore'
+import { formatMoney, formatDate } from '../utils/formatters'
+import { catalogoService } from '../services/catalogo.js'
+import { listasService } from '../services/listas.js'
+import { comprasService } from '../services/compras.js'
+import { premontadasService } from '../services/premontadas.js'
+import { SETOR_DISPLAY } from '../services/auth.js'
+
+const SETORES = Object.values(SETOR_DISPLAY)
 
 /* ─── helpers ─── */
 const STORY_TEMPLATES = [
   { bg: '#00300D', fg: '#FBDD90', accent: '#EBAB0A' },
   { bg: '#F5EDD8', fg: '#00300D', accent: '#EBAB0A' },
-];
+]
 
 function drawWrappedText(ctx, text, x, startY, maxWidth, lineHeight) {
-  const lines = [];
+  const lines = []
   for (const explicitLine of text.split('\n')) {
-    const words = explicitLine.split(' ');
-    let current = '';
+    const words = explicitLine.split(' ')
+    let current = ''
     for (const word of words) {
-      const test = current ? current + ' ' + word : word;
-      if (ctx.measureText(test).width > maxWidth && current) { lines.push(current); current = word; }
-      else { current = test; }
+      const test = current ? `${current} ${word}` : word
+      if (ctx.measureText(test).width > maxWidth && current) { lines.push(current); current = word }
+      else { current = test }
     }
-    if (current) lines.push(current);
-    else if (explicitLine === '') lines.push('');
+    if (current) lines.push(current)
+    else if (explicitLine === '') lines.push('')
   }
-  lines.forEach((line, i) => ctx.fillText(line, x, startY + i * lineHeight));
-  return lines.length;
+  lines.forEach((line, i) => { ctx.fillText(line, x, startY + i * lineHeight) })
+  return lines.length
 }
 
 /* ─── StoryModal ─── */
 function StoryModal({ lista, open, onClose }) {
-  const canvasRef = useRef(null);
-  const brandLogoRef = useRef(null);
-  const brandLoadedRef = useRef(false);
-  const photoImgRef = useRef(null);
-  const tplIdxRef = useRef(0);
-  const listaRef = useRef(lista);
-  listaRef.current = lista;
+  const canvasRef = useRef(null)
+  const brandLogoRef = useRef(null)
+  const brandLoadedRef = useRef(false)
+  const photoImgRef = useRef(null)
+  const tplIdxRef = useRef(0)
+  const listaRef = useRef(lista)
+  listaRef.current = lista
 
-  const [tplIdx, setTplIdx] = useState(0);
-  const [photoSrc, setPhotoSrc] = useState(null);
-  const [igHint, setIgHint] = useState(false);
-  tplIdxRef.current = tplIdx;
+  const [tplIdx, setTplIdx] = useState(0)
+  const [photoSrc, setPhotoSrc] = useState(null)
+  const [igHint, setIgHint] = useState(false)
+  tplIdxRef.current = tplIdx
 
   useEffect(() => {
-    if (!open) { setPhotoSrc(null); photoImgRef.current = null; setTplIdx(0); setIgHint(false); return; }
+    if (!open) { setPhotoSrc(null); photoImgRef.current = null; setTplIdx(0); setIgHint(false); return }
     if (!brandLoadedRef.current) {
-      const logoImg = new Image();
-      logoImg.onload = () => { brandLoadedRef.current = true; brandLogoRef.current = logoImg; renderStory(); };
-      logoImg.src = 'assets/img/LaProvenceDecor-Logo.png';
+      const logoImg = new Image()
+      logoImg.onload = () => { brandLoadedRef.current = true; brandLogoRef.current = logoImg; renderStory() }
+      logoImg.src = 'assets/img/LaProvenceDecor-Logo.png'
     }
     if (lista?.foto_casal) {
-      const img = new Image();
-      img.onload = () => { photoImgRef.current = img; setPhotoSrc(lista.foto_casal); };
-      img.src = lista.foto_casal;
+      const img = new Image()
+      img.onload = () => { photoImgRef.current = img; setPhotoSrc(lista.foto_casal) }
+      img.src = lista.foto_casal
     } else {
-      photoImgRef.current = null;
-      setPhotoSrc(null);
+      photoImgRef.current = null
+      setPhotoSrc(null)
     }
-  }, [open, lista]);
+  }, [open, lista])
 
-  useEffect(() => { if (open) setTimeout(() => renderStory(), 0); }, [tplIdx, photoSrc, open]);
+  useEffect(() => { if (open) setTimeout(() => renderStory(), 0) }, [tplIdx, photoSrc, open])
 
   function renderStory() {
-    const canvas = canvasRef.current;
-    const l = listaRef.current;
-    if (!canvas || !l) return;
-    const ctx = canvas.getContext('2d');
-    const W = 1080, H = 1920;
-    const tpl = STORY_TEMPLATES[tplIdxRef.current];
-    const displayNome = l.nome_noivos || 'Seus Nomes';
+    const canvas = canvasRef.current
+    const l = listaRef.current
+    if (!canvas || !l) return
+    const ctx = canvas.getContext('2d')
+    const W = 1080, H = 1920
+    const tpl = STORY_TEMPLATES[tplIdxRef.current]
+    const displayNome = l.nome_noivos || 'Seus Nomes'
     const displayData = l.data_casamento
-      ? new Date(l.data_casamento + 'T00:00:00').toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })
-      : 'Data do Casamento';
+      ? new Date(`${l.data_casamento}T00:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })
+      : 'Data do Casamento'
 
-    ctx.fillStyle = tpl.bg; ctx.fillRect(0, 0, W, H);
-    ctx.strokeStyle = tpl.accent; ctx.lineWidth = 3;
-    ctx.globalAlpha = 0.35; ctx.strokeRect(60, 60, W - 120, H - 120);
-    ctx.globalAlpha = 0.15; ctx.strokeRect(80, 80, W - 160, H - 160);
-    ctx.globalAlpha = 1; ctx.fillStyle = tpl.accent; ctx.fillRect(W / 2 - 120, 200, 240, 2);
+    ctx.fillStyle = tpl.bg; ctx.fillRect(0, 0, W, H)
+    ctx.strokeStyle = tpl.accent; ctx.lineWidth = 3
+    ctx.globalAlpha = 0.35; ctx.strokeRect(60, 60, W - 120, H - 120)
+    ctx.globalAlpha = 0.15; ctx.strokeRect(80, 80, W - 160, H - 160)
+    ctx.globalAlpha = 1; ctx.fillStyle = tpl.accent; ctx.fillRect(W / 2 - 120, 200, 240, 2)
 
-    const cx = W / 2, cy = 480, r = 215;
+    const cx = W / 2, cy = 480, r = 215
     if (photoImgRef.current) {
-      ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.closePath(); ctx.clip();
-      const img = photoImgRef.current;
-      const scale = Math.max((r * 2) / img.width, (r * 2) / img.height);
-      const sw = img.width * scale, sh = img.height * scale;
-      ctx.drawImage(img, cx - sw / 2, cy - sh / 2, sw, sh); ctx.restore();
-      ctx.strokeStyle = tpl.accent; ctx.lineWidth = 8;
-      ctx.beginPath(); ctx.arc(cx, cy, r + 4, 0, Math.PI * 2); ctx.stroke();
+      ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.closePath(); ctx.clip()
+      const img = photoImgRef.current
+      const scale = Math.max((r * 2) / img.width, (r * 2) / img.height)
+      const sw = img.width * scale, sh = img.height * scale
+      ctx.drawImage(img, cx - sw / 2, cy - sh / 2, sw, sh); ctx.restore()
+      ctx.strokeStyle = tpl.accent; ctx.lineWidth = 8
+      ctx.beginPath(); ctx.arc(cx, cy, r + 4, 0, Math.PI * 2); ctx.stroke()
     } else {
-      ctx.fillStyle = tpl.accent; ctx.globalAlpha = 0.15;
-      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
-      ctx.globalAlpha = 1; ctx.strokeStyle = tpl.accent; ctx.lineWidth = 4; ctx.globalAlpha = 0.4;
-      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;
+      ctx.fillStyle = tpl.accent; ctx.globalAlpha = 0.15
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill()
+      ctx.globalAlpha = 1; ctx.strokeStyle = tpl.accent; ctx.lineWidth = 4; ctx.globalAlpha = 0.4
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1
     }
     if (brandLoadedRef.current && brandLogoRef.current) {
-      const logoW = 400;
-      const logoH = Math.round(brandLogoRef.current.height * (logoW / brandLogoRef.current.width));
-      ctx.drawImage(brandLogoRef.current, W / 2 - logoW / 2, 820, logoW, logoH);
+      const logoW = 400
+      const logoH = Math.round(brandLogoRef.current.height * (logoW / brandLogoRef.current.width))
+      ctx.drawImage(brandLogoRef.current, W / 2 - logoW / 2, 820, logoW, logoH)
     } else {
-      ctx.fillStyle = tpl.accent; ctx.font = '500 56px "Great Vibes", cursive';
-      ctx.textAlign = 'center'; ctx.fillText('La Provence Decor', W / 2, 900);
+      ctx.fillStyle = tpl.accent; ctx.font = '500 56px "Great Vibes", cursive'
+      ctx.textAlign = 'center'; ctx.fillText('La Provence Decor', W / 2, 900)
     }
-    ctx.fillStyle = tpl.accent; ctx.fillRect(W / 2 - 90, 1030, 180, 2);
-    ctx.fillStyle = tpl.fg; ctx.font = '300 94px "Great Vibes", cursive'; ctx.textAlign = 'center';
-    const nomeLineH = 110, nomeBaseY = 1160;
-    const nomeLines = drawWrappedText(ctx, displayNome, W / 2, nomeBaseY, 880, nomeLineH);
-    const afterNomeY = nomeBaseY + (nomeLines - 1) * nomeLineH;
-    ctx.fillStyle = tpl.fg; ctx.globalAlpha = 0.7; ctx.font = '400 34px Montserrat, sans-serif';
-    ctx.fillText(displayData, W / 2, afterNomeY + 140);
-    ctx.globalAlpha = 1; ctx.fillStyle = tpl.accent; ctx.fillRect(W / 2 - 80, afterNomeY + 190, 160, 2);
+    ctx.fillStyle = tpl.accent; ctx.fillRect(W / 2 - 90, 1030, 180, 2)
+    ctx.fillStyle = tpl.fg; ctx.font = '300 94px "Great Vibes", cursive'; ctx.textAlign = 'center'
+    const nomeLineH = 110, nomeBaseY = 1160
+    const nomeLines = drawWrappedText(ctx, displayNome, W / 2, nomeBaseY, 880, nomeLineH)
+    const afterNomeY = nomeBaseY + (nomeLines - 1) * nomeLineH
+    ctx.fillStyle = tpl.fg; ctx.globalAlpha = 0.7; ctx.font = '400 34px Montserrat, sans-serif'
+    ctx.fillText(displayData, W / 2, afterNomeY + 140)
+    ctx.globalAlpha = 1; ctx.fillStyle = tpl.accent; ctx.fillRect(W / 2 - 80, afterNomeY + 190, 160, 2)
     if (l.codigo) {
-      ctx.fillStyle = tpl.fg; ctx.globalAlpha = 0.5; ctx.font = '600 26px Montserrat, sans-serif';
-      ctx.fillText('ACESSE COM O CÓDIGO', W / 2, afterNomeY + 270);
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = tpl.bg === '#00300D' ? '#C4781A' : '#00300D';
-      ctx.fillRect(W / 2 - 250, afterNomeY + 295, 500, 90);
-      ctx.fillStyle = tpl.bg === '#00300D' ? '#FFFFFF' : '#FBDD90';
-      ctx.font = 'bold 56px Montserrat, sans-serif'; ctx.fillText(l.codigo, W / 2, afterNomeY + 360);
+      ctx.fillStyle = tpl.fg; ctx.globalAlpha = 0.5; ctx.font = '600 26px Montserrat, sans-serif'
+      ctx.fillText('ACESSE COM O CÓDIGO', W / 2, afterNomeY + 270)
+      ctx.globalAlpha = 1
+      ctx.fillStyle = tpl.bg === '#00300D' ? '#C4781A' : '#00300D'
+      ctx.fillRect(W / 2 - 250, afterNomeY + 295, 500, 90)
+      ctx.fillStyle = tpl.bg === '#00300D' ? '#FFFFFF' : '#FBDD90'
+      ctx.font = 'bold 56px Montserrat, sans-serif'; ctx.fillText(l.codigo, W / 2, afterNomeY + 360)
     }
-    ctx.fillStyle = tpl.fg; ctx.globalAlpha = 0.35; ctx.font = '300 26px Montserrat, sans-serif'; ctx.globalAlpha = 1;
+    ctx.fillStyle = tpl.fg; ctx.globalAlpha = 0.35; ctx.font = '300 26px Montserrat, sans-serif'; ctx.globalAlpha = 1
   }
 
   function handlePhoto(e) {
-    const file = e.target.files[0]; if (!file) return;
-    const reader = new FileReader();
+    const file = e.target.files[0]; if (!file) return
+    const reader = new FileReader()
     reader.onload = (ev) => {
-      const img = new Image();
-      img.onload = () => { photoImgRef.current = img; setPhotoSrc(ev.target.result); };
-      img.src = ev.target.result;
-    };
-    reader.readAsDataURL(file);
+      const img = new Image()
+      img.onload = () => { photoImgRef.current = img; setPhotoSrc(ev.target.result) }
+      img.src = ev.target.result
+    }
+    reader.readAsDataURL(file)
   }
 
   function downloadStory() {
-    renderStory();
-    const link = document.createElement('a');
-    link.download = `story-${lista?.codigo || 'laprovence'}.png`;
-    link.href = canvasRef.current.toDataURL('image/png');
-    link.click();
+    renderStory()
+    const link = document.createElement('a')
+    link.download = `story-${lista?.codigo || 'laprovence'}.png`
+    link.href = canvasRef.current.toDataURL('image/png')
+    link.click()
   }
 
   async function compartilharInstagram() {
-    renderStory();
-    const canvas = canvasRef.current;
+    renderStory()
+    const canvas = canvasRef.current
     if (typeof navigator.canShare === 'function') {
       try {
-        const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
-        const file = new File([blob], 'story-laprovence.png', { type: 'image/png' });
-        if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'Story La Provence Decor' }); return; }
-      } catch (e) { if (e.name === 'AbortError') return; }
+        const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'))
+        const file = new File([blob], 'story-laprovence.png', { type: 'image/png' })
+        if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'Story La Provence Decor' }); return }
+      } catch (e) { if (e.name === 'AbortError') return }
     }
-    const link = document.createElement('a');
-    link.download = `story-${lista?.codigo || 'laprovence'}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-    const isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
-    if (isMobile) setTimeout(() => { window.location.href = 'instagram://story-camera'; }, 600);
-    setIgHint(true);
-    setTimeout(() => setIgHint(false), 8000);
+    const link = document.createElement('a')
+    link.download = `story-${lista?.codigo || 'laprovence'}.png`
+    link.href = canvas.toDataURL('image/png')
+    link.click()
+    const isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent)
+    if (isMobile) setTimeout(() => { window.location.href = 'instagram://story-camera' }, 600)
+    setIgHint(true)
+    setTimeout(() => setIgHint(false), 8000)
   }
 
-  const IG_SVG = <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" /></svg>;
+  const IG_SVG = <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" /></svg>
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title={lista ? `Story — ${lista.nome_noivos}` : 'Story'}
-      maxWidth="820px"
+    <Modal open={open} onClose={onClose} title={lista ? `Story — ${lista.nome_noivos}` : 'Story'} maxWidth="820px"
       footer={
         <>
-          <button className="btn btn-outline-dark btn-sm" onClick={onClose}>Fechar</button>
+          <button type="button" className="btn btn-outline-dark btn-sm" onClick={onClose}>Fechar</button>
           <div className="story-template-btns">
-            <button className="btn btn-sm btn-story-ig" onClick={compartilharInstagram}>
+            <button type="button" className="btn btn-sm btn-story-ig" onClick={compartilharInstagram}>
               {IG_SVG} Compartilhar no Instagram
             </button>
-            <button className="btn btn-verde" onClick={downloadStory}>Baixar (1080×1920px)</button>
+            <button type="button" className="btn btn-verde" onClick={downloadStory}>Baixar (1080×1920px)</button>
           </div>
         </>
       }
@@ -194,7 +196,7 @@ function StoryModal({ lista, open, onClose }) {
               <div className="label-caps" style={{ marginBottom: '0.7rem' }}>Template</div>
               <div className="story-template-btns">
                 {['Provence Verde', 'Campestre Bege'].map((label, i) => (
-                  <button key={i} className={`btn btn-sm ${tplIdx === i ? 'btn-verde' : 'btn-outline-dark'}`} style={{ flex: 1 }} onClick={() => setTplIdx(i)}>{label}</button>
+                  <button type="button" key={i} className={`btn btn-sm ${tplIdx === i ? 'btn-verde' : 'btn-outline-dark'}`} style={{ flex: 1 }} onClick={() => setTplIdx(i)}>{label}</button>
                 ))}
               </div>
             </div>
@@ -204,9 +206,7 @@ function StoryModal({ lista, open, onClose }) {
               <label htmlFor="story-photo-upload" className="story-photo-upload">
                 {photoSrc ? (
                   <div className="story-photo-loaded">
-                    <div className="story-photo-loaded__thumb">
-                      <img src={photoSrc} alt="" />
-                    </div>
+                    <div className="story-photo-loaded__thumb"><img src={photoSrc} alt="Foto do casal" /></div>
                     <div className="story-photo-loaded__info">
                       <div className="story-photo-loaded__title">Foto carregada</div>
                       <div className="story-photo-loaded__hint">Clique para alterar</div>
@@ -244,10 +244,7 @@ function StoryModal({ lista, open, onClose }) {
 
           <div className="story-canvas-preview">
             <div className="label-caps story-canvas-label">Preview</div>
-            <canvas
-              ref={canvasRef}
-              width={1080}
-              height={1920}
+            <canvas ref={canvasRef} width={1080} height={1920}
               style={{ width: '100%', maxWidth: 190, height: 'auto', borderRadius: 6, boxShadow: '0 12px 32px rgba(0,48,13,0.25)', display: 'block', margin: '0 auto' }}
             />
             <p className="story-canvas-hint">Preview reduzido · baixe para 1080×1920px</p>
@@ -255,144 +252,211 @@ function StoryModal({ lista, open, onClose }) {
         </div>
       )}
     </Modal>
-  );
+  )
 }
 
 /* ─── Admin page ─── */
 export default function Admin() {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const tab = searchParams.get('tab') || 'listas';
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const tab = searchParams.get('tab') || 'listas'
 
-  const {
-    currentUser, getListas, getCatalogo, getComprasByLista, getItemById,
-    aprovarCompra, rejeitarCompra, salvarItem, inativarItem, getPremontadas, salvarPremontada,
-    arquivarLista, getUserById,
-  } = useStore();
-  const { toasts, toast } = useToast();
+  const { currentUser } = useStore()
+  const { toasts, toast } = useToast()
 
-  const [search, setSearch] = useState('');
-  const [catSearch, setCatSearch] = useState('');
-  const [catSetor, setCatSetor] = useState('');
-  const [listaModal, setListaModal] = useState(null);
-  const [listaModalTab, setListaModalTab] = useState('itens');
-  const [compraDetalheModal, setCompraDetalheModal] = useState(null);
-  const [archiveConfirmModal, setArchiveConfirmModal] = useState(null);
-  const [casalInfoModal, setCasalInfoModal] = useState(null);
-  const [listaStoryModal, setListaStoryModal] = useState(null);
-  const [itemModal, setItemModal] = useState(null);
-  const [pmModal, setPmModal] = useState(null);
-  const [refresh, setRefresh] = useState(0);
+  const [listas, setListas] = useState([])
+  const [catalogo, setCatalogo] = useState([])
+  const [premontadas, setPremontadas] = useState([])
+  const [todasCompras, setTodasCompras] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  const [search, setSearch] = useState('')
+  const [catSearch, setCatSearch] = useState('')
+  const [catSetor, setCatSetor] = useState('')
+
+  const [modalData, setModalData] = useState(null) // { lista, compras, listaItens }
+  const [modalTab, setModalTab] = useState('itens')
+  const [compraDetalheModal, setCompraDetalheModal] = useState(null)
+  const [archiveConfirmModal, setArchiveConfirmModal] = useState(null)
+  const [casalInfoModal, setCasalInfoModal] = useState(null)
+  const [listaStoryModal, setListaStoryModal] = useState(null)
+  const [itemModal, setItemModal] = useState(null)
+  const [pmModal, setPmModal] = useState(null)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (!currentUser) { navigate('/auth'); return; }
-    if (currentUser.role !== 'gestor') { navigate('/dashboard'); }
-  }, [currentUser, navigate]);
+    if (!currentUser) { navigate('/auth'); return }
+    if (currentUser.role !== 'gestor') { navigate('/dashboard'); return }
+  }, [currentUser, navigate])
 
-  if (!currentUser) return null;
+  useEffect(() => {
+    if (!currentUser || currentUser.role !== 'gestor') return
+    async function load() {
+      setLoading(true)
+      try {
+        const [l, c, p] = await Promise.all([
+          listasService.getAll(),
+          catalogoService.getAll(),
+          premontadasService.getAll(),
+        ])
+        const ativas = l.filter((li) => li.status === 'Ativa')
+        setListas(ativas)
+        setCatalogo(c)
+        setPremontadas(p)
+        // carrega compras de todas as listas ativas em paralelo para os stats
+        if (ativas.length > 0) {
+          const allCompras = await Promise.all(ativas.map((li) => comprasService.getByLista(li.id)))
+          setTodasCompras(allCompras.flat())
+        }
+      } catch (e) {
+        toast(e.message, 'error')
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [currentUser?.id])
 
-  const listas = getListas().filter((l) => l.status === 'Ativa');
-  const catalogo = getCatalogo();
-  const premontadas = getPremontadas();
+  if (!currentUser) return null
 
-  const todasCompras = listas.flatMap((l) => getComprasByLista(l.id));
-  const totalArrecadado = todasCompras.filter((c) => c.status_pagamento === 'Aprovado' || c.status_pagamento === 'Confirmado').reduce((s, c) => s + Number(c.valor_pago), 0);
-  const pendentes = todasCompras.filter((c) => c.status_pagamento === 'Pendente').length;
+  const totalArrecadado = todasCompras
+    .filter((c) => c.status_pagamento === 'Aprovado' || c.status_pagamento === 'Confirmado')
+    .reduce((s, c) => s + Number(c.valor_pago), 0)
+  const pendentes = todasCompras.filter((c) => c.status_pagamento === 'Pendente').length
 
-  const filteredListas = listas.filter((l) => !search || l.nome_noivos.toLowerCase().includes(search.toLowerCase()) || l.codigo.toLowerCase().includes(search.toLowerCase()));
+  const filteredListas = listas.filter((l) =>
+    !search || l.nome_noivos.toLowerCase().includes(search.toLowerCase()) || l.codigo.toLowerCase().includes(search.toLowerCase())
+  )
 
-  let filteredCat = catalogo;
-  if (catSetor) filteredCat = filteredCat.filter((i) => i.setor === catSetor);
-  if (catSearch) filteredCat = filteredCat.filter((i) => i.nome.toLowerCase().includes(catSearch.toLowerCase()));
+  let filteredCat = catalogo
+  if (catSetor) filteredCat = filteredCat.filter((i) => i.setor === catSetor)
+  if (catSearch) filteredCat = filteredCat.filter((i) => i.nome.toLowerCase().includes(catSearch.toLowerCase()))
 
-  function handleAprovar(compraId) {
-    aprovarCompra(compraId);
-    setRefresh((r) => r + 1);
-    toast('Pagamento aprovado!');
-    if (listaModal) setListaModal({ ...listaModal, compras: getComprasByLista(listaModal.lista.id) });
-  }
-
-  function handleRejeitar(compraId) {
-    rejeitarCompra(compraId);
-    setRefresh((r) => r + 1);
-    toast('Compra rejeitada.');
-    if (listaModal) setListaModal({ ...listaModal, compras: getComprasByLista(listaModal.lista.id) });
-  }
-
-  function handleArquivar() {
-    arquivarLista(archiveConfirmModal.id);
-    setArchiveConfirmModal(null);
-    setListaModal(null);
-    setCompraDetalheModal(null);
-    setRefresh((r) => r + 1);
-    toast('Lista arquivada.');
-  }
-
-  function handleSalvarItem() {
-    if (!itemModal?.nome || !itemModal?.preco) { toast('Preencha nome e preço.', 'error'); return; }
-    salvarItem({
-      id: itemModal.id || null,
-      nome: itemModal.nome,
-      tamanho: itemModal.tamanho || '',
-      setor: itemModal.setor || 'Mesa posta',
-      preco: parseFloat(itemModal.preco) || 0,
-      estoque: parseInt(itemModal.estoque) || 0,
-      quantidade: parseInt(itemModal.quantidade) || 1,
-      descricao: itemModal.descricao || '',
-      marca: itemModal.marca || '',
-      imgs: itemModal.imgs || [],
-      status: itemModal.status || 'Ativo',
-    });
-    setItemModal(null);
-    setRefresh((r) => r + 1);
-    toast('Item salvo!');
-  }
-
-  function handleItemImgUpload(e) {
-    const file = e.target.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX = 800;
-        let { width, height } = img;
-        if (width > height && width > MAX) { height *= MAX / width; width = MAX; }
-        else if (height > MAX) { width *= MAX / height; height = MAX; }
-        canvas.width = width; canvas.height = height;
-        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-        const b64 = canvas.toDataURL('image/jpeg', 0.7);
-        setItemModal((m) => ({ ...m, imgs: [b64, ...(m.imgs || []).filter((x) => !x.startsWith('data:'))] }));
-      };
-      img.src = ev.target.result;
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function handleSalvarPremontada() {
-    if (!pmModal) return;
-    salvarPremontada({ id: pmModal.id, nome: pmModal.nome, descricao: pmModal.descricao, badge: pmModal.badge, img: pmModal.img, itens: pmModal.selectedItens, popular: pmModal.popular });
-    setPmModal(null);
-    setRefresh((r) => r + 1);
-    toast('Lista pré-montada salva!');
-  }
-
-  function openListaModal(lista) {
-    setListaModal({ lista, compras: getComprasByLista(lista.id) });
-    setListaModalTab('itens');
+  async function openListaModal(lista) {
+    try {
+      const [compras, listaItens] = await Promise.all([
+        comprasService.getByLista(lista.id),
+        listasService.getItens(lista.id),
+      ])
+      setModalData({ lista, compras, listaItens })
+      setModalTab('itens')
+    } catch (e) {
+      toast(e.message, 'error')
+    }
   }
 
   function closeListaModal() {
-    setListaModal(null);
-    setCompraDetalheModal(null);
+    setModalData(null)
+    setCompraDetalheModal(null)
   }
 
-  function openCasalInfo(lista) {
-    const user = getUserById(lista.user_id);
-    setCasalInfoModal({ lista, user });
+  async function handleAprovar(compraId) {
+    try {
+      await comprasService.aprovar(compraId)
+      setModalData((prev) => ({
+        ...prev,
+        compras: prev.compras.map((c) => c.id === compraId ? { ...c, status_pagamento: 'Aprovado' } : c),
+      }))
+      setTodasCompras((prev) => prev.map((c) => c.id === compraId ? { ...c, status_pagamento: 'Aprovado' } : c))
+      toast('Pagamento aprovado!')
+    } catch (e) { toast(e.message, 'error') }
   }
 
-  const SEARCH_SVG = <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" /></svg>;
+  async function handleRejeitar(compraId) {
+    try {
+      await comprasService.rejeitar(compraId)
+      setModalData((prev) => ({
+        ...prev,
+        compras: prev.compras.map((c) => c.id === compraId ? { ...c, status_pagamento: 'Rejeitado' } : c),
+      }))
+      setTodasCompras((prev) => prev.map((c) => c.id === compraId ? { ...c, status_pagamento: 'Rejeitado' } : c))
+      toast('Compra rejeitada.')
+    } catch (e) { toast(e.message, 'error') }
+  }
+
+  async function handleArquivar() {
+    try {
+      await listasService.update(archiveConfirmModal.id, { status: 'Arquivada' })
+      setListas((prev) => prev.filter((l) => l.id !== archiveConfirmModal.id))
+      setArchiveConfirmModal(null)
+      setModalData(null)
+      toast('Lista arquivada.')
+    } catch (e) { toast(e.message, 'error') }
+  }
+
+  async function handleToggleStatus(item) {
+    const newStatus = item.status === 'Ativo' ? 'Inativo' : 'Ativo'
+    try {
+      await catalogoService.update(item.id, { status: newStatus })
+      setCatalogo((prev) => prev.map((c) => c.id === item.id ? { ...c, status: newStatus } : c))
+      toast(newStatus === 'Ativo' ? 'Item ativado.' : 'Item inativado.')
+    } catch (e) { toast(e.message, 'error') }
+  }
+
+  async function handleSalvarItem() {
+    if (!itemModal?.nome || !itemModal?.preco) { toast('Preencha nome e preço.', 'error'); return }
+    setSaving(true)
+    try {
+      const payload = {
+        nome: itemModal.nome,
+        tamanho: itemModal.tamanho || '',
+        setor: itemModal.setor || 'Mesa posta',
+        preco: String(Number.parseFloat(itemModal.preco) || 0),
+        estoque: Number.parseInt(itemModal.estoque) || 0,
+        quantidade: Number.parseInt(itemModal.quantidade) || 1,
+        descricao: itemModal.descricao || '',
+        marca: itemModal.marca || '',
+        status: itemModal.status || 'Ativo',
+      }
+      let saved
+      if (itemModal.id) {
+        saved = await catalogoService.update(itemModal.id, payload)
+        // remove imagens antigas e adiciona nova se URL fornecida
+        const oldImages = itemModal.catalogo_images ?? []
+        await Promise.all(oldImages.map((img) => catalogoService.deleteImage(img.id)))
+      } else {
+        saved = await catalogoService.create(payload)
+      }
+      const newUrl = itemModal.imgs?.[0]
+      if (newUrl && !newUrl.startsWith('data:')) {
+        await catalogoService.addImage(saved.id, newUrl, 0)
+      }
+      const updated = await catalogoService.getAll()
+      setCatalogo(updated)
+      setItemModal(null)
+      toast('Item salvo!')
+    } catch (e) {
+      toast(e.message, 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleSalvarPremontada() {
+    if (!pmModal) return
+    setSaving(true)
+    try {
+      const saved = await premontadasService.update(pmModal.id, {
+        nome: pmModal.nome,
+        descricao: pmModal.descricao,
+        badge: pmModal.badge,
+        img: pmModal.img,
+        popular: pmModal.popular,
+      })
+      await premontadasService.syncItens(pmModal.id, pmModal.selectedItens, pmModal.itens || [])
+      setPremontadas((prev) => prev.map((p) =>
+        p.id === saved.id ? { ...saved, itens: pmModal.selectedItens, selectedItens: pmModal.selectedItens } : p
+      ))
+      setPmModal(null)
+      toast('Lista pré-montada salva!')
+    } catch (e) {
+      toast(e.message, 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const SEARCH_SVG = <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" /></svg>
 
   return (
     <div className="app-layout">
@@ -423,43 +487,42 @@ export default function Admin() {
                 <h3 className="section-card-title">Todas as Listas</h3>
                 <div className="search-bar" style={{ maxWidth: 260 }}>
                   <input type="text" placeholder="Buscar noivos..." value={search} onChange={(e) => setSearch(e.target.value)} />
-                  <button>{SEARCH_SVG}</button>
+                  <button type="button">{SEARCH_SVG}</button>
                 </div>
               </div>
 
-              <div className="lists-grid">
-                {filteredListas.length === 0 && <p style={{ color: 'var(--texto-suave)', fontSize: '0.85rem' }}>Nenhuma lista encontrada.</p>}
-                {filteredListas.map((lista) => {
-                  const compras = getComprasByLista(lista.id);
-                  const aprovadas = compras.filter((c) => c.status_pagamento === 'Aprovado' || c.status_pagamento === 'Confirmado');
-                  const pend = compras.filter((c) => c.status_pagamento === 'Pendente');
-                  return (
-                    <div key={lista.id} className="list-card">
-                      {lista.foto_casal && <div className="list-card-photo" style={{ backgroundImage: `url(${lista.foto_casal})` }} />}
-                      <div className="list-card-body">
-                        <div className="list-card-code">#{lista.codigo}</div>
-                        <div className="list-card-name">{lista.nome_noivos}</div>
-                        {lista.data_casamento && <div className="list-card-date">Casamento: {formatDate(lista.data_casamento)}</div>}
-                        <div className="chips-row">
-                          <span className="chip chip--default">{lista.itens.length} itens</span>
-                          <span className="chip chip--green">{aprovadas.length} aprovados</span>
-                          {pend.length > 0 && <span className="chip chip--yellow">{pend.length} pendente{pend.length > 1 ? 's' : ''}</span>}
-                        </div>
-                        <div className="list-card-actions">
-                          <button className="btn btn-outline-dark btn-sm" style={{ flex: 1 }} onClick={() => openListaModal(lista)}>Ver Detalhes</button>
-                          <button
-                            className="btn btn-sm btn-story-ig"
-                            title="Gerar Story Instagram"
-                            onClick={() => setListaStoryModal(lista)}
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" /></svg>
-                          </button>
+              {loading ? <p style={{ color: 'var(--texto-suave)', fontSize: '0.85rem' }}>Carregando...</p> : (
+                <div className="lists-grid">
+                  {filteredListas.length === 0 && <p style={{ color: 'var(--texto-suave)', fontSize: '0.85rem' }}>Nenhuma lista encontrada.</p>}
+                  {filteredListas.map((lista) => {
+                    const comprasLista = todasCompras.filter((c) => c.listas_id === lista.id || c.lista_id === lista.id)
+                    const aprovadas = comprasLista.filter((c) => c.status_pagamento === 'Aprovado' || c.status_pagamento === 'Confirmado')
+                    const pend = comprasLista.filter((c) => c.status_pagamento === 'Pendente')
+                    const itensCount = lista.lista_itens?.length ?? 0
+                    return (
+                      <div key={lista.id} className="list-card">
+                        {lista.foto_casal && <div className="list-card-photo" style={{ backgroundImage: `url(${lista.foto_casal})` }} />}
+                        <div className="list-card-body">
+                          <div className="list-card-code">#{lista.codigo}</div>
+                          <div className="list-card-name">{lista.nome_noivos}</div>
+                          {lista.data_casamento && <div className="list-card-date">Casamento: {formatDate(lista.data_casamento)}</div>}
+                          <div className="chips-row">
+                            <span className="chip chip--default">{itensCount} itens</span>
+                            <span className="chip chip--green">{aprovadas.length} aprovados</span>
+                            {pend.length > 0 && <span className="chip chip--yellow">{pend.length} pendente{pend.length > 1 ? 's' : ''}</span>}
+                          </div>
+                          <div className="list-card-actions">
+                            <button type="button" className="btn btn-outline-dark btn-sm" style={{ flex: 1 }} onClick={() => openListaModal(lista)}>Ver Detalhes</button>
+                            <button type="button" className="btn btn-sm btn-story-ig" title="Gerar Story Instagram" onClick={() => setListaStoryModal(lista)}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" /></svg>
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           </>
         )}
@@ -469,17 +532,22 @@ export default function Admin() {
           <>
             <div className="page-header">
               <div className="page-header-text"><span className="label-caps">Gestão de Produtos</span><h1>Catálogo de Itens</h1></div>
-              <button className="btn btn-verde" onClick={() => setItemModal({ nome: '', tamanho: '', setor: 'Mesa posta', preco: '', estoque: '', quantidade: 1, descricao: '', marca: '', imgs: [], status: 'Ativo' })}>Adicionar Item</button>
+              <button type="button" className="btn btn-verde"
+                onClick={() => setItemModal({ nome: '', tamanho: '', setor: 'Mesa posta', preco: '', estoque: '', quantidade: 1, descricao: '', marca: '', imgs: [], status: 'Ativo' })}>
+                Adicionar Item
+              </button>
             </div>
 
             <div className="admin-filter-row">
               <div className="search-bar" style={{ maxWidth: 320, flexShrink: 0 }}>
                 <input type="text" placeholder="Buscar item..." value={catSearch} onChange={(e) => setCatSearch(e.target.value)} />
-                <button><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" /></svg></button>
+                <button type="button">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" /></svg>
+                </button>
               </div>
               <div className="cat-filter-bar" style={{ flex: 1, marginBottom: 0, minWidth: 0 }}>
-                <button className={`cat-filter${catSetor === '' ? ' active' : ''}`} onClick={() => setCatSetor('')}>Todos</button>
-                {SETORES.map((s) => <button key={s} className={`cat-filter${catSetor === s ? ' active' : ''}`} onClick={() => setCatSetor(s)}>{s}</button>)}
+                <button type="button" className={`cat-filter${catSetor === '' ? ' active' : ''}`} onClick={() => setCatSetor('')}>Todos</button>
+                {SETORES.map((s) => <button type="button" key={s} className={`cat-filter${catSetor === s ? ' active' : ''}`} onClick={() => setCatSetor(s)}>{s}</button>)}
               </div>
             </div>
 
@@ -496,7 +564,7 @@ export default function Admin() {
                     {filteredCat.map((item) => (
                       <tr key={item.id} style={{ opacity: item.status === 'Inativo' ? 0.5 : 1 }}>
                         <td>
-                          {item.imgs?.[0] && <img src={item.imgs[0]} alt="" style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 3 }} onError={(e) => { e.target.style.display = 'none'; }} />}
+                          {item.imgs?.[0] && <img src={item.imgs[0]} alt={item.nome} style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 3 }} onError={(e) => { e.target.style.display = 'none' }} />}
                         </td>
                         <td className="table-item-name">{item.nome}</td>
                         <td className="table-item-small">{item.setor}</td>
@@ -506,10 +574,11 @@ export default function Admin() {
                         <td><StatusBadge status={item.status} /></td>
                         <td>
                           <div style={{ display: 'flex', gap: '0.4rem' }}>
-                            <button className="btn btn-outline-dark btn-sm" onClick={() => setItemModal({ ...item })}>Editar</button>
+                            <button type="button" className="btn btn-outline-dark btn-sm" onClick={() => setItemModal({ ...item })}>Editar</button>
                             <button
+                              type="button"
                               className={`btn btn-sm btn-toggle-${item.status === 'Ativo' ? 'inativar' : 'ativar'}`}
-                              onClick={() => { inativarItem(item.id); setRefresh((r) => r + 1); toast(item.status === 'Ativo' ? 'Item inativado.' : 'Item ativado.'); }}
+                              onClick={() => handleToggleStatus(item)}
                             >{item.status === 'Ativo' ? 'Inativar' : 'Ativar'}</button>
                           </div>
                         </td>
@@ -535,8 +604,9 @@ export default function Admin() {
                   <div className="pm-card-body">
                     <div className="label-caps pm-card-badge">{pm.badge}</div>
                     <div className="pm-card-name">{pm.nome}</div>
-                    <div className="pm-card-count">{pm.itens.length} itens</div>
-                    <button className="btn btn-outline-dark btn-sm" onClick={() => setPmModal({ ...pm, selectedItens: [...(pm.itens || [])] })}>Editar</button>
+                    <div className="pm-card-count">{(pm.itens || []).length} itens</div>
+                    <button type="button" className="btn btn-outline-dark btn-sm"
+                      onClick={() => setPmModal({ ...pm, selectedItens: [...(pm.itens || [])] })}>Editar</button>
                   </div>
                 </div>
               ))}
@@ -547,67 +617,67 @@ export default function Admin() {
 
       {/* ── MODAL DETALHE DA LISTA ── */}
       <Modal
-        open={!!listaModal}
+        open={!!modalData}
         onClose={closeListaModal}
-        title={listaModal ? `${listaModal.lista.nome_noivos} — #${listaModal.lista.codigo}` : ''}
+        title={modalData ? `${modalData.lista.nome_noivos} — #${modalData.lista.codigo}` : ''}
         maxWidth="900px"
         footer={
-          listaModal ? (
+          modalData ? (
             <>
-              <button className="btn btn-sm btn-archive" onClick={() => setArchiveConfirmModal(listaModal.lista)}>
-                Arquivar Lista
-              </button>
-              <button className="btn btn-outline-dark btn-sm" onClick={closeListaModal}>Fechar</button>
+              <button type="button" className="btn btn-sm btn-archive" onClick={() => setArchiveConfirmModal(modalData.lista)}>Arquivar Lista</button>
+              <button type="button" className="btn btn-outline-dark btn-sm" onClick={closeListaModal}>Fechar</button>
             </>
           ) : null
         }
       >
-        {listaModal && (
+        {modalData && (
           <>
             <div className="modal-info-header">
-              {listaModal.lista.foto_casal && (
-                <img src={listaModal.lista.foto_casal} alt="" className="couple-avatar couple-avatar--lg" />
+              {modalData.lista.foto_casal && (
+                <img src={modalData.lista.foto_casal} alt="Foto do casal" className="couple-avatar couple-avatar--lg" />
               )}
               <div className="modal-info-header__meta">
-                <div className="modal-info-header__name">{listaModal.lista.nome_noivos}</div>
-                {listaModal.lista.data_casamento && (
-                  <div className="modal-info-header__sub">Casamento em {formatDate(listaModal.lista.data_casamento)}</div>
+                <div className="modal-info-header__name">{modalData.lista.nome_noivos}</div>
+                {modalData.lista.data_casamento && (
+                  <div className="modal-info-header__sub">Casamento em {formatDate(modalData.lista.data_casamento)}</div>
                 )}
                 <div className="modal-info-header__links">
-                  <span style={{ color: 'var(--texto-suave)' }}>Código: <strong style={{ color: 'var(--ouro)' }}>#{listaModal.lista.codigo}</strong></span>
-                  <Link to={`/lista?codigo=${listaModal.lista.codigo}`} target="_blank" style={{ color: 'var(--verde)', fontWeight: 600 }}>
+                  <span style={{ color: 'var(--texto-suave)' }}>Código: <strong style={{ color: 'var(--ouro)' }}>#{modalData.lista.codigo}</strong></span>
+                  <Link to={`/lista?codigo=${modalData.lista.codigo}`} target="_blank" style={{ color: 'var(--verde)', fontWeight: 600 }}>
                     Ver Lista Pública →
                   </Link>
                 </div>
                 <div className="modal-info-header__actions">
-                  <button className="btn btn-sm btn-outline-dark btn-sm-icon" onClick={() => openCasalInfo(listaModal.lista)}>
+                  <button type="button" className="btn btn-sm btn-outline-dark btn-sm-icon"
+                    onClick={() => setCasalInfoModal({ lista: modalData.lista, user: modalData.lista.user ?? null })}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" /></svg>
                     Dados do Casal
                   </button>
-                  <button className="btn btn-sm btn-story-ig" onClick={() => { closeListaModal(); setListaStoryModal(listaModal.lista); }}>
+                  <button type="button" className="btn btn-sm btn-story-ig"
+                    onClick={() => { closeListaModal(); setListaStoryModal(modalData.lista) }}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" /></svg>
                     Gerar Story
                   </button>
                 </div>
-                {listaModal.lista.mensagem_boas_vindas && (
-                  <div className="modal-info-header__quote">"{listaModal.lista.mensagem_boas_vindas}"</div>
+                {modalData.lista.mensagem_boas_vindas && (
+                  <div className="modal-info-header__quote">"{modalData.lista.mensagem_boas_vindas}"</div>
                 )}
               </div>
               <div className="modal-stats">
                 <div>
-                  <div className="modal-stat__value" style={{ color: 'var(--verde)' }}>{listaModal.lista.itens.length}</div>
+                  <div className="modal-stat__value" style={{ color: 'var(--verde)' }}>{modalData.listaItens.length}</div>
                   <div className="modal-stat__label">Itens</div>
                 </div>
                 <div>
                   <div className="modal-stat__value" style={{ color: '#27ae60' }}>
-                    {listaModal.compras.filter((c) => c.status_pagamento === 'Aprovado' || c.status_pagamento === 'Confirmado').length}
+                    {modalData.compras.filter((c) => c.status_pagamento === 'Aprovado' || c.status_pagamento === 'Confirmado').length}
                   </div>
                   <div className="modal-stat__label">Aprovados</div>
                 </div>
-                {listaModal.compras.filter((c) => c.status_pagamento === 'Pendente').length > 0 && (
+                {modalData.compras.filter((c) => c.status_pagamento === 'Pendente').length > 0 && (
                   <div>
                     <div className="modal-stat__value" style={{ color: '#f39c12' }}>
-                      {listaModal.compras.filter((c) => c.status_pagamento === 'Pendente').length}
+                      {modalData.compras.filter((c) => c.status_pagamento === 'Pendente').length}
                     </div>
                     <div className="modal-stat__label">Pendentes</div>
                   </div>
@@ -617,33 +687,33 @@ export default function Admin() {
 
             <div className="modal-tabs">
               {[
-                { key: 'itens', label: `Itens (${listaModal.lista.itens.length})` },
-                { key: 'compras', label: `Compras (${listaModal.compras.length})` },
+                { key: 'itens', label: `Itens (${modalData.listaItens.length})` },
+                { key: 'compras', label: `Compras (${modalData.compras.length})` },
               ].map(({ key, label }) => (
-                <button key={key} className={`modal-tab-btn${listaModalTab === key ? ' active' : ''}`} onClick={() => setListaModalTab(key)}>
+                <button type="button" key={key} className={`modal-tab-btn${modalTab === key ? ' active' : ''}`} onClick={() => setModalTab(key)}>
                   {label}
                 </button>
               ))}
             </div>
 
-            {listaModalTab === 'itens' && (
+            {modalTab === 'itens' && (
               <div className="modal-items-grid">
-                {listaModal.lista.itens.length === 0 && (
+                {modalData.listaItens.length === 0 && (
                   <p style={{ color: 'var(--texto-suave)', fontSize: '0.85rem', gridColumn: '1/-1' }}>Nenhum item na lista.</p>
                 )}
-                {listaModal.lista.itens.map((itemId) => {
-                  const item = getItemById(itemId);
-                  if (!item) return null;
-                  const compra = listaModal.compras.find((c) => c.item_id === itemId);
+                {modalData.listaItens.map((li) => {
+                  const item = li.catalogo
+                  if (!item) return null
+                  const compra = modalData.compras.find((c) => c.catalogo_id === li.catalogo_id)
                   return (
                     <div
-                      key={itemId}
+                      key={li.id}
                       onClick={() => compra && setCompraDetalheModal({ item, compra })}
                       title={compra ? 'Clique para ver quem comprou' : ''}
                       className={`item-thumb item-thumb--${compra ? 'purchased' : 'available'}`}
                     >
                       {item.imgs?.[0] ? (
-                        <img src={item.imgs[0]} alt="" className="item-thumb__img" onError={(e) => { e.target.style.display = 'none'; }} />
+                        <img src={item.imgs[0]} alt={item.nome} className="item-thumb__img" onError={(e) => { e.target.style.display = 'none' }} />
                       ) : (
                         <div className="item-thumb__placeholder">
                           <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style={{ opacity: 0.2 }}><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" /></svg>
@@ -657,13 +727,13 @@ export default function Admin() {
                         </span>
                       </div>
                     </div>
-                  );
+                  )
                 })}
               </div>
             )}
 
-            {listaModalTab === 'compras' && (
-              listaModal.compras.length === 0 ? (
+            {modalTab === 'compras' && (
+              modalData.compras.length === 0 ? (
                 <p style={{ color: 'var(--texto-suave)', fontSize: '0.85rem' }}>Nenhuma compra registrada.</p>
               ) : (
                 <div className="table-wrapper">
@@ -672,11 +742,11 @@ export default function Admin() {
                       <tr><th>Item</th><th>Convidado</th><th>Valor</th><th>Pagamento</th><th>Status</th><th>Ações</th></tr>
                     </thead>
                     <tbody>
-                      {listaModal.compras.map((compra) => {
-                        const item = getItemById(compra.item_id);
+                      {modalData.compras.map((compra) => {
+                        const li = modalData.listaItens.find((li) => li.catalogo_id === compra.catalogo_id)
                         return (
                           <tr key={compra.id}>
-                            <td className="table-item-name">{item?.nome || compra.item_id}</td>
+                            <td className="table-item-name">{li?.catalogo?.nome || compra.catalogo_id}</td>
                             <td style={{ fontSize: '0.8rem' }}>{compra.nome_convidado}</td>
                             <td className="table-item-price">{formatMoney(compra.valor_pago)}</td>
                             <td className="table-item-small">{compra.forma_pagamento}</td>
@@ -684,13 +754,13 @@ export default function Admin() {
                             <td>
                               {compra.status_pagamento === 'Pendente' && (
                                 <div style={{ display: 'flex', gap: '0.3rem' }}>
-                                  <button className="btn btn-sm btn-aprovar" onClick={() => handleAprovar(compra.id)}>Aprovar</button>
-                                  <button className="btn btn-sm btn-rejeitar" onClick={() => handleRejeitar(compra.id)}>Rejeitar</button>
+                                  <button type="button" className="btn btn-sm btn-aprovar" onClick={() => handleAprovar(compra.id)}>Aprovar</button>
+                                  <button type="button" className="btn btn-sm btn-rejeitar" onClick={() => handleRejeitar(compra.id)}>Rejeitar</button>
                                 </div>
                               )}
                             </td>
                           </tr>
-                        );
+                        )
                       })}
                     </tbody>
                   </table>
@@ -702,18 +772,14 @@ export default function Admin() {
       </Modal>
 
       {/* ── MODAL DADOS DO CASAL ── */}
-      <Modal
-        open={!!casalInfoModal}
-        onClose={() => setCasalInfoModal(null)}
-        title="Informações do Casal"
-        maxWidth="440px"
-        footer={<button className="btn btn-outline-dark btn-sm" onClick={() => setCasalInfoModal(null)}>Fechar</button>}
+      <Modal open={!!casalInfoModal} onClose={() => setCasalInfoModal(null)} title="Informações do Casal" maxWidth="440px"
+        footer={<button type="button" className="btn btn-outline-dark btn-sm" onClick={() => setCasalInfoModal(null)}>Fechar</button>}
       >
         {casalInfoModal && (
           <div>
             <div className="modal-info-header modal-info-header--sm">
               {casalInfoModal.lista.foto_casal && (
-                <img src={casalInfoModal.lista.foto_casal} alt="" className="couple-avatar couple-avatar--sm" />
+                <img src={casalInfoModal.lista.foto_casal} alt="Foto do casal" className="couple-avatar couple-avatar--sm" />
               )}
               <div>
                 <div className="modal-info-header__name modal-info-header__name--sm">{casalInfoModal.lista.nome_noivos}</div>
@@ -724,12 +790,10 @@ export default function Admin() {
                 )}
               </div>
             </div>
-
             <div className="info-section-title">Dados de Contato</div>
-
             {casalInfoModal.user ? (
               <>
-                <InfoRow label="Nome Completo">{casalInfoModal.user.nome}</InfoRow>
+                <InfoRow label="Nome Completo">{casalInfoModal.user.nome ?? [casalInfoModal.user.nome_noiva, casalInfoModal.user.nome_noivo].filter(Boolean).join(' & ')}</InfoRow>
                 <InfoRow label="E-mail">{casalInfoModal.user.email}</InfoRow>
                 <InfoRow label="Telefone">{casalInfoModal.user.telefone || casalInfoModal.lista.telefone || '—'}</InfoRow>
               </>
@@ -741,18 +805,16 @@ export default function Admin() {
       </Modal>
 
       {/* ── MODAL DETALHES DA COMPRA ── */}
-      <Modal
-        open={!!compraDetalheModal}
-        onClose={() => setCompraDetalheModal(null)}
-        title="Detalhes do Presente"
-        maxWidth="460px"
-        footer={<button className="btn btn-outline-dark btn-sm" onClick={() => setCompraDetalheModal(null)}>Fechar</button>}
+      <Modal open={!!compraDetalheModal} onClose={() => setCompraDetalheModal(null)} title="Detalhes do Presente" maxWidth="460px"
+        footer={<button type="button" className="btn btn-outline-dark btn-sm" onClick={() => setCompraDetalheModal(null)}>Fechar</button>}
       >
         {compraDetalheModal && (
           <div>
             <div className="modal-info-header modal-info-header--sm">
               {compraDetalheModal.item.imgs?.[0] && (
-                <img src={compraDetalheModal.item.imgs[0]} alt="" style={{ width: 58, height: 58, objectFit: 'cover', borderRadius: 3, flexShrink: 0 }} onError={(e) => { e.target.style.display = 'none'; }} />
+                <img src={compraDetalheModal.item.imgs[0]} alt={compraDetalheModal.item.nome}
+                  style={{ width: 58, height: 58, objectFit: 'cover', borderRadius: 3, flexShrink: 0 }}
+                  onError={(e) => { e.target.style.display = 'none' }} />
               )}
               <div className="modal-info-header__meta">
                 <div className="modal-info-header__name" style={{ fontSize: '0.9rem' }}>{compraDetalheModal.item.nome}</div>
@@ -776,15 +838,11 @@ export default function Admin() {
       </Modal>
 
       {/* ── MODAL CONFIRMAR ARQUIVAMENTO ── */}
-      <Modal
-        open={!!archiveConfirmModal}
-        onClose={() => setArchiveConfirmModal(null)}
-        title="Arquivar Lista"
-        maxWidth="420px"
+      <Modal open={!!archiveConfirmModal} onClose={() => setArchiveConfirmModal(null)} title="Arquivar Lista" maxWidth="420px"
         footer={
           <>
-            <button className="btn btn-outline-dark btn-sm" onClick={() => setArchiveConfirmModal(null)}>Cancelar</button>
-            <button className="btn btn-sm btn-confirm-archive" onClick={handleArquivar}>Sim, Arquivar Lista</button>
+            <button type="button" className="btn btn-outline-dark btn-sm" onClick={() => setArchiveConfirmModal(null)}>Cancelar</button>
+            <button type="button" className="btn btn-sm btn-confirm-archive" onClick={handleArquivar}>Sim, Arquivar Lista</button>
           </>
         }
       >
@@ -807,56 +865,59 @@ export default function Admin() {
       <Modal open={!!itemModal} onClose={() => setItemModal(null)} title={itemModal?.id ? 'Editar Item' : 'Novo Item'} maxWidth="580px"
         footer={
           <>
-            <button className="btn btn-outline-dark btn-sm" onClick={() => setItemModal(null)}>Cancelar</button>
-            <button className="btn btn-verde" onClick={handleSalvarItem}>Salvar Item</button>
+            <button type="button" className="btn btn-outline-dark btn-sm" onClick={() => setItemModal(null)}>Cancelar</button>
+            <button type="button" className="btn btn-verde" onClick={handleSalvarItem} disabled={saving}>
+              {saving ? 'Salvando...' : 'Salvar Item'}
+            </button>
           </>
         }
       >
         {itemModal && (
           <div className="item-form-grid">
             <div className="form-group full">
-              <label>Nome do Item</label>
-              <input type="text" placeholder="Ex: Jogo de Panelas" value={itemModal.nome} onChange={(e) => setItemModal({ ...itemModal, nome: e.target.value })} />
+              <label htmlFor="if-nome">Nome do Item</label>
+              <input id="if-nome" type="text" placeholder="Ex: Jogo de Panelas" value={itemModal.nome}
+                onChange={(e) => setItemModal({ ...itemModal, nome: e.target.value })} />
             </div>
             <div className="form-group">
-              <label>Tamanho / Dimensões</label>
-              <input type="text" placeholder="Ex: 7 peças" value={itemModal.tamanho} onChange={(e) => setItemModal({ ...itemModal, tamanho: e.target.value })} />
+              <label htmlFor="if-tamanho">Tamanho / Dimensões</label>
+              <input id="if-tamanho" type="text" placeholder="Ex: 7 peças" value={itemModal.tamanho}
+                onChange={(e) => setItemModal({ ...itemModal, tamanho: e.target.value })} />
             </div>
             <div className="form-group">
-              <label>Setor</label>
-              <select value={itemModal.setor} onChange={(e) => setItemModal({ ...itemModal, setor: e.target.value })}>
+              <label htmlFor="if-setor">Setor</label>
+              <select id="if-setor" value={itemModal.setor} onChange={(e) => setItemModal({ ...itemModal, setor: e.target.value })}>
                 {SETORES.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
             <div className="form-group">
-              <label>Preço (R$)</label>
-              <input type="number" placeholder="0.00" min="0" step="0.01" value={itemModal.preco} onChange={(e) => setItemModal({ ...itemModal, preco: e.target.value })} />
+              <label htmlFor="if-preco">Preço (R$)</label>
+              <input id="if-preco" type="number" placeholder="0.00" min="0" step="0.01" value={itemModal.preco}
+                onChange={(e) => setItemModal({ ...itemModal, preco: e.target.value })} />
             </div>
             <div className="form-group">
-              <label>Estoque</label>
-              <input type="number" placeholder="0" min="0" value={itemModal.estoque} onChange={(e) => setItemModal({ ...itemModal, estoque: e.target.value })} />
+              <label htmlFor="if-estoque">Estoque</label>
+              <input id="if-estoque" type="number" placeholder="0" min="0" value={itemModal.estoque}
+                onChange={(e) => setItemModal({ ...itemModal, estoque: e.target.value })} />
             </div>
             <div className="form-group">
-              <label>Quantidade por kit</label>
-              <input type="number" placeholder="1" min="1" value={itemModal.quantidade} onChange={(e) => setItemModal({ ...itemModal, quantidade: e.target.value })} />
+              <label htmlFor="if-qtd">Quantidade por kit</label>
+              <input id="if-qtd" type="number" placeholder="1" min="1" value={itemModal.quantidade}
+                onChange={(e) => setItemModal({ ...itemModal, quantidade: e.target.value })} />
             </div>
             <div className="form-group full">
-              <label>Foto do Produto</label>
-              <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <input type="text" placeholder="Cole a URL da imagem" style={{ flex: 1 }} value={itemModal.imgs?.[0] || ''} onChange={(e) => setItemModal({ ...itemModal, imgs: e.target.value ? [e.target.value] : [] })} />
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap' }}>
-                <label htmlFor="item-img-upload" className="btn-upload-label">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z" /></svg>
-                  Enviar Imagem
-                </label>
-                <input type="file" id="item-img-upload" accept="image/*" style={{ display: 'none' }} onChange={handleItemImgUpload} />
-                {itemModal.imgs?.[0] && <img src={itemModal.imgs[0]} alt="preview" style={{ width: 52, height: 52, objectFit: 'cover', borderRadius: 3, border: '1px solid rgba(0,48,13,0.15)' }} onError={(e) => { e.target.style.display = 'none'; }} />}
-              </div>
+              <label htmlFor="if-img">URL da Imagem</label>
+              <input id="if-img" type="text" placeholder="Cole a URL da imagem" value={itemModal.imgs?.[0] || ''}
+                onChange={(e) => setItemModal({ ...itemModal, imgs: e.target.value ? [e.target.value] : [] })} />
+              {itemModal.imgs?.[0] && (
+                <img src={itemModal.imgs[0]} alt="preview" style={{ width: 52, height: 52, objectFit: 'cover', borderRadius: 3, marginTop: '0.5rem', border: '1px solid rgba(0,48,13,0.15)' }}
+                  onError={(e) => { e.target.style.display = 'none' }} />
+              )}
             </div>
             <div className="form-group full">
-              <label>Descrição</label>
-              <textarea placeholder="Descrição detalhada do item..." value={itemModal.descricao} onChange={(e) => setItemModal({ ...itemModal, descricao: e.target.value })} />
+              <label htmlFor="if-desc">Descrição</label>
+              <textarea id="if-desc" placeholder="Descrição detalhada do item..." value={itemModal.descricao}
+                onChange={(e) => setItemModal({ ...itemModal, descricao: e.target.value })} />
             </div>
           </div>
         )}
@@ -866,8 +927,10 @@ export default function Admin() {
       <Modal open={!!pmModal} onClose={() => setPmModal(null)} title={pmModal ? `Editar: ${pmModal.nome}` : ''} maxWidth="660px"
         footer={
           <>
-            <button className="btn btn-outline-dark btn-sm" onClick={() => setPmModal(null)}>Cancelar</button>
-            <button className="btn btn-verde" onClick={handleSalvarPremontada}>Salvar</button>
+            <button type="button" className="btn btn-outline-dark btn-sm" onClick={() => setPmModal(null)}>Cancelar</button>
+            <button type="button" className="btn btn-verde" onClick={handleSalvarPremontada} disabled={saving}>
+              {saving ? 'Salvando...' : 'Salvar'}
+            </button>
           </>
         }
       >
@@ -876,16 +939,18 @@ export default function Admin() {
             <div className="pm-modal-hint">Selecione os itens que farão parte desta lista pré-montada:</div>
             <div className="pm-items-grid">
               {catalogo.filter((i) => i.status === 'Ativo').map((item) => {
-                const checked = pmModal.selectedItens.includes(item.id);
+                const checked = pmModal.selectedItens.includes(item.id)
                 return (
                   <label key={item.id} className={`pm-item-label${checked ? ' checked' : ''}`}>
                     <input type="checkbox" checked={checked} onChange={() => {
-                      const itens = checked ? pmModal.selectedItens.filter((id) => id !== item.id) : [...pmModal.selectedItens, item.id];
-                      setPmModal({ ...pmModal, selectedItens: itens });
+                      const itens = checked
+                        ? pmModal.selectedItens.filter((id) => id !== item.id)
+                        : [...pmModal.selectedItens, item.id]
+                      setPmModal({ ...pmModal, selectedItens: itens })
                     }} style={{ width: 'auto', flexShrink: 0 }} />
                     <span className="pm-item-name">{item.nome}</span>
                   </label>
-                );
+                )
               })}
             </div>
             <div className="pm-modal-count">{pmModal.selectedItens.length} itens selecionados</div>
@@ -893,5 +958,5 @@ export default function Admin() {
         )}
       </Modal>
     </div>
-  );
+  )
 }
