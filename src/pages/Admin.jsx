@@ -434,19 +434,28 @@ export default function Admin() {
 
   async function handleSalvarPremontada() {
     if (!pmModal) return
+    if (!pmModal.nome?.trim()) { toast('Informe o nome da lista.', 'error'); return }
     setSaving(true)
     try {
-      const saved = await premontadasService.update(pmModal.id, {
+      const payload = {
         nome: pmModal.nome,
-        descricao: pmModal.descricao,
-        badge: pmModal.badge,
-        img: pmModal.img,
-        popular: pmModal.popular,
-      })
-      await premontadasService.syncItens(pmModal.id, pmModal.selectedItens, pmModal.itens || [])
-      setPremontadas((prev) => prev.map((p) =>
-        p.id === saved.id ? { ...saved, itens: pmModal.selectedItens, selectedItens: pmModal.selectedItens } : p
-      ))
+        descricao: pmModal.descricao || undefined,
+        badge: pmModal.badge || undefined,
+        img: pmModal.img || undefined,
+        popular: !!pmModal.popular,
+      }
+      let saved
+      if (pmModal.id) {
+        saved = await premontadasService.update(pmModal.id, payload)
+        await premontadasService.syncItens(pmModal.id, pmModal.selectedItens, pmModal.itens || [])
+        setPremontadas((prev) => prev.map((p) =>
+          p.id === saved.id ? { ...saved, itens: pmModal.selectedItens, selectedItens: pmModal.selectedItens } : p
+        ))
+      } else {
+        saved = await premontadasService.create(payload)
+        await Promise.all(pmModal.selectedItens.map((id) => premontadasService.addItem(saved.id, id)))
+        setPremontadas((prev) => [...prev, { ...saved, itens: pmModal.selectedItens, selectedItens: pmModal.selectedItens }])
+      }
       setPmModal(null)
       toast('Lista pré-montada salva!')
     } catch (e) {
@@ -596,13 +605,23 @@ export default function Admin() {
           <>
             <div className="page-header">
               <div className="page-header-text"><span className="label-caps">Templates</span><h1>Listas Pré-montadas</h1></div>
+              <button type="button" className="btn btn-verde btn-sm"
+                onClick={() => setPmModal({ nome: '', badge: '', img: '', popular: false, selectedItens: [] })}>
+                + Nova Pré-montada
+              </button>
             </div>
+            <p style={{ marginBottom: '1rem', fontSize: '0.8rem', color: 'var(--texto-suave)' }}>
+              {premontadas.filter((p) => p.popular).length}/3 listas marcadas como destaque no cadastro
+            </p>
             <div className="lists-grid">
               {premontadas.map((pm) => (
                 <div key={pm.id} className="list-card">
                   {pm.img && <div className="list-card-photo" style={{ backgroundImage: `url(${pm.img})` }} />}
                   <div className="pm-card-body">
-                    <div className="label-caps pm-card-badge">{pm.badge}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      {pm.badge && <div className="label-caps pm-card-badge">{pm.badge}</div>}
+                      {pm.popular && <div className="label-caps" style={{ color: 'var(--verde)', fontSize: '0.6rem' }}>★ Destaque</div>}
+                    </div>
                     <div className="pm-card-name">{pm.nome}</div>
                     <div className="pm-card-count">{(pm.itens || []).length} itens</div>
                     <button type="button" className="btn btn-outline-dark btn-sm"
@@ -924,7 +943,9 @@ export default function Admin() {
       </Modal>
 
       {/* ── MODAL PRÉ-MONTADA ── */}
-      <Modal open={!!pmModal} onClose={() => setPmModal(null)} title={pmModal ? `Editar: ${pmModal.nome}` : ''} maxWidth="660px"
+      <Modal open={!!pmModal} onClose={() => setPmModal(null)}
+        title={pmModal ? (pmModal.id ? `Editar: ${pmModal.nome}` : 'Nova Pré-montada') : ''}
+        maxWidth="660px"
         footer={
           <>
             <button type="button" className="btn btn-outline-dark btn-sm" onClick={() => setPmModal(null)}>Cancelar</button>
@@ -936,6 +957,35 @@ export default function Admin() {
       >
         {pmModal && (
           <>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label htmlFor="pm-nome">Nome</label>
+                <input id="pm-nome" type="text" placeholder="Ex: Clássica" value={pmModal.nome}
+                  onChange={(e) => setPmModal({ ...pmModal, nome: e.target.value })} />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label htmlFor="pm-badge">Badge <span style={{ fontWeight: 400, color: 'var(--texto-suave)' }}>(opcional)</span></label>
+                <input id="pm-badge" type="text" placeholder="Ex: Mais Popular" value={pmModal.badge || ''}
+                  onChange={(e) => setPmModal({ ...pmModal, badge: e.target.value })} />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0, gridColumn: '1/-1' }}>
+                <label htmlFor="pm-img">URL da Imagem <span style={{ fontWeight: 400, color: 'var(--texto-suave)' }}>(opcional)</span></label>
+                <input id="pm-img" type="text" placeholder="https://..." value={pmModal.img || ''}
+                  onChange={(e) => setPmModal({ ...pmModal, img: e.target.value })} />
+              </div>
+            </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', cursor: 'pointer', fontSize: '0.85rem' }}>
+              <input type="checkbox" checked={!!pmModal.popular} style={{ width: 'auto' }}
+                onChange={(e) => {
+                  const novasPopulares = premontadas.filter((p) => p.popular && p.id !== pmModal.id).length
+                  if (e.target.checked && novasPopulares >= 3) {
+                    toast('Máximo de 3 listas em destaque no cadastro.', 'error')
+                    return
+                  }
+                  setPmModal({ ...pmModal, popular: e.target.checked })
+                }} />
+              Exibir no cadastro como destaque <span style={{ color: 'var(--texto-suave)' }}>({premontadas.filter((p) => p.popular && p.id !== pmModal.id).length + (pmModal.popular ? 1 : 0)}/3)</span>
+            </label>
             <div className="pm-modal-hint">Selecione os itens que farão parte desta lista pré-montada:</div>
             <div className="pm-items-grid">
               {catalogo.filter((i) => i.status === 'Ativo').map((item) => {

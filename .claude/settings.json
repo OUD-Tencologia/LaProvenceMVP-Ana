@@ -31,7 +31,8 @@
       "Bash(curl -s http://localhost:3668/listas)",
       "Bash(curl -s http://localhost:3668/catalogo)",
       "Bash(curl -s -X DELETE http://localhost:3668/lista-itens/test-id -H \"Authorization: Bearer test\")",
-      "Bash(curl -s -X DELETE \"http://localhost:3668/lista-itens/00000000-0000-0000-0000-000000000000\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer eytest\")"
+      "Bash(curl -s -X DELETE \"http://localhost:3668/lista-itens/00000000-0000-0000-0000-000000000000\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer eytest\")",
+      "Read(//home/gabriel/Documents/ESTÁGIO/OunceData/la-provence/laprovence-api/src/modules/premontadas/**)"
     ],
     "additionalDirectories": [
       "/home/gabriel/Documents/ESTÁGIO/OunceData/la-provence/laprovence-api/src/modules/listas",
