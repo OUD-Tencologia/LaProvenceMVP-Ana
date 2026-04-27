@@ -11,7 +11,7 @@ export default function HeroSection({ onAcessarLista }) {
 
   return (
     <section className="hero">
-      <div className="hero-bg" style={{ backgroundImage: 'url("assets/img/hero1.png")' }}></div>
+      <div className="hero-bg" style={{ backgroundImage: 'url("/assets/img/hero1.png")' }}></div>
       <div className="hero-overlay"></div>
       <div className="hero-content">
         <h1>Monte a lista</h1>

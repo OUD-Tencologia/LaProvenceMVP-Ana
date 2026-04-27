@@ -95,7 +95,7 @@ export default function Sidebar({ role = 'noivo' }) {
     <>
       {/* Mobile header */}
       <div className="mobile-header">
-        <img src="assets/img/LaProvenceDecor-Logo.png" alt="La Provence" style={{ height: 28 }} />
+        <img src="/assets/img/LaProvenceDecor-Logo.png" alt="La Provence" style={{ height: 28 }} />
         <button className="sidebar-toggle" aria-label="Abrir Menu" onClick={() => setOpen(true)}>
           <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
             <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
@@ -108,7 +108,7 @@ export default function Sidebar({ role = 'noivo' }) {
       <aside className={`sidebar${open ? ' open' : ''}`}>
         <div className="sidebar-logo">
           <Link to="/" style={{ textDecoration: 'none' }}>
-            <img src="assets/img/LaProvenceDecor-Logo.png" alt="La Provence" style={{ width: 150 }} />
+            <img src="/assets/img/LaProvenceDecor-Logo.png" alt="La Provence" style={{ width: 150 }} />
           </Link>
         </div>
         <nav className="sidebar-nav" onClick={() => setOpen(false)}>

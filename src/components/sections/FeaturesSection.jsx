@@ -20,8 +20,8 @@ export default function FeaturesSection() {
           ))}
         </div>
         <div className="features-grid">
-          <img src="assets/img/catalog/buleFlorido.jpeg" alt="Decor" className="fg-img main-img" />
-          <img src="assets/img/catalog/Item1.png" alt="Decor" className="fg-img overlap-img" />
+          <img src="/assets/img/catalog/buleFlorido.jpeg" alt="Decor" className="fg-img main-img" />
+          <img src="/assets/img/catalog/Item1.png" alt="Decor" className="fg-img overlap-img" />
         </div>
       </div>
     </section>

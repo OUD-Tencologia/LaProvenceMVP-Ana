@@ -56,7 +56,7 @@ export default function PublicList() {
     return (
       <div>
         <nav className="public-navbar">
-          <Link to="/"><img src="assets/img/LaProvenceDecor-Logo.png" alt="La Provence" style={{ width: 150 }} /></Link>
+          <Link to="/"><img src="/assets/img/LaProvenceDecor-Logo.png" alt="La Provence" style={{ width: 150 }} /></Link>
         </nav>
         <div className="public-hero">
           <div className="public-hero-content">
@@ -99,7 +99,7 @@ export default function PublicList() {
       <Toast toasts={toasts} />
 
       <nav className="public-navbar">
-        <Link to="/"><img src="assets/img/LaProvenceDecor-Logo.png" alt="La Provence" style={{ width: 150 }} /></Link>
+        <Link to="/"><img src="/assets/img/LaProvenceDecor-Logo.png" alt="La Provence" style={{ width: 150 }} /></Link>
       </nav>
 
       <div className="public-hero">

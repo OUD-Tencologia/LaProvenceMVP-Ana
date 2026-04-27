@@ -17,7 +17,7 @@ export default function WeddingGallery() {
       </div>
       <div className="wg-container">
         <div className="wg-left">
-          <img src="assets/img/QuadroCasalAdornos.png" className="wg-main-img" alt="Casal de noivos" />
+          <img src="/assets/img/QuadroCasalAdornos.png" className="wg-main-img" alt="Casal de noivos" />
         </div>
         <div className="wg-right">
           <div className="wg-grid">

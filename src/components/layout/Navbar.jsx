@@ -19,7 +19,7 @@ export default function Navbar() {
   return (
     <nav className={`navbar${scrolled ? ' scrolled' : ''}`}>
       <Link to="/" className="navbar-logo">
-        <img src="assets/img/LaProvenceDecor-Logo.png" alt="La Provence" style={{ width: 180, height: 'auto' }} />
+        <img src="/assets/img/LaProvenceDecor-Logo.png" alt="La Provence" style={{ width: 180, height: 'auto' }} />
       </Link>
       <div className="navbar-nav">
         <a href="#como-funciona">Como Funciona</a>

@@ -8,7 +8,7 @@ export default function SiteFooter() {
     <footer className="reveal">
       <div className="footer-grid">
         <div className="footer-logo">
-          <img src="assets/img/LaProvenceDecor-Logo.png" alt="La Provence" />
+          <img src="/assets/img/LaProvenceDecor-Logo.png" alt="La Provence" />
           <div className="footer-social-links">
             <a href="https://www.instagram.com/laprovencedecor/" target="_blank" rel="noreferrer" className="footer-social-link" title="Instagram">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d={IG_PATH} /></svg>
