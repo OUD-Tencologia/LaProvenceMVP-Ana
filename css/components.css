@@ -489,6 +489,17 @@
   .chips-row {
     flex-wrap: wrap;
   }
+  .dashboard-items-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .modal-stats {
+    gap: 1rem;
+  }
+}
+@media (max-width: 360px) {
+  .dashboard-items-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* --- Auth additions --- */

@@ -411,16 +411,13 @@ export default function Admin() {
       let saved
       if (itemModal.id) {
         saved = await catalogoService.update(itemModal.id, payload)
-        // remove imagens antigas e adiciona nova se URL fornecida
         const oldImages = itemModal.catalogo_images ?? []
         await Promise.all(oldImages.map((img) => catalogoService.deleteImage(img.id)))
       } else {
         saved = await catalogoService.create(payload)
       }
-      const newUrl = itemModal.imgs?.[0]
-      if (newUrl && !newUrl.startsWith('data:')) {
-        await catalogoService.addImage(saved.id, newUrl, 0)
-      }
+      const newImgs = (itemModal.imgs ?? []).filter((u) => u && !u.startsWith('data:'))
+      await Promise.all(newImgs.map((url, idx) => catalogoService.addImage(saved.id, url, idx)))
       const updated = await catalogoService.getAll()
       setCatalogo(updated)
       setItemModal(null)
@@ -925,13 +922,30 @@ export default function Admin() {
                 onChange={(e) => setItemModal({ ...itemModal, quantidade: e.target.value })} />
             </div>
             <div className="form-group full">
-              <label htmlFor="if-img">URL da Imagem</label>
-              <input id="if-img" type="text" placeholder="Cole a URL da imagem" value={itemModal.imgs?.[0] || ''}
-                onChange={(e) => setItemModal({ ...itemModal, imgs: e.target.value ? [e.target.value] : [] })} />
-              {itemModal.imgs?.[0] && (
-                <img src={itemModal.imgs[0]} alt="preview" style={{ width: 52, height: 52, objectFit: 'cover', borderRadius: 3, marginTop: '0.5rem', border: '1px solid rgba(0,48,13,0.15)' }}
-                  onError={(e) => { e.target.style.display = 'none' }} />
-              )}
+              <label>Imagens <span style={{ fontWeight: 400, color: 'var(--texto-suave)' }}>(URLs)</span></label>
+              {(itemModal.imgs?.length ? itemModal.imgs : ['']).map((url, idx) => (
+                <div key={idx} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  {url && !url.startsWith('data:') && (
+                    <img src={url} alt="preview" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 3, border: '1px solid rgba(0,48,13,0.15)', flexShrink: 0 }}
+                      onError={(e) => { e.target.style.display = 'none' }} />
+                  )}
+                  <input type="text" placeholder={`URL da imagem ${idx + 1}`} value={url}
+                    style={{ flex: 1 }}
+                    onChange={(e) => {
+                      const imgs = [...(itemModal.imgs?.length ? itemModal.imgs : [''])]
+                      imgs[idx] = e.target.value
+                      setItemModal({ ...itemModal, imgs })
+                    }} />
+                  <button type="button" onClick={() => {
+                    const imgs = (itemModal.imgs?.length ? itemModal.imgs : ['']).filter((_, i) => i !== idx)
+                    setItemModal({ ...itemModal, imgs: imgs.length ? imgs : [''] })
+                  }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--texto-suave)', fontSize: '1.1rem', padding: '0 0.25rem', flexShrink: 0 }} aria-label="Remover imagem">✕</button>
+                </div>
+              ))}
+              <button type="button" onClick={() => setItemModal({ ...itemModal, imgs: [...(itemModal.imgs || []), ''] })}
+                style={{ fontSize: '0.8rem', color: 'var(--verde)', background: 'none', border: '1px dashed var(--verde)', borderRadius: 4, padding: '0.3rem 0.75rem', cursor: 'pointer', marginTop: '0.25rem' }}>
+                + Adicionar imagem
+              </button>
             </div>
             <div className="form-group full">
               <label htmlFor="if-desc">Descrição</label>

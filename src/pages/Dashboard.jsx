@@ -10,7 +10,6 @@ import useStore from '../store/useStore'
 import { formatMoney, formatDate } from '../utils/formatters'
 import { listasService } from '../services/listas.js'
 import { comprasService } from '../services/compras.js'
-import { maskPhone } from '../utils/validators'
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -25,10 +24,6 @@ export default function Dashboard() {
   const [savingMsg, setSavingMsg] = useState(false)
   const [compraModal, setCompraModal] = useState(null)
 
-  // Modal para criar lista (caso o noivo não tenha lista ainda)
-  const [criarModal, setCriarModal] = useState(false)
-  const [criandoLista, setCriandoLista] = useState(false)
-  const [formLista, setFormLista] = useState({ nome: '', data: '', tel: '' })
 
   useEffect(() => {
     if (!currentUser) { navigate('/auth'); return }
@@ -82,12 +77,25 @@ export default function Dashboard() {
   }, 0)
 
   function getListaUrl() { return window.location.origin + '/lista?codigo=' + lista?.codigo }
-  function copiarCodigo() { navigator.clipboard.writeText(lista.codigo).then(() => toast('Código copiado!')) }
-  function copiarLink() {
-    navigator.clipboard.writeText(getListaUrl())
-      .then(() => toast('Link copiado!'))
-      .catch(() => toast('Erro ao copiar o link', 'error'))
+
+  function copyText(text, msg) {
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(() => toast(msg)).catch(() => copyFallback(text, msg))
+    } else {
+      copyFallback(text, msg)
+    }
   }
+  function copyFallback(text, msg) {
+    const ta = document.createElement('textarea')
+    ta.value = text
+    ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0'
+    document.body.appendChild(ta)
+    ta.focus(); ta.select()
+    try { document.execCommand('copy'); toast(msg) } catch { toast('Não foi possível copiar. Copie manualmente.', 'error') }
+    document.body.removeChild(ta)
+  }
+  function copiarCodigo() { copyText(lista.codigo, 'Código copiado!') }
+  function copiarLink() { copyText(getListaUrl(), 'Link copiado!') }
   function compartilharWhatsApp() {
     const url = getListaUrl()
     const msg = encodeURIComponent(`Oi! ${lista.nome_noivos} estão se casando e montaram a lista de presentes no La Provence.\n\nAcesse aqui: ${url}\n\nOu use o código: ${lista.codigo}`)
@@ -119,75 +127,6 @@ export default function Dashboard() {
     }
   }
 
-  async function criarLista(e) {
-    e.preventDefault()
-    if (!formLista.nome) { toast('Informe o nome dos noivos.', 'error'); return }
-    setCriandoLista(true)
-    try {
-      const l = await listasService.create({
-        user_id: currentUser.id,
-        nome_noivos: formLista.nome,
-        telefone: formLista.tel || null,
-        data_casamento: formLista.data || null,
-      })
-      setLista(l)
-      setWelcomeMsg(l.mensagem_boas_vindas || '')
-      setCriarModal(false)
-      toast('Lista criada com sucesso!')
-    } catch (e) {
-      toast(e.message, 'error')
-    } finally {
-      setCriandoLista(false)
-    }
-  }
-
-  // Tela sem lista
-  if (!loading && !lista) {
-    return (
-      <div className="app-layout">
-        <Toast toasts={toasts} />
-        <Sidebar role="noivo" />
-        <main className="main-content">
-          <div className="page-header">
-            <div className="page-header-text">
-              <span className="label-caps">Bem-vindo</span>
-              <h1>Meu Painel</h1>
-            </div>
-          </div>
-          <div className="empty-state" style={{ padding: '4rem 2rem' }}>
-            <span className="script" style={{ fontSize: '2rem' }}>Ainda sem lista</span>
-            <p>Você ainda não criou sua lista de casamento.</p>
-            <button type="button" className="btn btn-verde" onClick={() => setCriarModal(true)}>Criar Lista</button>
-          </div>
-        </main>
-        <Modal open={criarModal} onClose={() => setCriarModal(false)} title="Criar Lista de Casamento"
-          footer={
-            <>
-              <button type="button" className="btn btn-outline-dark btn-sm" onClick={() => setCriarModal(false)}>Cancelar</button>
-              <button type="button" className="btn btn-verde" onClick={criarLista} disabled={criandoLista}>
-                {criandoLista ? 'Criando...' : 'Criar Lista'}
-              </button>
-            </>
-          }>
-          <div className="form-group">
-            <label htmlFor="lf-nome">Nome dos noivos</label>
-            <input id="lf-nome" type="text" placeholder="Ex: Ana & Lucas" value={formLista.nome}
-              onChange={(e) => setFormLista({ ...formLista, nome: e.target.value })} />
-          </div>
-          <div className="form-group">
-            <label htmlFor="lf-data">Data do casamento</label>
-            <input id="lf-data" type="date" value={formLista.data}
-              onChange={(e) => setFormLista({ ...formLista, data: e.target.value })} />
-          </div>
-          <div className="form-group">
-            <label htmlFor="lf-tel">Telefone (opcional)</label>
-            <input id="lf-tel" type="text" placeholder="(00) 00000-0000" value={formLista.tel}
-              onChange={(e) => setFormLista({ ...formLista, tel: maskPhone(e.target.value) })} />
-          </div>
-        </Modal>
-      </div>
-    )
-  }
 
   return (
     <div className="app-layout">

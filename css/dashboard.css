@@ -94,3 +94,38 @@
   flex-wrap: wrap;
   margin-bottom: 2rem;
 }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 768px) {
+  .list-summary-card {
+    padding: 1.5rem;
+  }
+  .summary-noivos {
+    font-size: 2rem;
+  }
+  .summary-code-row {
+    gap: 0.6rem;
+    margin-top: 1rem;
+  }
+}
+@media (max-width: 480px) {
+  .list-summary-card {
+    padding: 1.2rem;
+  }
+  .summary-noivos {
+    font-size: 1.6rem;
+  }
+  .summary-code {
+    font-size: 1rem;
+    letter-spacing: 0.15em;
+    padding: 0.4rem 0.8rem;
+  }
+  .summary-code-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .days-badge {
+    align-self: flex-start;
+  }
+}

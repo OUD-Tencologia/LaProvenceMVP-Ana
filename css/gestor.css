@@ -6,3 +6,18 @@
 }
 .item-form-grid .full { grid-column: 1 / -1; }
 @media (max-width: 600px) { .item-form-grid { grid-template-columns: 1fr; } }
+
+/* Admin list card actions: wrap and stretch buttons on small screens */
+@media (max-width: 480px) {
+  .list-card-actions {
+    flex-direction: column;
+  }
+  .list-card-actions .btn {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+  .pm-items-grid {
+    grid-template-columns: 1fr;
+  }
+}
