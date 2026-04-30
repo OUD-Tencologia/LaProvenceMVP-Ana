@@ -838,6 +838,40 @@ export default function Admin() {
               })}
             </div>
 
+            {/* Aprovações pendentes */}
+            {modalData.compras.filter((c) => c.status_pagamento === 'Pendente').length > 0 && (
+              <>
+                <div className="gestor-modal-section-title" style={{ marginTop: '1.5rem' }}>
+                  Aprovações Pendentes ({modalData.compras.filter((c) => c.status_pagamento === 'Pendente').length})
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {modalData.compras
+                    .filter((c) => c.status_pagamento === 'Pendente')
+                    .map((compra) => {
+                      const itemCat = catalogo.find((i) => i.id === compra.catalogo_id)
+                        || { nome: compra.catalogo_id ? 'Item desconhecido' : 'Vale Presente', setor: '', tamanho: '', imgs: [], preco: compra.valor_pago }
+                      return (
+                        <button
+                          type="button"
+                          key={compra.id}
+                          className="gestor-pendente-row"
+                          onClick={() => setCompraDetalheModal({ item: itemCat, compra })}
+                        >
+                          <div className="gestor-pendente-row__info">
+                            <span className="gestor-pendente-row__nome">{itemCat.nome}</span>
+                            <span className="gestor-pendente-row__convidado">{compra.nome_convidado}</span>
+                          </div>
+                          <div className="gestor-pendente-row__right">
+                            <span className="gestor-pendente-row__valor">{formatMoney(compra.valor_pago)}</span>
+                            <span className="gestor-pendente-row__action">Aprovar →</span>
+                          </div>
+                        </button>
+                      )
+                    })}
+                </div>
+              </>
+            )}
+
           </>
         )}
       </Modal>
