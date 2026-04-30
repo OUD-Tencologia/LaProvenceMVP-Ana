@@ -136,6 +136,82 @@
   .gestor-modal-items-grid { grid-template-columns: 1fr; }
 }
 
+/* ─── PICKER — ADICIONAR ITEM À LISTA ─── */
+.gestor-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.75rem;
+  max-height: 58vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.gestor-picker-card {
+  position: relative;
+  border: 1.5px solid rgba(0,48,13,0.12);
+  border-radius: 4px;
+  background: var(--branco);
+  padding: 0;
+  overflow: hidden;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+.gestor-picker-card:hover:not(:disabled) {
+  border-color: var(--verde);
+  box-shadow: 0 2px 8px rgba(0,48,13,0.12);
+}
+.gestor-picker-card--in-list {
+  border-color: var(--verde);
+  opacity: 0.65;
+  cursor: default;
+}
+.gestor-picker-card__img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: var(--bege-suave);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.gestor-picker-card__img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.gestor-picker-card__name {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--verde);
+  line-height: 1.3;
+  padding: 0.5rem 0.6rem 0.15rem;
+}
+.gestor-picker-card__price {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ouro);
+  padding: 0 0.6rem 0.5rem;
+}
+.gestor-picker-card__badge {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--verde);
+  color: var(--ouro-claro);
+  padding: 0.2rem 0.5rem;
+  text-align: center;
+}
+
+@media (max-width: 480px) {
+  .gestor-picker-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 /* ─── GESTOR PAGE SPECIFIC ─── */
 .item-form-grid {
   display: grid;

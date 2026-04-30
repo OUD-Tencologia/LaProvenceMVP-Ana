@@ -284,6 +284,9 @@ export default function Admin() {
   const [pmModal, setPmModal] = useState(null)
   const [saving, setSaving] = useState(false)
   const [newGiftsAlert, setNewGiftsAlert] = useState(null) // { count, firstLista }
+  const [addItemModal, setAddItemModal] = useState(false)
+  const [addItemSearch, setAddItemSearch] = useState('')
+  const [addingItemId, setAddingItemId] = useState(null)
 
   useEffect(() => {
     if (!currentUser) { navigate('/auth'); return }
@@ -386,6 +389,21 @@ export default function Admin() {
     link.download = `lista-${modalData.lista.codigo}.csv`
     link.click()
     URL.revokeObjectURL(url)
+  }
+
+  async function handleAddItemToList(catalogoId) {
+    if (!modalData || addingItemId) return
+    setAddingItemId(catalogoId)
+    try {
+      await listasService.addItem(modalData.lista.id, catalogoId)
+      const listaItens = await listasService.getItens(modalData.lista.id)
+      setModalData((prev) => ({ ...prev, listaItens }))
+      toast('Item adicionado à lista!')
+    } catch (e) {
+      toast(e.message || 'Erro ao adicionar item', 'error')
+    } finally {
+      setAddingItemId(null)
+    }
   }
 
   async function handleAprovar(compraId) {
@@ -735,8 +753,14 @@ export default function Admin() {
             </div>
 
             {/* Items section */}
-            <div className="gestor-modal-section-title">
-              Itens da Lista ({modalData.listaItens.length})
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
+              <div className="gestor-modal-section-title" style={{ marginBottom: 0 }}>
+                Itens da Lista ({modalData.listaItens.length})
+              </div>
+              <button type="button" className="btn btn-sm btn-verde"
+                onClick={() => { setAddItemSearch(''); setAddItemModal(true) }}>
+                + Adicionar Item
+              </button>
             </div>
 
             {modalData.listaItens.length === 0 && (
@@ -804,6 +828,56 @@ export default function Admin() {
               </div>
             )}
           </>
+        )}
+      </Modal>
+
+      {/* ── MODAL PICKER — ADICIONAR ITEM À LISTA ── */}
+      <Modal
+        open={addItemModal && !!modalData}
+        onClose={() => { setAddItemModal(false); setAddItemSearch('') }}
+        title="Adicionar Item à Lista"
+        maxWidth="700px"
+        footer={<button type="button" className="btn btn-outline-dark btn-sm" onClick={() => { setAddItemModal(false); setAddItemSearch('') }}>Fechar</button>}
+      >
+        {modalData && (
+          <div>
+            <input
+              type="text"
+              placeholder="Buscar item..."
+              value={addItemSearch}
+              onChange={(e) => setAddItemSearch(e.target.value)}
+              style={{ width: '100%', marginBottom: '1rem' }}
+            />
+            <div className="gestor-picker-grid">
+              {catalogo
+                .filter((i) => i.status === 'Ativo' && (!addItemSearch || i.nome.toLowerCase().includes(addItemSearch.toLowerCase())))
+                .map((item) => {
+                  const inList = modalData.listaItens.some((li) => li.catalogo_id === item.id)
+                  const isAdding = addingItemId === item.id
+                  return (
+                    <button
+                      type="button"
+                      key={item.id}
+                      className={`gestor-picker-card${inList ? ' gestor-picker-card--in-list' : ''}`}
+                      onClick={() => !inList && handleAddItemToList(item.id)}
+                      disabled={isAdding || !!addingItemId}
+                      title={inList ? 'Já está na lista' : item.nome}
+                    >
+                      <div className="gestor-picker-card__img">
+                        {item.imgs?.[0]
+                          ? <img src={item.imgs[0]} alt={item.nome} onError={(e) => { e.target.style.display = 'none' }} />
+                          : <span style={{ fontSize: '1.5rem' }}>📦</span>
+                        }
+                      </div>
+                      <div className="gestor-picker-card__name">{item.nome}</div>
+                      <div className="gestor-picker-card__price">{formatMoney(item.preco)}</div>
+                      {inList && <div className="gestor-picker-card__badge">Na lista ✓</div>}
+                      {isAdding && <div className="gestor-picker-card__badge">Adicionando...</div>}
+                    </button>
+                  )
+                })}
+            </div>
+          </div>
         )}
       </Modal>
 

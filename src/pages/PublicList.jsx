@@ -110,17 +110,15 @@ export default function PublicList() {
     return c && c.status_pagamento !== 'Rejeitado'
   }
 
-  function abrirGiftModal(catalogoId) {
-    if (isPresenteado(catalogoId)) {
+  function abrirGiftModal(item, listaItem) {
+    if (!item) return
+    if (isPresenteado(item.id)) {
       toast('Este item já foi presenteado por outra pessoa.', 'error')
       return
     }
-    const listaItem = listaItens.find((li) => li.catalogo_id === catalogoId)
-    const item = listaItem?.catalogo || itensBase.find((i) => i.id === catalogoId)
-    if (!item) return
     setDetailItem(null)
     setGuestErrors({})
-    setGiftModal({ item, listaItem })
+    setGiftModal({ item, listaItem: listaItem ?? listaItens.find((li) => li.catalogo_id === item.id) })
   }
 
   function validarGuest() {
@@ -281,7 +279,7 @@ export default function PublicList() {
                     <div className="tamanho">{item.tamanho}</div>
                     <div className="preco">{formatMoney(item.preco)}</div>
                     {!isPresent
-                      ? <button type="button" className="btn btn-verde btn-sm" style={{ marginTop: 'auto' }} onClick={() => abrirGiftModal(item.id)}>
+                      ? <button type="button" className="btn btn-verde btn-sm" style={{ marginTop: 'auto' }} onClick={() => abrirGiftModal(item, listaItem)}>
                           Presentear
                         </button>
                       : <span style={{ fontSize: '0.72rem', color: 'var(--texto-suave)' }}>{isPendente ? 'Em processamento' : 'Já foi presenteado'}</span>
@@ -305,7 +303,7 @@ export default function PublicList() {
             <>
               <button type="button" className="btn btn-outline-dark btn-sm" onClick={() => setDetailItem(null)}>Fechar</button>
               {!isPresenteado(detailItem.item.id)
-                ? <button type="button" className="btn btn-verde btn-sm" onClick={() => abrirGiftModal(detailItem.item.id)}>Presentear</button>
+                ? <button type="button" className="btn btn-verde btn-sm" onClick={() => abrirGiftModal(detailItem.item, detailItem.listaItem)}>Presentear</button>
                 : <span style={{ fontSize: '0.8rem', color: 'var(--texto-suave)', padding: '0.5rem' }}>Já presenteado</span>
               }
             </>
