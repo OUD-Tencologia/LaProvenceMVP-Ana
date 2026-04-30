@@ -300,8 +300,8 @@ export default function Admin() {
       try {
         const [l, c, p] = await Promise.all([
           listasService.getAll(),
-          catalogoService.getAll({ limit: 100 }),
-          premontadasService.getAll(),
+          catalogoService.getAll({ limit: 100 }).catch(() => []),
+          premontadasService.getAll().catch(() => []),
         ])
         const ativas = l.filter((li) => li.status === 'Ativa')
         setListas(ativas)
