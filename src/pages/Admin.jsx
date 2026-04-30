@@ -300,8 +300,8 @@ export default function Admin() {
       try {
         const [l, c, p] = await Promise.all([
           listasService.getAll(),
-          catalogoService.getAll({ limit: 100 }).catch(() => []),
-          premontadasService.getAll().catch(() => []),
+          catalogoService.getAll({ limit: 100 }).catch((e) => { toast(e.message || 'Erro ao carregar catálogo', 'error'); return [] }),
+          premontadasService.getAll().catch((e) => { toast(e.message || 'Erro ao carregar pré-montadas', 'error'); return [] }),
         ])
         const ativas = l.filter((li) => li.status === 'Ativa')
         setListas(ativas)
