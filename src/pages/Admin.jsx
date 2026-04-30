@@ -520,6 +520,17 @@ export default function Admin() {
     }
   }
 
+  async function handleDeletePremontada(pm) {
+    if (!window.confirm(`Excluir a lista pré-montada "${pm.nome}"? Esta ação não pode ser desfeita.`)) return
+    try {
+      await premontadasService.delete(pm.id)
+      setPremontadas((prev) => prev.filter((p) => p.id !== pm.id))
+      toast('Lista pré-montada excluída.')
+    } catch (e) {
+      toast(e.message || 'Erro ao excluir a lista pré-montada', 'error')
+    }
+  }
+
   const SEARCH_SVG = <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" /></svg>
 
   return (
@@ -683,8 +694,12 @@ export default function Admin() {
                     </div>
                     <div className="pm-card-name">{pm.nome}</div>
                     <div className="pm-card-count">{(pm.itens || []).length} itens</div>
-                    <button type="button" className="btn btn-outline-dark btn-sm"
-                      onClick={() => setPmModal({ ...pm, selectedItens: [...(pm.itens || [])] })}>Editar</button>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <button type="button" className="btn btn-outline-dark btn-sm"
+                        onClick={() => setPmModal({ ...pm, selectedItens: [...(pm.itens || [])] })}>Editar</button>
+                      <button type="button" className="btn btn-sm" style={{ color: '#c0392b', borderColor: '#c0392b', background: 'transparent' }}
+                        onClick={() => handleDeletePremontada(pm)}>Excluir</button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -1127,8 +1142,20 @@ export default function Admin() {
                         ? pmModal.selectedItens.filter((id) => id !== item.id)
                         : [...pmModal.selectedItens, item.id]
                       setPmModal({ ...pmModal, selectedItens: itens })
-                    }} style={{ width: 'auto', flexShrink: 0 }} />
-                    <span className="pm-item-name">{item.nome}</span>
+                    }} />
+                    <div className="pm-item-label__img">
+                      {item.imgs?.[0]
+                        ? <img src={item.imgs[0]} alt={item.nome} />
+                        : <span className="pm-item-label__img-placeholder">📦</span>
+                      }
+                    </div>
+                    <div className="pm-item-label__body">
+                      <div className="pm-item-label__check">
+                        <span className="pm-item-label__check-tick">✓</span>
+                      </div>
+                      <span className="pm-item-name">{item.nome}</span>
+                      <div className="pm-item-price">{formatMoney(item.preco)}</div>
+                    </div>
                   </label>
                 )
               })}
