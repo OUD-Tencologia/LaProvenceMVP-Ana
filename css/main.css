@@ -879,6 +879,7 @@ footer {
   top: 0;
   height: 100vh;
   overflow: hidden;
+  background-image: url("../assets/img/couplewedding.png");
   background-size: cover;
   background-position: center;
   display: flex;
