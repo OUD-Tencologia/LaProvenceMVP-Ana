@@ -300,7 +300,7 @@ export default function Admin() {
       try {
         const [l, c, p] = await Promise.all([
           listasService.getAll(),
-          catalogoService.getAll({ limit: 500 }),
+          catalogoService.getAll({ limit: 100 }),
           premontadasService.getAll(),
         ])
         const ativas = l.filter((li) => li.status === 'Ativa')
@@ -476,7 +476,7 @@ export default function Admin() {
       }
       const newImgs = (itemModal.imgs ?? []).filter((u) => u && !u.startsWith('data:'))
       await Promise.all(newImgs.map((url, idx) => catalogoService.addImage(saved.id, url, idx)))
-      const updated = await catalogoService.getAll({ limit: 500 })
+      const updated = await catalogoService.getAll({ limit: 100 })
       setCatalogo(updated)
       setItemModal(null)
       toast('Item salvo!')
