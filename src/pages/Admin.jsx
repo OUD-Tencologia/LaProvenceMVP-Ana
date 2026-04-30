@@ -300,7 +300,7 @@ export default function Admin() {
       try {
         const [l, c, p] = await Promise.all([
           listasService.getAll(),
-          catalogoService.getAll(),
+          catalogoService.getAll({ limit: 500 }),
           premontadasService.getAll(),
         ])
         const ativas = l.filter((li) => li.status === 'Ativa')
@@ -476,7 +476,7 @@ export default function Admin() {
       }
       const newImgs = (itemModal.imgs ?? []).filter((u) => u && !u.startsWith('data:'))
       await Promise.all(newImgs.map((url, idx) => catalogoService.addImage(saved.id, url, idx)))
-      const updated = await catalogoService.getAll()
+      const updated = await catalogoService.getAll({ limit: 500 })
       setCatalogo(updated)
       setItemModal(null)
       toast('Item salvo!')
@@ -517,6 +517,16 @@ export default function Admin() {
       toast(e.message, 'error')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function openPmEditModal(pm) {
+    try {
+      const itens = await premontadasService.getItens(pm.id)
+      const idsAtuais = itens.map((item) => item.id)
+      setPmModal({ ...pm, itens: idsAtuais, selectedItens: [...idsAtuais] })
+    } catch {
+      setPmModal({ ...pm, selectedItens: [...(pm.itens || [])] })
     }
   }
 
@@ -696,7 +706,7 @@ export default function Admin() {
                     <div className="pm-card-count">{(pm.itens || []).length} itens</div>
                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                       <button type="button" className="btn btn-outline-dark btn-sm"
-                        onClick={() => setPmModal({ ...pm, selectedItens: [...(pm.itens || [])] })}>Editar</button>
+                        onClick={() => openPmEditModal(pm)}>Editar</button>
                       <button type="button" className="btn btn-sm" style={{ color: '#c0392b', borderColor: '#c0392b', background: 'transparent' }}
                         onClick={() => handleDeletePremontada(pm)}>Excluir</button>
                     </div>
@@ -799,6 +809,11 @@ export default function Admin() {
                     style={{ cursor: isPendente ? 'pointer' : 'default' }}
                   >
                     {isAprovado && <div className="gestor-item-stamp">Presenteado</div>}
+                    {item.imgs?.[0] && (
+                      <img src={item.imgs[0]} alt={item.nome}
+                        style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', borderRadius: '2px', marginBottom: '0.4rem', display: 'block' }}
+                        onError={(e) => { e.target.style.display = 'none' }} />
+                    )}
                     <div className="gestor-item-card-name">{item.nome}</div>
                     <div className="gestor-item-card-sub">{item.setor || item.tamanho || ''}</div>
                     <div className="gestor-item-card-price">{formatMoney(item.preco)}</div>
