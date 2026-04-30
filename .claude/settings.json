@@ -39,7 +39,8 @@
       "Bash(grep -i \"partir\\\\|minimo\\\\|mínimo\\\\|min.*val\\\\|R\\\\$.*[56]00\")",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(npx tsc *)"
     ],
     "additionalDirectories": [
       "/home/gabriel/Documents/ESTÁGIO/OunceData/la-provence/laprovence-api/src/modules/listas",

@@ -205,6 +205,31 @@
   padding: 0.2rem 0.5rem;
   text-align: center;
 }
+.gestor-picker-card--indisponivel {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.gestor-picker-card--indisponivel::after {
+  content: 'Indisponível';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(192,57,43,0.85);
+  color: #fff;
+  font-size: 0.58rem; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  text-align: center; padding: 0.22rem 0;
+}
+.pm-card-warning {
+  background: none;
+  border: 1px solid #c0392b;
+  color: #c0392b;
+  font-size: 0.68rem; font-weight: 700;
+  border-radius: 3px;
+  padding: 0.18rem 0.5rem;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+}
+.pm-card-warning:hover { background: rgba(192,57,43,0.08); }
 
 @media (max-width: 480px) {
   .gestor-picker-grid {

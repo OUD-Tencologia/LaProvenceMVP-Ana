@@ -282,6 +282,7 @@ export default function Admin() {
   const [listaStoryModal, setListaStoryModal] = useState(null)
   const [itemModal, setItemModal] = useState(null)
   const [pmModal, setPmModal] = useState(null)
+  const [pmIndisponiveisModal, setPmIndisponiveisModal] = useState(null)
   const [saving, setSaving] = useState(false)
   const [newGiftsAlert, setNewGiftsAlert] = useState(null) // { count, firstLista }
   const [addItemModal, setAddItemModal] = useState(false)
@@ -520,6 +521,16 @@ export default function Admin() {
     }
   }
 
+  function getPmIndisponiveis(pm) {
+    return (pm.itens || []).reduce((acc, id) => {
+      const item = catalogo.find((c) => c.id === id)
+      if (!item) acc.push({ id, nome: 'Item não encontrado no catálogo' })
+      else if (item.status !== 'Ativo' || Number(item.estoque) <= 0)
+        acc.push({ id, nome: item.nome, motivo: item.status !== 'Ativo' ? 'Inativo' : 'Sem estoque' })
+      return acc
+    }, [])
+  }
+
   async function openPmEditModal(pm) {
     try {
       const itens = await premontadasService.getItens(pm.id)
@@ -703,7 +714,15 @@ export default function Admin() {
                       {pm.popular && <div className="label-caps" style={{ color: 'var(--verde)', fontSize: '0.6rem' }}>★ Destaque</div>}
                     </div>
                     <div className="pm-card-name">{pm.nome}</div>
-                    <div className="pm-card-count">{(pm.itens || []).length} itens</div>
+                    <div className="pm-card-count" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <span>{(pm.itens || []).length} {(pm.itens || []).length === 1 ? 'item' : 'itens'}</span>
+                      {getPmIndisponiveis(pm).length > 0 && (
+                        <button type="button" className="pm-card-warning"
+                          onClick={() => setPmIndisponiveisModal({ nome: pm.nome, itens: getPmIndisponiveis(pm) })}>
+                          ⚠ {getPmIndisponiveis(pm).length} indisponível{getPmIndisponiveis(pm).length > 1 ? 'is' : ''}
+                        </button>
+                      )}
+                    </div>
                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                       <button type="button" className="btn btn-outline-dark btn-sm"
                         onClick={() => openPmEditModal(pm)}>Editar</button>
@@ -880,18 +899,19 @@ export default function Admin() {
             />
             <div className="gestor-picker-grid">
               {catalogo
-                .filter((i) => i.status === 'Ativo' && (!addItemSearch || i.nome.toLowerCase().includes(addItemSearch.toLowerCase())))
+                .filter((i) => !addItemSearch || i.nome.toLowerCase().includes(addItemSearch.toLowerCase()))
                 .map((item) => {
                   const inList = modalData.listaItens.some((li) => li.catalogo_id === item.id)
                   const isAdding = addingItemId === item.id
+                  const indisponivel = item.status !== 'Ativo' || Number(item.estoque) <= 0
                   return (
                     <button
                       type="button"
                       key={item.id}
-                      className={`gestor-picker-card${inList ? ' gestor-picker-card--in-list' : ''}`}
-                      onClick={() => !inList && handleAddItemToList(item.id)}
-                      disabled={isAdding || !!addingItemId}
-                      title={inList ? 'Já está na lista' : item.nome}
+                      className={`gestor-picker-card${inList ? ' gestor-picker-card--in-list' : ''}${indisponivel ? ' gestor-picker-card--indisponivel' : ''}`}
+                      onClick={() => !inList && !indisponivel && handleAddItemToList(item.id)}
+                      disabled={isAdding || !!addingItemId || indisponivel}
+                      title={inList ? 'Já está na lista' : indisponivel ? 'Item indisponível' : item.nome}
                     >
                       <div className="gestor-picker-card__img">
                         {item.imgs?.[0]
@@ -1148,11 +1168,13 @@ export default function Admin() {
             </label>
             <div className="pm-modal-hint">Selecione os itens que farão parte desta lista pré-montada:</div>
             <div className="pm-items-grid">
-              {catalogo.filter((i) => i.status === 'Ativo').map((item) => {
+              {catalogo.map((item) => {
                 const checked = pmModal.selectedItens.includes(item.id)
+                const indisponivel = item.status !== 'Ativo' || Number(item.estoque) <= 0
                 return (
-                  <label key={item.id} className={`pm-item-label${checked ? ' checked' : ''}`}>
-                    <input type="checkbox" checked={checked} onChange={() => {
+                  <label key={item.id} className={`pm-item-label${checked ? ' checked' : ''}${indisponivel ? ' pm-item-label--indisponivel' : ''}`}>
+                    <input type="checkbox" checked={checked} disabled={indisponivel} onChange={() => {
+                      if (indisponivel) return
                       const itens = checked
                         ? pmModal.selectedItens.filter((id) => id !== item.id)
                         : [...pmModal.selectedItens, item.id]
@@ -1170,6 +1192,7 @@ export default function Admin() {
                       </div>
                       <span className="pm-item-name">{item.nome}</span>
                       <div className="pm-item-price">{formatMoney(item.preco)}</div>
+                      {indisponivel && <div className="pm-item-unavailable-tag">{item.status !== 'Ativo' ? 'Inativo' : 'Sem estoque'}</div>}
                     </div>
                   </label>
                 )
@@ -1177,6 +1200,29 @@ export default function Admin() {
             </div>
             <div className="pm-modal-count">{pmModal.selectedItens.length} itens selecionados</div>
           </>
+        )}
+      </Modal>
+
+      {/* ── MODAL ITENS INDISPONÍVEIS DA PRÉ-MONTADA ── */}
+      <Modal open={!!pmIndisponiveisModal} onClose={() => setPmIndisponiveisModal(null)}
+        title={pmIndisponiveisModal ? `Itens indisponíveis — ${pmIndisponiveisModal.nome}` : ''}
+        maxWidth="420px"
+        footer={<button type="button" className="btn btn-outline-dark btn-sm" onClick={() => setPmIndisponiveisModal(null)}>Fechar</button>}
+      >
+        {pmIndisponiveisModal && (
+          <div>
+            <p style={{ fontSize: '0.85rem', color: 'var(--texto-suave)', marginBottom: '1rem' }}>
+              Os seguintes itens desta lista pré-montada estão indisponíveis:
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {pmIndisponiveisModal.itens.map((it) => (
+                <div key={it.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.6rem 0.75rem', background: 'rgba(192,57,43,0.06)', borderRadius: 4, border: '1px solid rgba(192,57,43,0.15)' }}>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--verde)' }}>{it.nome}</span>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#c0392b', letterSpacing: '0.05em', textTransform: 'uppercase', flexShrink: 0, marginLeft: '0.5rem' }}>{it.motivo || 'Indisponível'}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </Modal>
     </div>
