@@ -34,13 +34,20 @@
       "Bash(curl -s -X DELETE \"http://localhost:3668/lista-itens/00000000-0000-0000-0000-000000000000\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer eytest\")",
       "Read(//home/gabriel/Documents/ESTÁGIO/OunceData/la-provence/laprovence-api/src/modules/premontadas/**)",
       "Read(//home/gabriel/Documents/ESTÁGIO/OunceData/la-provence/laprovence-api/src/modules/catalogo_images/**)",
-      "Read(//home/gabriel/**)"
+      "Read(//home/gabriel/**)",
+      "Bash(grep -i \"partir\\\\|min\\\\|valor\\\\|R\\\\$\")",
+      "Bash(grep -i \"partir\\\\|minimo\\\\|mínimo\\\\|min.*val\\\\|R\\\\$.*[56]00\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ],
     "additionalDirectories": [
       "/home/gabriel/Documents/ESTÁGIO/OunceData/la-provence/laprovence-api/src/modules/listas",
       "/home/gabriel/Documents/ESTÁGIO/OunceData/la-provence/laprovence-api/src/modules/lista_itens",
       "/home/gabriel/Documents/ESTÁGIO/OunceData/la-provence/laprovence-api/src/modules/catalogo",
-      "/home/gabriel/Documents/ESTÁGIO/OunceData/la-provence/laprovence-api/src/modules/compras"
+      "/home/gabriel/Documents/ESTÁGIO/OunceData/la-provence/laprovence-api/src/modules/compras",
+      "/home/gabriel/Documents/ESTÁGIO/OunceData/la-provence/laprovence-api/src/modules/premontadas",
+      "/home/gabriel/Documents/ESTÁGIO/OunceData/la-provence/laprovence-api/src/modules/premontada_itens"
     ]
   }
 }
