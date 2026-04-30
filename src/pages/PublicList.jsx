@@ -246,7 +246,7 @@ export default function PublicList() {
                   <div style={{ fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--texto-suave)', marginBottom: '0.3rem' }}>Valor Livre</div>
                   <h4>Presentear com Crédito</h4>
                   <div className="tamanho">Os noivos escolhem o presente</div>
-                  <div className="preco" style={{ color: 'var(--texto-suave)', fontSize: '0.85rem' }}>A partir de R$ 600,00</div>
+                  <div className="preco" style={{ color: 'var(--texto-suave)', fontSize: '0.85rem' }}>A partir de R$ 200,00</div>
                   <a
                     href={`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(`Olá! Gostaria de presentear os noivos ${lista.nome_noivos} com um cartão presente. Código da lista: ${lista.codigo}`)}`}
                     target="_blank"
