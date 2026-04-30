@@ -1,3 +1,141 @@
+/* ─── MODAL PRESENTE GESTOR ─── */
+.gestor-modal-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  background: var(--bege-suave);
+  border-radius: 4px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+.gestor-modal-stat-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+  margin-bottom: 0.3rem;
+}
+.gestor-modal-stat-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--verde);
+}
+.gestor-modal-section-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--verde);
+  margin-bottom: 0.85rem;
+}
+.gestor-modal-items-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.gestor-item-card {
+  position: relative;
+  border: 1.5px solid rgba(0,48,13,0.12);
+  border-radius: 4px;
+  padding: 0.85rem 0.9rem;
+  background: var(--branco);
+  text-align: left;
+  width: 100%;
+  transition: border-color 0.2s;
+  overflow: hidden;
+}
+.gestor-item-card--pending {
+  border-color: #EBAB0A;
+  background: #fffbee;
+}
+.gestor-item-card--pending:hover {
+  border-color: #c88a00;
+}
+.gestor-item-card--approved {
+  border-color: var(--verde);
+  background: rgba(3,127,36,0.04);
+}
+.gestor-item-card--selected {
+  border-color: #c0392b !important;
+  box-shadow: 0 0 0 2px rgba(192,57,43,0.18);
+}
+.gestor-item-stamp {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: var(--verde);
+  color: var(--ouro-claro);
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: 2px;
+}
+.gestor-item-card-name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--verde);
+  line-height: 1.35;
+  margin-bottom: 0.25rem;
+}
+.gestor-item-card-sub {
+  font-size: 0.65rem;
+  color: var(--texto-suave);
+  margin-bottom: 0.35rem;
+}
+.gestor-item-card-price {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--verde);
+  margin-bottom: 0.25rem;
+}
+.gestor-item-card-status {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #EBAB0A;
+}
+.gestor-compra-detail {
+  background: var(--bege-suave);
+  border: 1px solid rgba(0,48,13,0.1);
+  border-radius: 4px;
+  padding: 1rem 1.25rem;
+  margin-top: 0.5rem;
+}
+.gestor-compra-detail-title {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ouro);
+  margin-bottom: 0.85rem;
+}
+.gestor-compra-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+}
+.gestor-compra-detail-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+@media (max-width: 600px) {
+  .gestor-modal-stats { grid-template-columns: repeat(2, 1fr); }
+  .gestor-modal-items-grid { grid-template-columns: repeat(2, 1fr); }
+  .gestor-compra-detail-grid { grid-template-columns: 1fr; }
+  .gestor-compra-detail-actions { flex-direction: column; }
+}
+@media (max-width: 400px) {
+  .gestor-modal-items-grid { grid-template-columns: 1fr; }
+}
+
 /* ─── GESTOR PAGE SPECIFIC ─── */
 .item-form-grid {
   display: grid;

@@ -33,12 +33,14 @@
       "Bash(curl -s -X DELETE http://localhost:3668/lista-itens/test-id -H \"Authorization: Bearer test\")",
       "Bash(curl -s -X DELETE \"http://localhost:3668/lista-itens/00000000-0000-0000-0000-000000000000\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer eytest\")",
       "Read(//home/gabriel/Documents/ESTÁGIO/OunceData/la-provence/laprovence-api/src/modules/premontadas/**)",
-      "Read(//home/gabriel/Documents/ESTÁGIO/OunceData/la-provence/laprovence-api/src/modules/catalogo_images/**)"
+      "Read(//home/gabriel/Documents/ESTÁGIO/OunceData/la-provence/laprovence-api/src/modules/catalogo_images/**)",
+      "Read(//home/gabriel/**)"
     ],
     "additionalDirectories": [
       "/home/gabriel/Documents/ESTÁGIO/OunceData/la-provence/laprovence-api/src/modules/listas",
       "/home/gabriel/Documents/ESTÁGIO/OunceData/la-provence/laprovence-api/src/modules/lista_itens",
-      "/home/gabriel/Documents/ESTÁGIO/OunceData/la-provence/laprovence-api/src/modules/catalogo"
+      "/home/gabriel/Documents/ESTÁGIO/OunceData/la-provence/laprovence-api/src/modules/catalogo",
+      "/home/gabriel/Documents/ESTÁGIO/OunceData/la-provence/laprovence-api/src/modules/compras"
     ]
   }
 }

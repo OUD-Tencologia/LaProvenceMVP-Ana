@@ -134,7 +134,7 @@ export default function Catalog() {
           </select>
         </div>
 
-        <div className="catalog-layout" style={{ gridTemplateColumns: '1fr 300px' }}>
+        <div className="catalog-layout-2col">
           <div>
             <div className="cat-filter-bar">
               <button type="button" className={`cat-filter${setor === '' ? ' active' : ''}`} onClick={() => setSetor('')}>Todos</button>

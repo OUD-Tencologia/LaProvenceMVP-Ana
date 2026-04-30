@@ -7,7 +7,7 @@ import InfoRow from '../components/ui/InfoRow'
 import StatusBadge from '../components/ui/StatusBadge'
 import { useToast } from '../hooks/useToast'
 import useStore from '../store/useStore'
-import { formatMoney, formatDate } from '../utils/formatters'
+import { formatMoney, formatDate, maskMoney, parseMoney, numToMaskMoney } from '../utils/formatters'
 import { catalogoService } from '../services/catalogo.js'
 import { listasService } from '../services/listas.js'
 import { comprasService } from '../services/compras.js'
@@ -275,7 +275,7 @@ export default function Admin() {
   const [catSetor, setCatSetor] = useState('')
 
   const [modalData, setModalData] = useState(null) // { lista, compras, listaItens }
-  const [modalTab, setModalTab] = useState('itens')
+  const [selectedPending, setSelectedPending] = useState(null) // { item, compra }
   const [compraDetalheModal, setCompraDetalheModal] = useState(null)
   const [archiveConfirmModal, setArchiveConfirmModal] = useState(null)
   const [casalInfoModal, setCasalInfoModal] = useState(null)
@@ -283,6 +283,7 @@ export default function Admin() {
   const [itemModal, setItemModal] = useState(null)
   const [pmModal, setPmModal] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [newGiftsAlert, setNewGiftsAlert] = useState(null) // { count, firstLista }
 
   useEffect(() => {
     if (!currentUser) { navigate('/auth'); return }
@@ -305,8 +306,17 @@ export default function Admin() {
         setPremontadas(p)
         // carrega compras de todas as listas ativas em paralelo para os stats
         if (ativas.length > 0) {
-          const allCompras = await Promise.all(ativas.map((li) => comprasService.getByLista(li.id)))
-          setTodasCompras(allCompras.flat())
+          const allComprasArr = await Promise.all(ativas.map((li) => comprasService.getByLista(li.id).catch(() => [])))
+          const flat = allComprasArr.flat()
+          setTodasCompras(flat)
+
+          // Detecta novos presentes desde a última visita
+          const lastSeen = Number(localStorage.getItem('lp_gestor_last_seen') || '0')
+          const novas = flat.filter((c) => c.status_pagamento === 'Pendente' && new Date(c.data_compra).getTime() > lastSeen)
+          if (novas.length > 0) {
+            const primeiraLista = ativas.find((li) => novas.some((c) => c.listas_id === li.id || c.lista_id === li.id))
+            setNewGiftsAlert({ count: novas.length, firstLista: primeiraLista })
+          }
         }
       } catch (e) {
         toast(e.message, 'error')
@@ -335,11 +345,11 @@ export default function Admin() {
   async function openListaModal(lista) {
     try {
       const [compras, listaItens] = await Promise.all([
-        comprasService.getByLista(lista.id),
+        comprasService.getByLista(lista.id).catch(() => []),
         listasService.getItens(lista.id),
       ])
       setModalData({ lista, compras, listaItens })
-      setModalTab('itens')
+      setSelectedPending(null)
     } catch (e) {
       toast(e.message, 'error')
     }
@@ -348,6 +358,34 @@ export default function Admin() {
   function closeListaModal() {
     setModalData(null)
     setCompraDetalheModal(null)
+    setSelectedPending(null)
+  }
+
+  function downloadCSV() {
+    if (!modalData) return
+    const rows = [
+      ['Item', 'Convidado', 'Telefone', 'Valor', 'Pagamento', 'Status', 'Data'],
+      ...modalData.compras.map((c) => {
+        const li = modalData.listaItens.find((li) => li.catalogo_id === c.catalogo_id)
+        return [
+          li?.catalogo?.nome || c.catalogo_id,
+          c.nome_convidado,
+          c.telefone || '',
+          formatMoney(c.valor_pago),
+          c.forma_pagamento,
+          c.status_pagamento,
+          new Date(c.data_compra).toLocaleString('pt-BR'),
+        ]
+      }),
+    ]
+    const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const blob = new Blob([`﻿${csv}`], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `lista-${modalData.lista.codigo}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
   }
 
   async function handleAprovar(compraId) {
@@ -358,6 +396,7 @@ export default function Admin() {
         compras: prev.compras.map((c) => c.id === compraId ? { ...c, status_pagamento: 'Aprovado' } : c),
       }))
       setTodasCompras((prev) => prev.map((c) => c.id === compraId ? { ...c, status_pagamento: 'Aprovado' } : c))
+      setSelectedPending(null)
       toast('Pagamento aprovado!')
     } catch (e) { toast(e.message, 'error') }
   }
@@ -370,7 +409,8 @@ export default function Admin() {
         compras: prev.compras.map((c) => c.id === compraId ? { ...c, status_pagamento: 'Rejeitado' } : c),
       }))
       setTodasCompras((prev) => prev.map((c) => c.id === compraId ? { ...c, status_pagamento: 'Rejeitado' } : c))
-      toast('Compra rejeitada.')
+      setSelectedPending(null)
+      toast('Compra cancelada.')
     } catch (e) { toast(e.message, 'error') }
   }
 
@@ -401,7 +441,7 @@ export default function Admin() {
         nome: itemModal.nome,
         tamanho: itemModal.tamanho || '',
         setor: itemModal.setor || 'Mesa posta',
-        preco: String(Number.parseFloat(itemModal.preco) || 0),
+        preco: String(parseMoney(itemModal.preco) || 0),
         estoque: Number.parseInt(itemModal.estoque) || 0,
         quantidade: Number.parseInt(itemModal.quantidade) || 1,
         descricao: itemModal.descricao || '',
@@ -555,6 +595,10 @@ export default function Admin() {
                 <button type="button" className={`cat-filter${catSetor === '' ? ' active' : ''}`} onClick={() => setCatSetor('')}>Todos</button>
                 {SETORES.map((s) => <button type="button" key={s} className={`cat-filter${catSetor === s ? ' active' : ''}`} onClick={() => setCatSetor(s)}>{s}</button>)}
               </div>
+              <select className="cat-filter-select" value={catSetor} onChange={(e) => setCatSetor(e.target.value)}>
+                <option value="">Todas as categorias</option>
+                {SETORES.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
             </div>
 
             <div className="card">
@@ -580,7 +624,7 @@ export default function Admin() {
                         <td><StatusBadge status={item.status} /></td>
                         <td>
                           <div style={{ display: 'flex', gap: '0.4rem' }}>
-                            <button type="button" className="btn btn-outline-dark btn-sm" onClick={() => setItemModal({ ...item })}>Editar</button>
+                            <button type="button" className="btn btn-outline-dark btn-sm" onClick={() => setItemModal({ ...item, preco: numToMaskMoney(item.preco) })}>Editar</button>
                             <button
                               type="button"
                               className={`btn btn-sm btn-toggle-${item.status === 'Ativo' ? 'inativar' : 'ativar'}`}
@@ -635,153 +679,129 @@ export default function Admin() {
       <Modal
         open={!!modalData}
         onClose={closeListaModal}
-        title={modalData ? `${modalData.lista.nome_noivos} — #${modalData.lista.codigo}` : ''}
-        maxWidth="900px"
+        title={modalData ? `${modalData.lista.nome_noivos} — ${modalData.lista.codigo}` : ''}
+        maxWidth="860px"
         footer={
           modalData ? (
-            <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '0.5rem', flexWrap: 'wrap' }}>
               <button type="button" className="btn btn-sm btn-archive" onClick={() => setArchiveConfirmModal(modalData.lista)}>Arquivar Lista</button>
-              <button type="button" className="btn btn-outline-dark btn-sm" onClick={closeListaModal}>Fechar</button>
-            </>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button type="button" className="btn btn-outline-dark btn-sm" onClick={closeListaModal}>Fechar</button>
+                <button type="button" className="btn btn-verde btn-sm" onClick={downloadCSV}>Baixar Extrato (CSV)</button>
+              </div>
+            </div>
           ) : null
         }
       >
         {modalData && (
           <>
-            <div className="modal-info-header">
-              {modalData.lista.foto_casal && (
-                <img src={modalData.lista.foto_casal} alt="Foto do casal" className="couple-avatar couple-avatar--lg" />
-              )}
-              <div className="modal-info-header__meta">
-                <div className="modal-info-header__name">{modalData.lista.nome_noivos}</div>
-                {modalData.lista.data_casamento && (
-                  <div className="modal-info-header__sub">Casamento em {formatDate(modalData.lista.data_casamento)}</div>
-                )}
-                <div className="modal-info-header__links">
-                  <span style={{ color: 'var(--texto-suave)' }}>Código: <strong style={{ color: 'var(--ouro)' }}>#{modalData.lista.codigo}</strong></span>
-                  <Link to={`/lista?codigo=${modalData.lista.codigo}`} target="_blank" style={{ color: 'var(--verde)', fontWeight: 600 }}>
-                    Ver Lista Pública →
-                  </Link>
-                </div>
-                <div className="modal-info-header__actions">
-                  <button type="button" className="btn btn-sm btn-outline-dark btn-sm-icon"
-                    onClick={() => setCasalInfoModal({ lista: modalData.lista, user: modalData.lista.user ?? null })}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" /></svg>
-                    Dados do Casal
-                  </button>
-                  <button type="button" className="btn btn-sm btn-story-ig"
-                    onClick={() => { closeListaModal(); setListaStoryModal(modalData.lista) }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" /></svg>
-                    Gerar Story
-                  </button>
-                </div>
-                {modalData.lista.mensagem_boas_vindas && (
-                  <div className="modal-info-header__quote">"{modalData.lista.mensagem_boas_vindas}"</div>
-                )}
+            {/* Stats row */}
+            <div className="gestor-modal-stats">
+              <div>
+                <div className="gestor-modal-stat-label">Código</div>
+                <div className="gestor-modal-stat-value">{modalData.lista.codigo}</div>
               </div>
-              <div className="modal-stats">
-                <div>
-                  <div className="modal-stat__value" style={{ color: 'var(--verde)' }}>{modalData.listaItens.length}</div>
-                  <div className="modal-stat__label">Itens</div>
+              <div>
+                <div className="gestor-modal-stat-label">Casamento</div>
+                <div className="gestor-modal-stat-value">{modalData.lista.data_casamento ? formatDate(modalData.lista.data_casamento) : '—'}</div>
+              </div>
+              <div>
+                <div className="gestor-modal-stat-label">Itens na Lista</div>
+                <div className="gestor-modal-stat-value">{modalData.listaItens.length}</div>
+              </div>
+              <div>
+                <div className="gestor-modal-stat-label">Total Presenteado</div>
+                <div className="gestor-modal-stat-value" style={{ color: 'var(--ouro)' }}>
+                  {formatMoney(modalData.compras.filter((c) => c.status_pagamento !== 'Rejeitado').reduce((s, c) => s + Number(c.valor_pago), 0))}
                 </div>
-                <div>
-                  <div className="modal-stat__value" style={{ color: '#27ae60' }}>
-                    {modalData.compras.filter((c) => c.status_pagamento === 'Aprovado' || c.status_pagamento === 'Confirmado').length}
-                  </div>
-                  <div className="modal-stat__label">Aprovados</div>
-                </div>
-                {modalData.compras.filter((c) => c.status_pagamento === 'Pendente').length > 0 && (
-                  <div>
-                    <div className="modal-stat__value" style={{ color: '#f39c12' }}>
-                      {modalData.compras.filter((c) => c.status_pagamento === 'Pendente').length}
-                    </div>
-                    <div className="modal-stat__label">Pendentes</div>
-                  </div>
-                )}
               </div>
             </div>
 
-            <div className="modal-tabs">
-              {[
-                { key: 'itens', label: `Itens (${modalData.listaItens.length})` },
-                { key: 'compras', label: `Compras (${modalData.compras.length})` },
-              ].map(({ key, label }) => (
-                <button type="button" key={key} className={`modal-tab-btn${modalTab === key ? ' active' : ''}`} onClick={() => setModalTab(key)}>
-                  {label}
-                </button>
-              ))}
+            {/* Actions row */}
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+              <button type="button" className="btn btn-sm btn-outline-dark btn-sm-icon"
+                onClick={() => setCasalInfoModal({ lista: modalData.lista, user: modalData.lista.user ?? null })}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" /></svg>
+                Dados do Casal
+              </button>
+              <button type="button" className="btn btn-sm btn-story-ig"
+                onClick={() => { closeListaModal(); setListaStoryModal(modalData.lista) }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" /></svg>
+                Gerar Story
+              </button>
+              <Link to={`/lista?codigo=${modalData.lista.codigo}`} target="_blank" className="btn btn-sm btn-outline-dark">
+                Ver Lista Pública →
+              </Link>
             </div>
 
-            {modalTab === 'itens' && (
-              <div className="modal-items-grid">
-                {modalData.listaItens.length === 0 && (
-                  <p style={{ color: 'var(--texto-suave)', fontSize: '0.85rem', gridColumn: '1/-1' }}>Nenhum item na lista.</p>
-                )}
-                {modalData.listaItens.map((li) => {
-                  const item = li.catalogo
-                  if (!item) return null
-                  const compra = modalData.compras.find((c) => c.catalogo_id === li.catalogo_id)
-                  return (
-                    <div
-                      key={li.id}
-                      onClick={() => compra && setCompraDetalheModal({ item, compra })}
-                      title={compra ? 'Clique para ver quem comprou' : ''}
-                      className={`item-thumb item-thumb--${compra ? 'purchased' : 'available'}`}
-                    >
-                      {item.imgs?.[0] ? (
-                        <img src={item.imgs[0]} alt={item.nome} className="item-thumb__img" onError={(e) => { e.target.style.display = 'none' }} />
-                      ) : (
-                        <div className="item-thumb__placeholder">
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style={{ opacity: 0.2 }}><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" /></svg>
-                        </div>
-                      )}
-                      <div className="item-thumb__body">
-                        <div className="item-thumb__name">{item.nome}</div>
-                        <div className="item-thumb__price">{formatMoney(item.preco)}</div>
-                        <span className={`status-badge status-badge--${compra ? 'purchased' : 'available'}`}>
-                          {compra ? '✓ Presenteado' : 'Disponível'}
-                        </span>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+            {/* Items section */}
+            <div className="gestor-modal-section-title">
+              Itens da Lista ({modalData.listaItens.length})
+            </div>
+
+            {modalData.listaItens.length === 0 && (
+              <p style={{ color: 'var(--texto-suave)', fontSize: '0.85rem', marginBottom: '1rem' }}>Nenhum item na lista ainda.</p>
             )}
 
-            {modalTab === 'compras' && (
-              modalData.compras.length === 0 ? (
-                <p style={{ color: 'var(--texto-suave)', fontSize: '0.85rem' }}>Nenhuma compra registrada.</p>
-              ) : (
-                <div className="table-wrapper">
-                  <table>
-                    <thead>
-                      <tr><th>Item</th><th>Convidado</th><th>Valor</th><th>Pagamento</th><th>Status</th><th>Ações</th></tr>
-                    </thead>
-                    <tbody>
-                      {modalData.compras.map((compra) => {
-                        const li = modalData.listaItens.find((li) => li.catalogo_id === compra.catalogo_id)
-                        return (
-                          <tr key={compra.id}>
-                            <td className="table-item-name">{li?.catalogo?.nome || compra.catalogo_id}</td>
-                            <td style={{ fontSize: '0.8rem' }}>{compra.nome_convidado}</td>
-                            <td className="table-item-price">{formatMoney(compra.valor_pago)}</td>
-                            <td className="table-item-small">{compra.forma_pagamento}</td>
-                            <td><StatusBadge status={compra.status_pagamento} /></td>
-                            <td>
-                              {compra.status_pagamento === 'Pendente' && (
-                                <div style={{ display: 'flex', gap: '0.3rem' }}>
-                                  <button type="button" className="btn btn-sm btn-aprovar" onClick={() => handleAprovar(compra.id)}>Aprovar</button>
-                                  <button type="button" className="btn btn-sm btn-rejeitar" onClick={() => handleRejeitar(compra.id)}>Rejeitar</button>
-                                </div>
-                              )}
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
+            <div className="gestor-modal-items-grid">
+              {modalData.listaItens.map((li) => {
+                const item = li.catalogo
+                if (!item) return null
+                const compra = modalData.compras.find((c) => c.catalogo_id === li.catalogo_id)
+                const isPendente = compra?.status_pagamento === 'Pendente'
+                const isAprovado = compra && (compra.status_pagamento === 'Aprovado' || compra.status_pagamento === 'Confirmado')
+                const isSelected = selectedPending?.compra?.id === compra?.id
+                return (
+                  <button
+                    type="button"
+                    key={li.id}
+                    className={`gestor-item-card${isPendente ? ' gestor-item-card--pending' : ''}${isAprovado ? ' gestor-item-card--approved' : ''}${isSelected ? ' gestor-item-card--selected' : ''}`}
+                    onClick={() => isPendente && setSelectedPending(isSelected ? null : { item, compra })}
+                    style={{ cursor: isPendente ? 'pointer' : 'default' }}
+                  >
+                    {isAprovado && <div className="gestor-item-stamp">Presenteado</div>}
+                    <div className="gestor-item-card-name">{item.nome}</div>
+                    <div className="gestor-item-card-sub">{item.setor || item.tamanho || ''}</div>
+                    <div className="gestor-item-card-price">{formatMoney(item.preco)}</div>
+                    {isPendente && <div className="gestor-item-card-status">AGUARDANDO PGTO</div>}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Inline purchase detail */}
+            {selectedPending && (
+              <div className="gestor-compra-detail">
+                <div className="gestor-compra-detail-title">
+                  Detalhe da Compra — {selectedPending.item.nome.toUpperCase()}
                 </div>
-              )
+                <div className="gestor-compra-detail-grid">
+                  <div>
+                    <span className="label-caps" style={{ fontSize: '0.6rem', color: 'var(--texto-suave)' }}>Convidado</span>
+                    <div style={{ fontWeight: 600, marginTop: '0.2rem' }}>{selectedPending.compra.nome_convidado}</div>
+                  </div>
+                  <div>
+                    <span className="label-caps" style={{ fontSize: '0.6rem', color: 'var(--texto-suave)' }}>Telefone</span>
+                    <div style={{ fontWeight: 600, marginTop: '0.2rem' }}>{selectedPending.compra.telefone || '—'}</div>
+                  </div>
+                  <div>
+                    <span className="label-caps" style={{ fontSize: '0.6rem', color: 'var(--texto-suave)' }}>Valor</span>
+                    <div style={{ fontWeight: 700, color: 'var(--ouro)', marginTop: '0.2rem' }}>{formatMoney(selectedPending.compra.valor_pago)}</div>
+                  </div>
+                  <div>
+                    <span className="label-caps" style={{ fontSize: '0.6rem', color: 'var(--texto-suave)' }}>Pagamento</span>
+                    <div style={{ fontWeight: 600, marginTop: '0.2rem' }}>{selectedPending.compra.forma_pagamento}</div>
+                  </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <span className="label-caps" style={{ fontSize: '0.6rem', color: 'var(--texto-suave)' }}>Data</span>
+                    <div style={{ fontWeight: 600, marginTop: '0.2rem' }}>{new Date(selectedPending.compra.data_compra).toLocaleString('pt-BR')}</div>
+                  </div>
+                </div>
+                <div className="gestor-compra-detail-actions">
+                  <button type="button" className="btn btn-verde" style={{ flex: 1 }} onClick={() => handleAprovar(selectedPending.compra.id)}>APROVAR</button>
+                  <button type="button" className="btn btn-sm btn-rejeitar" style={{ flex: 1 }} onClick={() => handleRejeitar(selectedPending.compra.id)}>CANCELAR COMPRA</button>
+                </div>
+              </div>
             )}
           </>
         )}
@@ -874,6 +894,28 @@ export default function Admin() {
         )}
       </Modal>
 
+      {/* ── MODAL ALERTA NOVO PRESENTE ── */}
+      <Modal open={!!newGiftsAlert} onClose={() => { localStorage.setItem('lp_gestor_last_seen', String(Date.now())); setNewGiftsAlert(null) }} maxWidth="360px">
+        <div style={{ textAlign: 'center', padding: '1rem 0.5rem' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎁</div>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--verde)', marginBottom: '0.75rem' }}>
+            Novo presente comprado!
+          </h3>
+          <p style={{ fontSize: '0.85rem', color: 'var(--texto-suave)', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+            Que alegria! Foram registrados <strong>{newGiftsAlert?.count}</strong> novo(s) presente(s) desde a sua última visita.
+          </p>
+          <button type="button" className="btn btn-verde" style={{ width: '100%', padding: '0.85rem', fontSize: '0.78rem', letterSpacing: '0.1em' }}
+            onClick={() => {
+              localStorage.setItem('lp_gestor_last_seen', String(Date.now()))
+              const firstLista = newGiftsAlert?.firstLista
+              setNewGiftsAlert(null)
+              if (firstLista) openListaModal(firstLista)
+            }}>
+            VER PRESENTES
+          </button>
+        </div>
+      </Modal>
+
       {/* ── MODAL STORY ── */}
       <StoryModal lista={listaStoryModal} open={!!listaStoryModal} onClose={() => setListaStoryModal(null)} />
 
@@ -908,8 +950,8 @@ export default function Admin() {
             </div>
             <div className="form-group">
               <label htmlFor="if-preco">Preço (R$)</label>
-              <input id="if-preco" type="number" placeholder="0.00" min="0" step="0.01" value={itemModal.preco}
-                onChange={(e) => setItemModal({ ...itemModal, preco: e.target.value })} />
+              <input id="if-preco" type="text" inputMode="numeric" placeholder="R$ 0,00" value={itemModal.preco || ''}
+                onChange={(e) => setItemModal({ ...itemModal, preco: maskMoney(e.target.value) })} />
             </div>
             <div className="form-group">
               <label htmlFor="if-estoque">Estoque</label>

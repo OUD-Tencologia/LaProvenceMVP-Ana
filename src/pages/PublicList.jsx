@@ -41,9 +41,10 @@ export default function PublicList() {
 
   // Gift flow
   const [giftModal, setGiftModal] = useState(null) // { item, listaItem }
-  const [cartItems, setCartItems] = useState([])
   const [guestData, setGuestData] = useState({ nome: '', cpf: '', telefone: '', formaPagamento: '' })
   const [guestErrors, setGuestErrors] = useState({})
+  const [confirmModal, setConfirmModal] = useState(null) // { items, guestNome, formaPagamento }
+  const [confirmando, setConfirmando] = useState(false)
 
   useEffect(() => {
     if (!codigo) { setLoading(false); return }
@@ -132,40 +133,48 @@ export default function PublicList() {
     return Object.keys(errs).length === 0
   }
 
-  function continuarPresenteando() {
+  async function confirmarPresente() {
     if (!validarGuest()) return
-    setCartItems((prev) => {
-      if (prev.find((i) => i.id === giftModal.item.id)) return prev
-      return [...prev, giftModal.item]
-    })
+    const item = giftModal.item
+
+    setConfirmando(true)
+    try {
+      await comprasService.create({
+        listas_id: lista.id,
+        catalogo_id: item.id,
+        nome_convidado: guestData.nome,
+        cpf: guestData.cpf.replace(/\D/g, ''),
+        telefone: guestData.telefone,
+        valor_pago: String(Number(item.preco)),
+        forma_pagamento: guestData.formaPagamento,
+        status_pagamento: 'Pendente',
+        is_new_gestor: true,
+      })
+    } catch {
+      // item continuará sendo tentado pelo gestor via WhatsApp
+    }
+    try {
+      const novasCompras = await comprasService.getByLista(lista.id)
+      setCompras(novasCompras)
+    } catch { /* manter estado atual */ }
+
+    setConfirmando(false)
     setGiftModal(null)
-    toast('Item adicionado! Continue escolhendo presentes.')
+    setConfirmModal({ items: [item], guestNome: guestData.nome, formaPagamento: guestData.formaPagamento })
   }
 
-  function finalizarConosco() {
-    if (!validarGuest()) return
-    const todosItens = cartItems.find((i) => i.id === giftModal.item.id)
-      ? cartItems
-      : [...cartItems, giftModal.item]
-
-    const totalValor = todosItens.reduce((s, i) => s + Number(i.preco), 0)
-    const itensText = todosItens.map((i) => `• ${i.nome} — ${formatMoney(i.preco)}`).join('\n')
-
+  function abrirWhatsApp() {
+    if (!confirmModal) return
+    const totalValor = confirmModal.items.reduce((s, i) => s + Number(i.preco), 0)
+    const itensText = confirmModal.items.map((i) => `• ${i.nome} — ${formatMoney(i.preco)}`).join('\n')
     const msg = encodeURIComponent(
-      `Olá! Gostaria de presentear os noivos *${lista.nome_noivos}*. 🎁\n\n` +
-      `*Meus dados:*\n` +
-      `Nome: ${guestData.nome}\n` +
-      `CPF: ${guestData.cpf}\n` +
-      `Telefone: ${guestData.telefone}\n` +
-      `Forma de pagamento: ${guestData.formaPagamento}\n\n` +
-      `*${todosItens.length > 1 ? 'Itens escolhidos' : 'Item escolhido'}:*\n${itensText}\n\n` +
-      `*Total: ${formatMoney(totalValor)}*\n\n` +
-      `Código da lista: ${lista.codigo}`
+      `Olá! Gostaria de confirmar o presente para os noivos *${lista.nome_noivos}*. 🎁\n\n` +
+      `*Meus dados:*\nNome: ${confirmModal.guestNome}\nForma de pagamento: ${confirmModal.formaPagamento}\n\n` +
+      `*${confirmModal.items.length > 1 ? 'Itens escolhidos' : 'Item escolhido'}:*\n${itensText}\n\n` +
+      `*Total: ${formatMoney(totalValor)}*\n\nCódigo da lista: ${lista.codigo}`
     )
-
     window.open(`https://wa.me/${WA_NUMBER}?text=${msg}`, '_blank')
-    setGiftModal(null)
-    setCartItems([])
+    setConfirmModal(null)
   }
 
   return (
@@ -198,25 +207,6 @@ export default function PublicList() {
         </div>
       </div>
 
-      {/* Cart summary bar */}
-      {cartItems.length > 0 && (
-        <div style={{ background: 'var(--verde)', padding: '0.75rem 4%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-          <span style={{ color: 'var(--ouro-claro)', fontSize: '0.82rem', fontWeight: 600 }}>
-            🎁 {cartItems.length} {cartItems.length === 1 ? 'item selecionado' : 'itens selecionados'} — {formatMoney(cartItems.reduce((s, i) => s + Number(i.preco), 0))}
-          </span>
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <button type="button" className="btn btn-outline btn-sm" onClick={() => setCartItems([])}>Limpar</button>
-            <button type="button" className="btn btn-verde btn-sm" style={{ background: 'var(--ouro)', color: 'var(--verde)' }}
-              onClick={() => {
-                if (!cartItems.length) return
-                setGuestErrors({})
-                setGiftModal({ item: cartItems[cartItems.length - 1], listaItem: null, finalizando: true })
-              }}>
-              Finalizar Conosco
-            </button>
-          </div>
-        </div>
-      )}
 
       {lista && (
         <div className="public-catalog">
@@ -275,17 +265,11 @@ export default function PublicList() {
               const compra = compras.find((c) => c.catalogo_id === item.id)
               const isPendente = compra && compra.status_pagamento === 'Pendente'
               const isPresent = compra && compra.status_pagamento !== 'Rejeitado'
-              const inCart = cartItems.some((i) => i.id === item.id)
               return (
                 <div key={item.id} className={`item-card${isPresent ? ' purchased' : ''}`} style={isPendente ? { opacity: 0.7, filter: 'grayscale(0.6)' } : {}}>
                   {isPresent && (
                     <div className="purchased-overlay" style={isPendente ? { background: 'rgba(107,107,107,0.7)' } : {}}>
                       <span className="purchased-stamp" style={isPendente ? { color: '#fff', borderColor: '#fff' } : {}}>{isPendente ? 'Em andamento' : 'Presenteado'}</span>
-                    </div>
-                  )}
-                  {inCart && !isPresent && (
-                    <div className="purchased-overlay" style={{ background: 'rgba(235,171,10,0.15)' }}>
-                      <span className="purchased-stamp" style={{ background: 'var(--ouro)', color: 'var(--verde)' }}>No carrinho 🎁</span>
                     </div>
                   )}
                   <div style={{ cursor: 'pointer' }} onClick={() => setDetailItem({ item, listaItem })}>
@@ -298,7 +282,7 @@ export default function PublicList() {
                     <div className="preco">{formatMoney(item.preco)}</div>
                     {!isPresent
                       ? <button type="button" className="btn btn-verde btn-sm" style={{ marginTop: 'auto' }} onClick={() => abrirGiftModal(item.id)}>
-                          {inCart ? 'Selecionado ✓' : 'Presentear'}
+                          Presentear
                         </button>
                       : <span style={{ fontSize: '0.72rem', color: 'var(--texto-suave)' }}>{isPendente ? 'Em processamento' : 'Já foi presenteado'}</span>
                     }
@@ -349,67 +333,50 @@ export default function PublicList() {
         <Modal
           open={!!giftModal}
           onClose={() => setGiftModal(null)}
-          title="Presentear com Carinho"
-          maxWidth="540px"
+          title="Presentear este item"
+          maxWidth="480px"
           footer={
-            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', width: '100%' }}>
-              {!giftModal.finalizando && (
-                <button type="button" className="btn btn-outline-dark btn-sm" style={{ flex: 1 }} onClick={continuarPresenteando}>
-                  Continuar Presenteando
-                </button>
-              )}
-              <button type="button" className="btn btn-verde btn-sm" style={{ flex: 1, background: 'var(--ouro)', color: 'var(--verde)', fontWeight: 700 }} onClick={finalizarConosco}>
-                Finalizar Conosco 💬
+            <div style={{ display: 'flex', gap: '0.75rem', width: '100%' }}>
+              <button type="button" className="btn btn-outline-dark btn-sm" style={{ flex: 1 }} onClick={() => setGiftModal(null)}>
+                CANCELAR
+              </button>
+              <button type="button" className="btn btn-verde btn-sm" style={{ flex: 1 }} onClick={confirmarPresente} disabled={confirmando}>
+                {confirmando ? 'REGISTRANDO...' : 'CONFIRMAR PRESENTE'}
               </button>
             </div>
           }
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
 
-            {/* Cart summary */}
-            {cartItems.length > 0 && (
-              <div style={{ background: 'rgba(0,48,13,0.04)', border: '1px solid rgba(0,48,13,0.1)', borderRadius: 4, padding: '0.9rem 1rem' }}>
-                <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--texto-suave)', marginBottom: '0.5rem' }}>Já selecionados</div>
-                {cartItems.map((i) => (
-                  <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.2rem 0', color: 'var(--verde)' }}>
-                    <span>{i.nome}</span>
-                    <span style={{ fontWeight: 700 }}>{formatMoney(i.preco)}</span>
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* Item info */}
+            <div>
+              <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--verde)', marginBottom: '0.3rem' }}>{giftModal.item.nome}</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--texto-suave)' }}>Defina o valor com o qual deseja presentear os noivos:</div>
+            </div>
 
-            {/* Current item */}
-            {!giftModal.finalizando && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem', padding: '0.9rem 1rem', background: 'rgba(235,171,10,0.07)', border: '1px solid rgba(235,171,10,0.25)', borderRadius: 4 }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--texto-suave)', marginBottom: '0.2rem' }}>{giftModal.item.setor}</div>
-                  <div style={{ fontWeight: 700, color: 'var(--verde)', fontSize: '0.9rem', lineHeight: 1.3 }}>{giftModal.item.nome}</div>
-                </div>
-                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--ouro)', whiteSpace: 'nowrap' }}>{formatMoney(giftModal.item.preco)}</div>
-              </div>
-            )}
+            {/* Price box */}
+            <div style={{ background: 'var(--bege-suave)', border: '1px solid rgba(0,48,13,0.1)', borderRadius: 4, padding: '1rem 1.5rem', textAlign: 'center' }}>
+              <div style={{ fontSize: '1.7rem', fontWeight: 700, color: 'var(--verde)' }}>{formatMoney(giftModal.item.preco)}</div>
+            </div>
 
             {/* Guest form */}
             <div>
-              <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--texto-suave)', marginBottom: '0.9rem' }}>Seus dados</div>
-
-              <div className="form-group" style={{ marginBottom: '0.9rem' }}>
-                <label htmlFor="guest-nome">Nome completo</label>
-                <input id="guest-nome" type="text" placeholder="Seu nome" value={guestData.nome}
+              <div className="form-group" style={{ marginBottom: '0.85rem' }}>
+                <label htmlFor="guest-nome" style={{ textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '0.62rem' }}>Seu Nome Completo</label>
+                <input id="guest-nome" type="text" placeholder="Nome completo" value={guestData.nome}
                   onChange={(e) => setGuestData({ ...guestData, nome: e.target.value })} />
                 {guestErrors.nome && <span className="form-error show">{guestErrors.nome}</span>}
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.9rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.85rem' }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label htmlFor="guest-cpf">CPF</label>
+                  <label htmlFor="guest-cpf" style={{ textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '0.62rem' }}>CPF</label>
                   <input id="guest-cpf" type="text" placeholder="000.000.000-00" value={guestData.cpf}
                     onChange={(e) => setGuestData({ ...guestData, cpf: maskCPF(e.target.value) })} />
                   {guestErrors.cpf && <span className="form-error show">{guestErrors.cpf}</span>}
                 </div>
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label htmlFor="guest-tel">Telefone</label>
+                  <label htmlFor="guest-tel" style={{ textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '0.62rem' }}>Telefone</label>
                   <input id="guest-tel" type="text" placeholder="(00) 00000-0000" value={guestData.telefone}
                     onChange={(e) => setGuestData({ ...guestData, telefone: maskPhone(e.target.value) })} />
                   {guestErrors.telefone && <span className="form-error show">{guestErrors.telefone}</span>}
@@ -417,11 +384,11 @@ export default function PublicList() {
               </div>
 
               <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
-                <legend style={{ display: 'block', fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--verde)', marginBottom: '0.5rem', width: '100%' }}>
+                <legend style={{ display: 'block', fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--texto-suave)', marginBottom: '0.5rem', width: '100%' }}>
                   Forma de Pagamento
                 </legend>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
-                  {['PIX', 'Crédito', 'Débito'].map((op) => (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                  {['Pix', 'Cartão'].map((op) => (
                     <button type="button" key={op}
                       className={`payment-option${guestData.formaPagamento === op ? ' selected' : ''}`}
                       onClick={() => setGuestData({ ...guestData, formaPagamento: op })}>
@@ -433,9 +400,32 @@ export default function PublicList() {
               </fieldset>
             </div>
 
-            <p style={{ fontSize: '0.72rem', color: 'var(--texto-suave)', lineHeight: 1.6, textAlign: 'center' }}>
-              Ao clicar em <strong>Finalizar Conosco</strong> você será redirecionado para o WhatsApp da La Provence para confirmar o pagamento.
+            <p style={{ fontSize: '0.72rem', color: 'var(--texto-suave)', lineHeight: 1.6, textAlign: 'center', margin: 0 }}>
+              Ao confirmar, nossa equipe entrará em contato para finalizar o pagamento com segurança.
             </p>
+          </div>
+        </Modal>
+      )}
+      {/* Modal confirmação presente */}
+      {confirmModal && (
+        <Modal open={!!confirmModal} onClose={() => setConfirmModal(null)} maxWidth="420px">
+          <div className="confirm-present-modal">
+            <div className="script confirm-present-title">Quase lá!</div>
+            <h3 className="confirm-present-subtitle">Estamos finalizando seu presente</h3>
+            <p className="confirm-present-desc">
+              Para garantir a segurança da transação, o pagamento é concluído diretamente com nossa equipe.
+            </p>
+            <div className="confirm-present-box">
+              <div className="label-caps" style={{ color: 'var(--ouro)', marginBottom: '0.5rem' }}>
+                {confirmModal.items.length > 1 ? 'Itens Escolhidos' : 'Item Escolhido'}
+              </div>
+              {confirmModal.items.map((item) => (
+                <div key={item.id} className="confirm-present-item">{item.nome}</div>
+              ))}
+            </div>
+            <button type="button" className="btn btn-verde confirm-present-wa" onClick={abrirWhatsApp}>
+              ENTRAR EM CONTATO VIA WHATSAPP
+            </button>
           </div>
         </Modal>
       )}

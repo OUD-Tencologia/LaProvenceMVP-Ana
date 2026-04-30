@@ -219,8 +219,13 @@ export default function Auth() {
             </div>
             <div className="form-group">
               <label>Data do casamento</label>
-              <input type="date" className="date-input" min={minDate} value={regForm.data}
-                onChange={(e) => setRegForm({ ...regForm, data: e.target.value })} />
+              <input type="date" className="date-input" min={minDate} max="9999-12-31" value={regForm.data}
+                onChange={(e) => {
+                  const val = e.target.value
+                  const year = val.split('-')[0]
+                  if (year && year.length > 4) return
+                  setRegForm({ ...regForm, data: val })
+                }} />
             </div>
             <div className="form-group">
               <label>Senha</label>

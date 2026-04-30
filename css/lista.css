@@ -1,3 +1,48 @@
+/* ─── MODAL CONFIRMAÇÃO PRESENTE ─── */
+.confirm-present-modal {
+  text-align: center;
+  padding: 0.5rem 0.25rem 0.25rem;
+}
+.confirm-present-title {
+  font-size: 3rem;
+  color: var(--verde);
+  line-height: 1.1;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+.confirm-present-subtitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--verde);
+  margin-bottom: 0.75rem;
+}
+.confirm-present-desc {
+  font-size: 0.82rem;
+  color: var(--texto-suave);
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+.confirm-present-box {
+  background: var(--bege-suave);
+  border-radius: 4px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+.confirm-present-item {
+  font-weight: 600;
+  color: var(--verde);
+  font-size: 0.95rem;
+  margin-top: 0.3rem;
+}
+.confirm-present-wa {
+  width: 100%;
+  padding: 0.9rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
 /* ─── CHECKOUT BUTTON ─── */
 .btn-checkout {
   background: transparent;

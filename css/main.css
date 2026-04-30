@@ -872,7 +872,7 @@ footer {
   min-height: 100vh;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  align-items: start;
+  align-items: stretch;
 }
 .auth-left {
   position: sticky;
@@ -1645,6 +1645,9 @@ footer {
   .catalog-layout {
     grid-template-columns: 180px 1fr;
   }
+  .catalog-layout-2col {
+    grid-template-columns: 1fr;
+  }
   .mini-cart {
     display: none;
   }
@@ -2177,6 +2180,14 @@ tbody tr:last-child td {
   background: var(--verde);
   color: var(--ouro-claro);
   border-color: var(--verde);
+}
+
+/* ─── 2-COL CATALOG LAYOUT (gestor/noivos, no sidebar) ─── */
+.catalog-layout-2col {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 2rem;
+  align-items: start;
 }
 
 /* ─── CATALOG LARGE CARDS ─────────────────────── */
