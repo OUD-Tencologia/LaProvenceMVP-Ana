@@ -12,7 +12,7 @@ import { catalogoService } from '../services/catalogo.js'
 import { listasService } from '../services/listas.js'
 import { comprasService } from '../services/compras.js'
 import { premontadasService } from '../services/premontadas.js'
-import { SETOR_DISPLAY } from '../services/auth.js'
+import { SETOR_DISPLAY, SETOR_API } from '../services/auth.js'
 
 const SETORES = Object.values(SETOR_DISPLAY)
 
@@ -275,7 +275,6 @@ export default function Admin() {
   const [catSetor, setCatSetor] = useState('')
 
   const [modalData, setModalData] = useState(null) // { lista, compras, listaItens }
-  const [selectedPending, setSelectedPending] = useState(null) // { item, compra }
   const [compraDetalheModal, setCompraDetalheModal] = useState(null)
   const [archiveConfirmModal, setArchiveConfirmModal] = useState(null)
   const [casalInfoModal, setCasalInfoModal] = useState(null)
@@ -353,7 +352,6 @@ export default function Admin() {
         listasService.getItens(lista.id),
       ])
       setModalData({ lista, compras, listaItens })
-      setSelectedPending(null)
     } catch (e) {
       toast(e.message, 'error')
     }
@@ -362,7 +360,6 @@ export default function Admin() {
   function closeListaModal() {
     setModalData(null)
     setCompraDetalheModal(null)
-    setSelectedPending(null)
   }
 
   function downloadCSV() {
@@ -415,7 +412,7 @@ export default function Admin() {
         compras: prev.compras.map((c) => c.id === compraId ? { ...c, status_pagamento: 'Aprovado' } : c),
       }))
       setTodasCompras((prev) => prev.map((c) => c.id === compraId ? { ...c, status_pagamento: 'Aprovado' } : c))
-      setSelectedPending(null)
+      setCompraDetalheModal(null)
       toast('Pagamento aprovado!')
     } catch (e) { toast(e.message, 'error') }
   }
@@ -428,7 +425,7 @@ export default function Admin() {
         compras: prev.compras.map((c) => c.id === compraId ? { ...c, status_pagamento: 'Rejeitado' } : c),
       }))
       setTodasCompras((prev) => prev.map((c) => c.id === compraId ? { ...c, status_pagamento: 'Rejeitado' } : c))
-      setSelectedPending(null)
+      setCompraDetalheModal(null)
       toast('Compra cancelada.')
     } catch (e) { toast(e.message, 'error') }
   }
@@ -459,7 +456,7 @@ export default function Admin() {
       const payload = {
         nome: itemModal.nome,
         tamanho: itemModal.tamanho || '',
-        setor: itemModal.setor || 'Mesa posta',
+        setor: SETOR_API[itemModal.setor] || itemModal.setor || 'Mesa_posta',
         preco: String(parseMoney(itemModal.preco) || 0),
         estoque: Number.parseInt(itemModal.estoque) || 0,
         quantidade: Number.parseInt(itemModal.quantidade) || 1,
@@ -674,7 +671,7 @@ export default function Admin() {
                         <td><StatusBadge status={item.status} /></td>
                         <td>
                           <div style={{ display: 'flex', gap: '0.4rem' }}>
-                            <button type="button" className="btn btn-outline-dark btn-sm" onClick={() => setItemModal({ ...item, preco: numToMaskMoney(item.preco) })}>Editar</button>
+                            <button type="button" className="btn btn-outline-dark btn-sm" onClick={() => setItemModal({ ...item, preco: numToMaskMoney(item.preco), setor: SETOR_DISPLAY[item.setor] || item.setor })}>Editar</button>
                             <button
                               type="button"
                               className={`btn btn-sm btn-toggle-${item.status === 'Ativo' ? 'inativar' : 'ativar'}`}
@@ -818,13 +815,12 @@ export default function Admin() {
                 const compra = modalData.compras.find((c) => c.catalogo_id === li.catalogo_id)
                 const isPendente = compra?.status_pagamento === 'Pendente'
                 const isAprovado = compra && (compra.status_pagamento === 'Aprovado' || compra.status_pagamento === 'Confirmado')
-                const isSelected = selectedPending?.compra?.id === compra?.id
                 return (
                   <button
                     type="button"
                     key={li.id}
-                    className={`gestor-item-card${isPendente ? ' gestor-item-card--pending' : ''}${isAprovado ? ' gestor-item-card--approved' : ''}${isSelected ? ' gestor-item-card--selected' : ''}`}
-                    onClick={() => isPendente && setSelectedPending(isSelected ? null : { item, compra })}
+                    className={`gestor-item-card${isPendente ? ' gestor-item-card--pending' : ''}${isAprovado ? ' gestor-item-card--approved' : ''}`}
+                    onClick={() => isPendente && setCompraDetalheModal({ item, compra })}
                     style={{ cursor: isPendente ? 'pointer' : 'default' }}
                   >
                     {isAprovado && <div className="gestor-item-stamp">Presenteado</div>}
@@ -842,40 +838,6 @@ export default function Admin() {
               })}
             </div>
 
-            {/* Inline purchase detail */}
-            {selectedPending && (
-              <div className="gestor-compra-detail">
-                <div className="gestor-compra-detail-title">
-                  Detalhe da Compra — {selectedPending.item.nome.toUpperCase()}
-                </div>
-                <div className="gestor-compra-detail-grid">
-                  <div>
-                    <span className="label-caps" style={{ fontSize: '0.6rem', color: 'var(--texto-suave)' }}>Convidado</span>
-                    <div style={{ fontWeight: 600, marginTop: '0.2rem' }}>{selectedPending.compra.nome_convidado}</div>
-                  </div>
-                  <div>
-                    <span className="label-caps" style={{ fontSize: '0.6rem', color: 'var(--texto-suave)' }}>Telefone</span>
-                    <div style={{ fontWeight: 600, marginTop: '0.2rem' }}>{selectedPending.compra.telefone || '—'}</div>
-                  </div>
-                  <div>
-                    <span className="label-caps" style={{ fontSize: '0.6rem', color: 'var(--texto-suave)' }}>Valor</span>
-                    <div style={{ fontWeight: 700, color: 'var(--ouro)', marginTop: '0.2rem' }}>{formatMoney(selectedPending.compra.valor_pago)}</div>
-                  </div>
-                  <div>
-                    <span className="label-caps" style={{ fontSize: '0.6rem', color: 'var(--texto-suave)' }}>Pagamento</span>
-                    <div style={{ fontWeight: 600, marginTop: '0.2rem' }}>{selectedPending.compra.forma_pagamento}</div>
-                  </div>
-                  <div style={{ gridColumn: '1 / -1' }}>
-                    <span className="label-caps" style={{ fontSize: '0.6rem', color: 'var(--texto-suave)' }}>Data</span>
-                    <div style={{ fontWeight: 600, marginTop: '0.2rem' }}>{new Date(selectedPending.compra.data_compra).toLocaleString('pt-BR')}</div>
-                  </div>
-                </div>
-                <div className="gestor-compra-detail-actions">
-                  <button type="button" className="btn btn-verde" style={{ flex: 1 }} onClick={() => handleAprovar(selectedPending.compra.id)}>APROVAR</button>
-                  <button type="button" className="btn btn-sm btn-rejeitar" style={{ flex: 1 }} onClick={() => handleRejeitar(selectedPending.compra.id)}>CANCELAR COMPRA</button>
-                </div>
-              </div>
-            )}
           </>
         )}
       </Modal>
@@ -966,7 +928,17 @@ export default function Admin() {
 
       {/* ── MODAL DETALHES DA COMPRA ── */}
       <Modal open={!!compraDetalheModal} onClose={() => setCompraDetalheModal(null)} title="Detalhes do Presente" maxWidth="460px"
-        footer={<button type="button" className="btn btn-outline-dark btn-sm" onClick={() => setCompraDetalheModal(null)}>Fechar</button>}
+        footer={
+          compraDetalheModal?.compra?.status_pagamento === 'Pendente' ? (
+            <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
+              <button type="button" className="btn btn-outline-dark btn-sm" onClick={() => setCompraDetalheModal(null)} style={{ flexShrink: 0 }}>Fechar</button>
+              <button type="button" className="btn btn-sm btn-rejeitar" style={{ flex: 1 }} onClick={() => handleRejeitar(compraDetalheModal.compra.id)}>CANCELAR COMPRA</button>
+              <button type="button" className="btn btn-verde" style={{ flex: 1 }} onClick={() => handleAprovar(compraDetalheModal.compra.id)}>APROVAR</button>
+            </div>
+          ) : (
+            <button type="button" className="btn btn-outline-dark btn-sm" onClick={() => setCompraDetalheModal(null)}>Fechar</button>
+          )
+        }
       >
         {compraDetalheModal && (
           <div>
