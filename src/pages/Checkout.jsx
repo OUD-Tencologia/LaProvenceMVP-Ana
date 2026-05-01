@@ -133,7 +133,7 @@ export default function Checkout() {
         nome_convidado: form.nome.trim(),
         cpf: form.cpf,
         telefone: form.tel,
-        valor_pago: item.preco,
+        valor_pago: String(item.preco),
         forma_pagamento: pgtoStr,
       })
 
