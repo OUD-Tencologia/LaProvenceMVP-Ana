@@ -245,7 +245,7 @@ export default function Story() {
   return (
     <div className="app-layout">
       <Sidebar role={currentUser.role === 'gestor' ? 'gestor' : 'noivo'} />
-      <div style={{ marginLeft: 240, padding: '2.5rem 3rem', minHeight: '100vh', display: 'grid', gridTemplateColumns: '1fr 400px', gap: '3rem', alignItems: 'start' }}>
+      <div className="story-layout">
 
         {/* Controls */}
         <div>
