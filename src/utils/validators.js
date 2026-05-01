@@ -14,7 +14,7 @@ export function validateCPF(cpf) {
 }
 
 export function validatePassword(senha) {
-  return senha.length >= 8 && /[A-Z]/.test(senha) && /[0-9]/.test(senha) && /[^A-Za-z0-9]/.test(senha);
+  return senha.length >= 8 && /[A-Z]/.test(senha) && /[0-9]/.test(senha);
 }
 
 /* ─── input masks (returns cleaned value) ────────── */

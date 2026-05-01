@@ -261,6 +261,7 @@ export default function Auth() {
               <button type="button" className={`template-card auth-template-opt${selectedTemplate === '' ? ' selected' : ''}`}
                 onClick={() => setSelectedTemplate('')}>
                 <div className="auth-template-opt__info">
+                  <div className="label-caps auth-template-opt__badge" style={{ visibility: 'hidden' }}>placeholder</div>
                   <strong className="auth-template-opt__name">Começar do zero</strong>
                   <div className="auth-template-opt__count">Adicione os itens pelo catálogo depois</div>
                 </div>
