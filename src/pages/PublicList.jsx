@@ -41,10 +41,13 @@ export default function PublicList() {
 
   // Gift flow
   const [giftModal, setGiftModal] = useState(null) // { item, listaItem }
+  const [giftValor, setGiftValor] = useState(200)
   const [guestData, setGuestData] = useState({ nome: '', cpf: '', telefone: '', formaPagamento: '' })
   const [guestErrors, setGuestErrors] = useState({})
   const [confirmModal, setConfirmModal] = useState(null) // { items, guestNome, formaPagamento }
   const [confirmando, setConfirmando] = useState(false)
+
+  const CARTAO_PRESENTE_ITEM = { id: null, nome: 'Cartão Presente', preco: 200, setor: '', tamanho: '', imgs: [], marca: '', isCartaoPresente: true }
 
   useEffect(() => {
     if (!codigo) { setLoading(false); return }
@@ -112,12 +115,13 @@ export default function PublicList() {
 
   function abrirGiftModal(item, listaItem) {
     if (!item) return
-    if (isPresenteado(item.id)) {
+    if (!item.isCartaoPresente && isPresenteado(item.id)) {
       toast('Este item já foi presenteado por outra pessoa.', 'error')
       return
     }
     setDetailItem(null)
     setGuestErrors({})
+    setGiftValor(200)
     setGiftModal({ item, listaItem: listaItem ?? listaItens.find((li) => li.catalogo_id === item.id) })
   }
 
@@ -127,6 +131,7 @@ export default function PublicList() {
     if (!guestData.cpf.replace(/\D/g, '') || guestData.cpf.replace(/\D/g, '').length < 11) errs.cpf = 'CPF inválido'
     if (!guestData.telefone.trim()) errs.telefone = 'Informe seu telefone'
     if (!guestData.formaPagamento) errs.formaPagamento = 'Selecione a forma de pagamento'
+    if (giftModal?.item?.isCartaoPresente && (!giftValor || giftValor < 200)) errs.valor = 'Valor mínimo de R$ 200,00'
     setGuestErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -139,11 +144,11 @@ export default function PublicList() {
     try {
       await comprasService.create({
         listas_id: lista.id,
-        catalogo_id: item.id,
+        catalogo_id: item.isCartaoPresente ? null : item.id,
         nome_convidado: guestData.nome,
         cpf: guestData.cpf.replace(/\D/g, ''),
         telefone: guestData.telefone,
-        valor_pago: String(Number(item.preco)),
+        valor_pago: String(item.isCartaoPresente ? giftValor : Number(item.preco)),
         forma_pagamento: guestData.formaPagamento,
         status_pagamento: 'Pendente',
         is_new_gestor: true,
@@ -158,13 +163,13 @@ export default function PublicList() {
 
     setConfirmando(false)
     setGiftModal(null)
-    setConfirmModal({ items: [item], guestNome: guestData.nome, formaPagamento: guestData.formaPagamento })
+    setConfirmModal({ items: [item], guestNome: guestData.nome, formaPagamento: guestData.formaPagamento, giftValor: item.isCartaoPresente ? giftValor : null })
   }
 
   function abrirWhatsApp() {
     if (!confirmModal) return
-    const totalValor = confirmModal.items.reduce((s, i) => s + Number(i.preco), 0)
-    const itensText = confirmModal.items.map((i) => `• ${i.nome} — ${formatMoney(i.preco)}`).join('\n')
+    const totalValor = confirmModal.giftValor ?? confirmModal.items.reduce((s, i) => s + Number(i.preco), 0)
+    const itensText = confirmModal.items.map((i) => `• ${i.nome} — ${formatMoney(confirmModal.giftValor ?? i.preco)}`).join('\n')
     const msg = encodeURIComponent(
       `Olá! Gostaria de confirmar o presente para os noivos *${lista.nome_noivos}*. 🎁\n\n` +
       `*Meus dados:*\nNome: ${confirmModal.guestNome}\nForma de pagamento: ${confirmModal.formaPagamento}\n\n` +
@@ -247,13 +252,12 @@ export default function PublicList() {
                   <h4>Presentear com Crédito</h4>
                   <div className="tamanho">Os noivos escolhem o presente</div>
                   <div className="preco" style={{ color: 'var(--texto-suave)', fontSize: '0.85rem' }}>A partir de R$ 200,00</div>
-                  <a
-                    href={`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(`Olá! Gostaria de presentear os noivos ${lista.nome_noivos} com um cartão presente. Código da lista: ${lista.codigo}`)}`}
-                    target="_blank"
-                    rel="noreferrer"
+                  <button
+                    type="button"
                     className="btn btn-verde btn-sm"
-                    style={{ marginTop: 'auto', display: 'block', textAlign: 'center' }}
-                  >Presentear</a>
+                    style={{ marginTop: 'auto', display: 'block', textAlign: 'center', width: '100%' }}
+                    onClick={() => abrirGiftModal(CARTAO_PRESENTE_ITEM, null)}
+                  >Presentear</button>
                 </div>
               </div>
             )}
@@ -349,12 +353,28 @@ export default function PublicList() {
             {/* Item info */}
             <div>
               <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--verde)', marginBottom: '0.3rem' }}>{giftModal.item.nome}</div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--texto-suave)' }}>Defina o valor com o qual deseja presentear os noivos:</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--texto-suave)' }}>
+                {giftModal.item.isCartaoPresente ? 'Escolha o valor do cartão presente (mínimo R$ 200,00):' : 'Defina o valor com o qual deseja presentear os noivos:'}
+              </div>
             </div>
 
             {/* Price box */}
             <div style={{ background: 'var(--bege-suave)', border: '1px solid rgba(0,48,13,0.1)', borderRadius: 4, padding: '1rem 1.5rem', textAlign: 'center' }}>
-              <div style={{ fontSize: '1.7rem', fontWeight: 700, color: 'var(--verde)' }}>{formatMoney(giftModal.item.preco)}</div>
+              {giftModal.item.isCartaoPresente ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <input
+                    type="number"
+                    min={200}
+                    step={50}
+                    value={giftValor}
+                    onChange={(e) => setGiftValor(Number(e.target.value))}
+                    style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--verde)', textAlign: 'center', border: '1px solid rgba(0,48,13,0.2)', borderRadius: 4, padding: '0.4rem 0.75rem', width: '100%', boxSizing: 'border-box', background: 'var(--branco)' }}
+                  />
+                  {guestErrors.valor && <span className="form-error show">{guestErrors.valor}</span>}
+                </div>
+              ) : (
+                <div style={{ fontSize: '1.7rem', fontWeight: 700, color: 'var(--verde)' }}>{formatMoney(giftModal.item.preco)}</div>
+              )}
             </div>
 
             {/* Guest form */}
@@ -418,7 +438,9 @@ export default function PublicList() {
                 {confirmModal.items.length > 1 ? 'Itens Escolhidos' : 'Item Escolhido'}
               </div>
               {confirmModal.items.map((item) => (
-                <div key={item.id} className="confirm-present-item">{item.nome}</div>
+                <div key={item.id ?? 'cartao'} className="confirm-present-item">
+                  {item.nome}{confirmModal.giftValor ? ` — ${formatMoney(confirmModal.giftValor)}` : ''}
+                </div>
               ))}
             </div>
             <button type="button" className="btn btn-verde confirm-present-wa" onClick={abrirWhatsApp}>

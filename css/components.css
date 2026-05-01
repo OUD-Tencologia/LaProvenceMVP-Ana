@@ -386,6 +386,8 @@
   padding: 1rem 1.2rem;
   margin-bottom: 0.6rem;
   cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
 }
 .auth-template-opt__info { flex: 1; }
 .auth-template-opt__badge { color: var(--ouro); }

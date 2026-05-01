@@ -571,7 +571,21 @@ export default function Admin() {
             <div className="stats-grid" style={{ marginBottom: '2rem' }}>
               <div className="stat-card"><span className="label-caps">Listas Ativas</span><div className="value">{listas.length}</div></div>
               <div className="stat-card"><span className="label-caps">Total Compras</span><div className="value">{todasCompras.length}</div></div>
-              <div className="stat-card"><span className="label-caps">Pendentes</span><div className="value">{pendentes}</div></div>
+              <button
+                type="button"
+                className="stat-card"
+                disabled={!pendentes}
+                style={pendentes > 0 ? { cursor: 'pointer', borderColor: '#EBAB0A', background: 'rgba(235,171,10,0.06)', textAlign: 'left', width: '100%' } : { textAlign: 'left', width: '100%' }}
+                onClick={() => {
+                  const firstPending = todasCompras.find((c) => c.status_pagamento === 'Pendente')
+                  const lista = firstPending && listas.find((l) => l.id === (firstPending.listas_id ?? firstPending.lista_id))
+                  if (lista) openListaModal(lista)
+                }}
+              >
+                <span className="label-caps">Pendentes</span>
+                <div className="value" style={pendentes > 0 ? { color: '#EBAB0A' } : {}}>{pendentes}</div>
+                {pendentes > 0 && <div style={{ fontSize: '0.6rem', color: '#EBAB0A', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: '0.25rem' }}>Ver lista →</div>}
+              </button>
               <div className="stat-card"><span className="label-caps">Total Arrecadado</span><div className="value" style={{ fontSize: '1.2rem' }}>{formatMoney(totalArrecadado)}</div></div>
             </div>
 
