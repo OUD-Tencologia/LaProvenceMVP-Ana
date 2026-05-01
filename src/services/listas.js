@@ -9,6 +9,14 @@ function normalizarLista(lista) {
     data_casamento: lista.data_casamento
       ? lista.data_casamento.split('T')[0]
       : null,
+    user: lista.user
+      ? {
+          ...lista.user,
+          data_casamento: lista.user.data_casamento
+            ? lista.user.data_casamento.split('T')[0]
+            : null,
+        }
+      : lista.user,
   }
 }
 

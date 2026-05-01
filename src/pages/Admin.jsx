@@ -81,8 +81,9 @@ function StoryModal({ lista, open, onClose }) {
     const W = 1080, H = 1920
     const tpl = STORY_TEMPLATES[tplIdxRef.current]
     const displayNome = l.nome_noivos || 'Seus Nomes'
-    const displayData = l.data_casamento
-      ? new Date(`${l.data_casamento}T00:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })
+    const effectiveData = l.data_casamento || l.user?.data_casamento
+    const displayData = effectiveData
+      ? new Date(`${effectiveData}T00:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })
       : 'Data do Casamento'
 
     ctx.fillStyle = tpl.bg; ctx.fillRect(0, 0, W, H)
@@ -229,7 +230,7 @@ function StoryModal({ lista, open, onClose }) {
             <div className="story-data-block">
               {[
                 { label: 'Noivos', value: lista.nome_noivos },
-                lista.data_casamento ? { label: 'Casamento', value: formatDate(lista.data_casamento) } : null,
+                (lista.data_casamento || lista.user?.data_casamento) ? { label: 'Casamento', value: formatDate(lista.data_casamento || lista.user?.data_casamento) } : null,
                 { label: 'Código', value: `#${lista.codigo}`, highlight: true },
               ].filter(Boolean).map(({ label, value, highlight }) => (
                 <div key={label} className="story-data-row">
@@ -953,9 +954,9 @@ export default function Admin() {
               )}
               <div>
                 <div className="modal-info-header__name modal-info-header__name--sm">{casalInfoModal.lista.nome_noivos}</div>
-                {casalInfoModal.lista.data_casamento && (
+                {(casalInfoModal.lista.data_casamento || casalInfoModal.user?.data_casamento) && (
                   <div className="modal-info-header__sub modal-info-header__sub--sm">
-                    Casamento em {formatDate(casalInfoModal.lista.data_casamento)}
+                    Casamento em {formatDate(casalInfoModal.lista.data_casamento || casalInfoModal.user?.data_casamento)}
                   </div>
                 )}
               </div>
