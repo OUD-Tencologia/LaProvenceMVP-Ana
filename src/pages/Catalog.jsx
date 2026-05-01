@@ -46,7 +46,9 @@ export default function Catalog() {
         setCatalogo(cat.filter((i) => i.status === 'Ativo'))
 
         let l = null
-        try { l = await listasService.getByUser(currentUser.id) } catch { /* sem lista */ }
+        try { l = await listasService.getByUser(currentUser.id) } catch (e) {
+          console.warn('[Catalog] getByUser failed:', e?.message)
+        }
         setLista(l)
 
         if (l) {
