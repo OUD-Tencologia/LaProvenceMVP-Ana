@@ -174,9 +174,9 @@ export default function Catalog() {
                           type="button"
                           className={`btn btn-sm${inList ? '' : ' btn-verde'}`}
                           style={inList ? { background: 'rgba(0,48,13,0.08)', color: 'var(--verde)' } : {}}
-                          disabled={toggling === item.id}
+                          disabled={toggling === item.id || (!inList && item.estoque === 0)}
                           onClick={() => toggleItem(item.id)}
-                        >{inList ? 'Remover' : 'Adicionar'}</button>
+                        >{inList ? 'Remover' : item.estoque === 0 ? 'Indisponível' : 'Adicionar'}</button>
                       </div>
                     </div>
                   )
@@ -243,9 +243,9 @@ export default function Catalog() {
                 type="button"
                 className={`btn btn-sm${listaItens.some((li) => li.catalogo_id === detailItem.id) ? '' : ' btn-verde'}`}
                 style={listaItens.some((li) => li.catalogo_id === detailItem.id) ? { background: 'rgba(0,48,13,0.08)', color: 'var(--verde)' } : {}}
-                disabled={toggling === detailItem.id}
+                disabled={toggling === detailItem.id || (!listaItens.some((li) => li.catalogo_id === detailItem.id) && detailItem.estoque === 0)}
                 onClick={() => { toggleItem(detailItem.id); setDetailItem(null) }}
-              >{listaItens.some((li) => li.catalogo_id === detailItem.id) ? 'Remover' : 'Adicionar'}</button>
+              >{listaItens.some((li) => li.catalogo_id === detailItem.id) ? 'Remover' : detailItem.estoque === 0 ? 'Indisponível' : 'Adicionar'}</button>
             </>
           }
         >
