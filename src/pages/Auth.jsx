@@ -85,8 +85,8 @@ export default function Auth() {
         data_casamento: regForm.data || null,
         password: regForm.senha,
       })
-      login(user, token)
-
+      // Token is already in localStorage from authService.register() — create the lista
+      // before calling login() to avoid the useEffect navigation racing with lista creation.
       const lista = await listasService.create({
         user_id: user.id,
         nome_noivos: nome,
@@ -102,6 +102,7 @@ export default function Auth() {
         } catch { /* não bloqueia o cadastro */ }
       }
 
+      login(user, token)
       navigate('/dashboard?novo=1')
     } catch (e) {
       setRegErrors({ geral: e.message })
