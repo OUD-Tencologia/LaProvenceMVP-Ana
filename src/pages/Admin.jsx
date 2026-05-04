@@ -289,6 +289,10 @@ export default function Admin() {
   const [addItemSearch, setAddItemSearch] = useState('')
   const [addingItemId, setAddingItemId] = useState(null)
 
+  const catalogImgInputRef = useRef(null)
+  const uploadingImgIdxRef = useRef(null)
+  const pmImgInputRef = useRef(null)
+
   useEffect(() => {
     if (!currentUser) { navigate('/auth'); return }
     if (currentUser.role !== 'gestor') { navigate('/dashboard'); return }
@@ -473,7 +477,7 @@ export default function Admin() {
       } else {
         saved = await catalogoService.create(payload)
       }
-      const newImgs = (itemModal.imgs ?? []).filter((u) => u && !u.startsWith('data:'))
+      const newImgs = (itemModal.imgs ?? []).filter((u) => !!u)
       await Promise.all(newImgs.map((url, idx) => catalogoService.addImage(saved.id, url, idx)))
       const updated = await catalogoService.getAll({ limit: 100 })
       setCatalogo(updated)
@@ -548,6 +552,31 @@ export default function Admin() {
     } catch (e) {
       toast(e.message || 'Erro ao excluir a lista pré-montada', 'error')
     }
+  }
+
+  function handleCatalogImageFile(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const idx = uploadingImgIdxRef.current
+      setItemModal((prev) => {
+        const imgs = [...(prev.imgs?.length ? prev.imgs : [''])]
+        imgs[idx] = ev.target.result
+        return { ...prev, imgs }
+      })
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
+  function handlePmImageFile(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => setPmModal((prev) => ({ ...prev, img: ev.target.result }))
+    reader.readAsDataURL(file)
+    e.target.value = ''
   }
 
   const SEARCH_SVG = <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" /></svg>
@@ -1109,20 +1138,26 @@ export default function Admin() {
                 onChange={(e) => setItemModal({ ...itemModal, quantidade: e.target.value })} />
             </div>
             <div className="form-group full">
-              <label>Imagens <span style={{ fontWeight: 400, color: 'var(--texto-suave)' }}>(URLs)</span></label>
+              <input type="file" id="catalog-img-upload" ref={catalogImgInputRef} accept="image/*" style={{ display: 'none' }} onChange={handleCatalogImageFile} />
+              <label htmlFor="catalog-img-upload" style={{ pointerEvents: 'none' }}>Imagens <span style={{ fontWeight: 400, color: 'var(--texto-suave)' }}>(URL ou upload)</span></label>
               {(itemModal.imgs?.length ? itemModal.imgs : ['']).map((url, idx) => (
                 <div key={idx} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  {url && !url.startsWith('data:') && (
+                  {url && (
                     <img src={url} alt="preview" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 3, border: '1px solid rgba(0,48,13,0.15)', flexShrink: 0 }}
                       onError={(e) => { e.target.style.display = 'none' }} />
                   )}
-                  <input type="text" placeholder={`URL da imagem ${idx + 1}`} value={url}
+                  <input type="text" placeholder={`URL da imagem ${idx + 1}`} value={url.startsWith('data:') ? '' : url}
                     style={{ flex: 1 }}
                     onChange={(e) => {
                       const imgs = [...(itemModal.imgs?.length ? itemModal.imgs : [''])]
                       imgs[idx] = e.target.value
                       setItemModal({ ...itemModal, imgs })
                     }} />
+                  <button type="button" title="Fazer upload de arquivo"
+                    onClick={() => { uploadingImgIdxRef.current = idx; catalogImgInputRef.current?.click() }}
+                    style={{ background: 'none', border: '1px solid var(--verde)', borderRadius: 4, cursor: 'pointer', color: 'var(--verde)', fontSize: '0.75rem', padding: '0.25rem 0.5rem', flexShrink: 0, whiteSpace: 'nowrap' }}>
+                    Upload
+                  </button>
                   <button type="button" onClick={() => {
                     const imgs = (itemModal.imgs?.length ? itemModal.imgs : ['']).filter((_, i) => i !== idx)
                     setItemModal({ ...itemModal, imgs: imgs.length ? imgs : [''] })
@@ -1171,8 +1206,21 @@ export default function Admin() {
               </div>
               <div className="form-group" style={{ marginBottom: 0, gridColumn: '1/-1' }}>
                 <label htmlFor="pm-img">URL da Imagem <span style={{ fontWeight: 400, color: 'var(--texto-suave)' }}>(opcional)</span></label>
-                <input id="pm-img" type="text" placeholder="https://..." value={pmModal.img || ''}
-                  onChange={(e) => setPmModal({ ...pmModal, img: e.target.value })} />
+                <input type="file" ref={pmImgInputRef} accept="image/*" style={{ display: 'none' }} onChange={handlePmImageFile} />
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  {pmModal.img && (
+                    <img src={pmModal.img} alt="preview" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 3, border: '1px solid rgba(0,48,13,0.15)', flexShrink: 0 }}
+                      onError={(e) => { e.target.style.display = 'none' }} />
+                  )}
+                  <input id="pm-img" type="text" placeholder="https://..." value={pmModal.img?.startsWith('data:') ? '' : (pmModal.img || '')}
+                    style={{ flex: 1 }}
+                    onChange={(e) => setPmModal({ ...pmModal, img: e.target.value })} />
+                  <button type="button" title="Fazer upload de arquivo"
+                    onClick={() => pmImgInputRef.current?.click()}
+                    style={{ background: 'none', border: '1px solid var(--verde)', borderRadius: 4, cursor: 'pointer', color: 'var(--verde)', fontSize: '0.75rem', padding: '0.25rem 0.5rem', flexShrink: 0, whiteSpace: 'nowrap' }}>
+                    Upload
+                  </button>
+                </div>
               </div>
             </div>
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', cursor: 'pointer', fontSize: '0.85rem' }}>
