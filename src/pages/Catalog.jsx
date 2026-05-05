@@ -42,7 +42,7 @@ export default function Catalog() {
     async function load() {
       setLoading(true)
       try {
-        const cat = await catalogoService.getAll()
+        const cat = await catalogoService.getAll({ limit: 500 })
         setCatalogo(cat.filter((i) => i.status === 'Ativo'))
 
         let l = null
