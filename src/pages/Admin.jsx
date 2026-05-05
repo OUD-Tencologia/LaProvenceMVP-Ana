@@ -305,7 +305,7 @@ export default function Admin() {
       try {
         const [l, c, p] = await Promise.all([
           listasService.getAll(),
-          catalogoService.getAll({ limit: 100 }).catch((e) => { toast(e.message || 'Erro ao carregar catálogo', 'error'); return [] }),
+          catalogoService.getAll({ limit: 500 }).catch((e) => { toast(e.message || 'Erro ao carregar catálogo', 'error'); return [] }),
           premontadasService.getAll().catch((e) => { toast(e.message || 'Erro ao carregar pré-montadas', 'error'); return [] }),
         ])
         const ativas = l.filter((li) => li.status === 'Ativa')
@@ -454,6 +454,17 @@ export default function Admin() {
     } catch (e) { toast(e.message, 'error') }
   }
 
+  async function handleDeleteCatalogo(item) {
+    if (!window.confirm(`Excluir "${item.nome}" permanentemente? Esta ação não pode ser desfeita.`)) return
+    try {
+      await catalogoService.delete(item.id)
+      setCatalogo((prev) => prev.filter((c) => c.id !== item.id))
+      toast('Item excluído.')
+    } catch (e) {
+      toast(e.message || 'Erro ao excluir o item.', 'error')
+    }
+  }
+
   async function handleSalvarItem() {
     if (!itemModal?.nome || !itemModal?.preco) { toast('Preencha nome e preço.', 'error'); return }
     setSaving(true)
@@ -479,7 +490,7 @@ export default function Admin() {
       }
       const newImgs = (itemModal.imgs ?? []).filter((u) => !!u)
       await Promise.all(newImgs.map((url, idx) => catalogoService.addImage(saved.id, url, idx)))
-      const updated = await catalogoService.getAll({ limit: 100 })
+      const updated = await catalogoService.getAll({ limit: 500 })
       setCatalogo(updated)
       setItemModal(null)
       toast('Item salvo!')
@@ -721,6 +732,11 @@ export default function Admin() {
                               className={`btn btn-sm btn-toggle-${item.status === 'Ativo' ? 'inativar' : 'ativar'}`}
                               onClick={() => handleToggleStatus(item)}
                             >{item.status === 'Ativo' ? 'Inativar' : 'Ativar'}</button>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-danger"
+                              onClick={() => handleDeleteCatalogo(item)}
+                            >Excluir</button>
                           </div>
                         </td>
                       </tr>
