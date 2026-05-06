@@ -286,6 +286,7 @@ export default function Admin() {
   const [pmItemSearch, setPmItemSearch] = useState('')
   const [pmItemSetor, setPmItemSetor] = useState('')
   const [pmShowSelected, setPmShowSelected] = useState(false)
+  const [pmPage, setPmPage] = useState(1)
   const [pmIndisponiveisModal, setPmIndisponiveisModal] = useState(null)
   const [saving, setSaving] = useState(false)
   const [newGiftsAlert, setNewGiftsAlert] = useState(null) // { count, firstLista }
@@ -615,6 +616,17 @@ export default function Admin() {
   }
 
   const SEARCH_SVG = <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" /></svg>
+
+  const PM_PER_PAGE = 8
+  const pmFiltered = pmModal ? catalogo.filter((item) => {
+    if (pmShowSelected) return pmModal.selectedItens.includes(item.id)
+    if (pmItemSetor && item.setor !== pmItemSetor) return false
+    if (pmItemSearch && !item.nome.toLowerCase().includes(pmItemSearch.toLowerCase())) return false
+    return true
+  }) : []
+  const pmTotalPages = Math.max(1, Math.ceil(pmFiltered.length / PM_PER_PAGE))
+  const pmSafePage = Math.min(pmPage, pmTotalPages)
+  const pmPaginated = pmFiltered.slice((pmSafePage - 1) * PM_PER_PAGE, pmSafePage * PM_PER_PAGE)
 
   return (
     <div className="app-layout">
@@ -1240,7 +1252,7 @@ export default function Admin() {
       </Modal>
 
       {/* ── MODAL PRÉ-MONTADA ── */}
-      <Modal open={!!pmModal} onClose={() => { setPmModal(null); setPmItemSearch(''); setPmItemSetor(''); setPmShowSelected(false) }}
+      <Modal open={!!pmModal} onClose={() => { setPmModal(null); setPmItemSearch(''); setPmItemSetor(''); setPmShowSelected(false); setPmPage(1) }}
         title={pmModal ? (pmModal.id ? `Editar: ${pmModal.nome}` : 'Nova Pré-montada') : ''}
         maxWidth="960px"
         footer={
@@ -1305,58 +1317,58 @@ export default function Admin() {
                   className="pm-selector-search"
                   placeholder="Buscar item..."
                   value={pmItemSearch}
-                  onChange={(e) => setPmItemSearch(e.target.value)}
+                  onChange={(e) => { setPmItemSearch(e.target.value); setPmPage(1) }}
                 />
                 <button
                   type="button"
                   className={`pm-selector-toggle${pmShowSelected ? ' active' : ''}`}
-                  onClick={() => setPmShowSelected((v) => !v)}
+                  onClick={() => { setPmShowSelected((v) => !v); setPmPage(1) }}
                 >
                   {pmShowSelected ? 'Ver todos' : `Selecionados (${pmModal.selectedItens.length})`}
                 </button>
               </div>
               <div className="pm-selector-setores">
-                <button type="button" className={`pm-setor-btn${pmItemSetor === '' ? ' active' : ''}`} onClick={() => setPmItemSetor('')}>Todos</button>
+                <button type="button" className={`pm-setor-btn${pmItemSetor === '' ? ' active' : ''}`} onClick={() => { setPmItemSetor(''); setPmPage(1) }}>Todos</button>
                 {Object.values(SETOR_DISPLAY).map((s) => (
-                  <button type="button" key={s} className={`pm-setor-btn${pmItemSetor === s ? ' active' : ''}`} onClick={() => setPmItemSetor(s)}>{s}</button>
+                  <button type="button" key={s} className={`pm-setor-btn${pmItemSetor === s ? ' active' : ''}`} onClick={() => { setPmItemSetor(s); setPmPage(1) }}>{s}</button>
                 ))}
               </div>
               <div className="pm-items-grid">
-                {catalogo
-                  .filter((item) => {
-                    if (pmShowSelected) return pmModal.selectedItens.includes(item.id)
-                    if (pmItemSetor && item.setor !== pmItemSetor) return false
-                    if (pmItemSearch && !item.nome.toLowerCase().includes(pmItemSearch.toLowerCase())) return false
-                    return true
-                  })
-                  .map((item) => {
-                    const checked = pmModal.selectedItens.includes(item.id)
-                    const indisponivel = item.status !== 'Ativo' || Number(item.estoque) <= 0
-                    return (
-                      <label key={item.id} className={`pm-item-label${checked ? ' checked' : ''}${indisponivel ? ' pm-item-label--indisponivel' : ''}`}>
-                        <input type="checkbox" checked={checked} disabled={indisponivel} onChange={() => {
-                          if (indisponivel) return
-                          const itens = checked
-                            ? pmModal.selectedItens.filter((id) => id !== item.id)
-                            : [...pmModal.selectedItens, item.id]
-                          setPmModal({ ...pmModal, selectedItens: itens })
-                        }} />
-                        <div className="pm-item-label__img">
-                          {item.imgs?.[0]
-                            ? <img src={item.imgs[0]} alt={item.nome} />
-                            : <span className="pm-item-label__img-placeholder">📦</span>
-                          }
-                        </div>
-                        <div className="pm-item-label__body">
-                          <div className="pm-item-label__check"><span className="pm-item-label__check-tick">✓</span></div>
-                          <span className="pm-item-name">{item.nome}</span>
-                          <div className="pm-item-price">{formatMoney(item.preco)}</div>
-                          {indisponivel && <div className="pm-item-unavailable-tag">{item.status !== 'Ativo' ? 'Inativo' : 'Sem estoque'}</div>}
-                        </div>
-                      </label>
-                    )
-                  })}
+                {pmPaginated.map((item) => {
+                  const checked = pmModal.selectedItens.includes(item.id)
+                  const indisponivel = item.status !== 'Ativo' || Number(item.estoque) <= 0
+                  return (
+                    <label key={item.id} className={`pm-item-label${checked ? ' checked' : ''}${indisponivel ? ' pm-item-label--indisponivel' : ''}`}>
+                      <input type="checkbox" checked={checked} disabled={indisponivel} onChange={() => {
+                        if (indisponivel) return
+                        const itens = checked
+                          ? pmModal.selectedItens.filter((id) => id !== item.id)
+                          : [...pmModal.selectedItens, item.id]
+                        setPmModal({ ...pmModal, selectedItens: itens })
+                      }} />
+                      <div className="pm-item-label__img">
+                        {item.imgs?.[0]
+                          ? <img src={item.imgs[0]} alt={item.nome} />
+                          : <span className="pm-item-label__img-placeholder">📦</span>
+                        }
+                      </div>
+                      <div className="pm-item-label__body">
+                        <div className="pm-item-label__check"><span className="pm-item-label__check-tick">✓</span></div>
+                        <span className="pm-item-name">{item.nome}</span>
+                        <div className="pm-item-price">{formatMoney(item.preco)}</div>
+                        {indisponivel && <div className="pm-item-unavailable-tag">{item.status !== 'Ativo' ? 'Inativo' : 'Sem estoque'}</div>}
+                      </div>
+                    </label>
+                  )
+                })}
               </div>
+              {pmTotalPages > 1 && (
+                <div className="catalog-pagination" style={{ marginTop: '0.75rem' }}>
+                  <button type="button" className="catalog-pagination__btn" disabled={pmSafePage === 1} onClick={() => setPmPage((p) => p - 1)}>&#8592;</button>
+                  <span className="catalog-pagination__info">{pmSafePage} de {pmTotalPages}</span>
+                  <button type="button" className="catalog-pagination__btn" disabled={pmSafePage === pmTotalPages} onClick={() => setPmPage((p) => p + 1)}>&#8594;</button>
+                </div>
+              )}
             </div>
           </div>
         )}

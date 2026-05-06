@@ -653,7 +653,7 @@
   border-color: var(--verde);
 }
 
-.pm-items-grid  { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.6rem; max-height: 420px; overflow-y: auto; padding: 0.25rem 2px 0.5rem; flex: 1; }
+.pm-items-grid  { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem; padding: 0.25rem 2px 0.5rem; }
 .pm-item-label  {
   display: flex; flex-direction: column;
   border: 1.5px solid rgba(0, 48, 13, 0.12); border-radius: 4px;
