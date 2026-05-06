@@ -278,6 +278,7 @@ export default function Admin() {
   const [modalData, setModalData] = useState(null) // { lista, compras, listaItens }
   const [compraDetalheModal, setCompraDetalheModal] = useState(null)
   const [archiveConfirmModal, setArchiveConfirmModal] = useState(null)
+  const [deleteConfirmItem, setDeleteConfirmItem] = useState(null)
   const [casalInfoModal, setCasalInfoModal] = useState(null)
   const [listaStoryModal, setListaStoryModal] = useState(null)
   const [itemModal, setItemModal] = useState(null)
@@ -454,11 +455,16 @@ export default function Admin() {
     } catch (e) { toast(e.message, 'error') }
   }
 
-  async function handleDeleteCatalogo(item) {
-    if (!window.confirm(`Excluir "${item.nome}" permanentemente? Esta ação não pode ser desfeita.`)) return
+  function handleDeleteCatalogo(item) {
+    setDeleteConfirmItem(item)
+  }
+
+  async function handleConfirmDeleteCatalogo() {
+    if (!deleteConfirmItem) return
     try {
-      await catalogoService.delete(item.id)
-      setCatalogo((prev) => prev.filter((c) => c.id !== item.id))
+      await catalogoService.delete(deleteConfirmItem.id)
+      setCatalogo((prev) => prev.filter((c) => c.id !== deleteConfirmItem.id))
+      setDeleteConfirmItem(null)
       toast('Item excluído.')
     } catch (e) {
       toast(e.message || 'Erro ao excluir o item.', 'error')
@@ -1080,6 +1086,27 @@ export default function Admin() {
             <p className="archive-confirm__subtitle">Deseja arquivar a lista de</p>
             <p className="archive-confirm__name">{archiveConfirmModal.nome_noivos}?</p>
             <p className="archive-confirm__warning">A lista será inativada e não ficará mais visível ao público. Esta ação pode ser revertida manualmente.</p>
+          </div>
+        )}
+      </Modal>
+
+      {/* ── MODAL CONFIRMAR EXCLUSÃO DE ITEM ── */}
+      <Modal open={!!deleteConfirmItem} onClose={() => setDeleteConfirmItem(null)} title="Excluir Item" maxWidth="420px"
+        footer={
+          <>
+            <button type="button" className="btn btn-outline-dark btn-sm" onClick={() => setDeleteConfirmItem(null)}>Cancelar</button>
+            <button type="button" className="btn btn-sm btn-danger" onClick={handleConfirmDeleteCatalogo}>Sim, Excluir</button>
+          </>
+        }
+      >
+        {deleteConfirmItem && (
+          <div className="archive-confirm">
+            <div className="archive-confirm__icon">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="#c0392b"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
+            </div>
+            <p className="archive-confirm__subtitle">Deseja excluir permanentemente</p>
+            <p className="archive-confirm__name">{deleteConfirmItem.nome}?</p>
+            <p className="archive-confirm__warning">O item será removido do catálogo e de todas as listas em que estiver. Esta ação não pode ser desfeita.</p>
           </div>
         )}
       </Modal>
