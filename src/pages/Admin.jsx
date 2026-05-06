@@ -362,6 +362,8 @@ export default function Admin() {
   if (catSearch) filteredCat = filteredCat.filter((i) => i.nome.toLowerCase().includes(catSearch.toLowerCase()))
   if (catSort === 'az') filteredCat.sort((a, b) => a.nome.localeCompare(b.nome))
   else if (catSort === 'za') filteredCat.sort((a, b) => b.nome.localeCompare(a.nome))
+  else if (catSort === 'novo') filteredCat.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  else if (catSort === 'velho') filteredCat.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
 
   async function openListaModal(lista) {
     try {
@@ -643,6 +645,8 @@ export default function Admin() {
   if (previewSort === 'menor') previewFiltered = [...previewFiltered].sort((a, b) => a.preco - b.preco)
   else if (previewSort === 'maior') previewFiltered = [...previewFiltered].sort((a, b) => b.preco - a.preco)
   else if (previewSort === 'az') previewFiltered = [...previewFiltered].sort((a, b) => a.nome.localeCompare(b.nome))
+  else if (previewSort === 'novo') previewFiltered = [...previewFiltered].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  else if (previewSort === 'velho') previewFiltered = [...previewFiltered].sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
   const previewTotalPages = Math.max(1, Math.ceil(previewFiltered.length / PREVIEW_PER_PAGE))
   const previewSafePage = Math.min(previewPage, previewTotalPages)
   const previewPaginated = previewFiltered.slice((previewSafePage - 1) * PREVIEW_PER_PAGE, previewSafePage * PREVIEW_PER_PAGE)
@@ -755,6 +759,8 @@ export default function Admin() {
                 <option value="padrao">Padrão</option>
                 <option value="az">A → Z</option>
                 <option value="za">Z → A</option>
+                <option value="novo">Mais Novos</option>
+                <option value="velho">Mais Antigos</option>
               </select>
               <div className="cat-filter-bar" style={{ flex: 1, marginBottom: 0, minWidth: 0 }}>
                 <button type="button" className={`cat-filter${catSetor === '' ? ' active' : ''}`} onClick={() => setCatSetor('')}>Todos</button>
@@ -875,6 +881,8 @@ export default function Admin() {
                 <option value="menor">Menor Preço</option>
                 <option value="maior">Maior Preço</option>
                 <option value="az">A → Z</option>
+                <option value="novo">Mais Novos</option>
+                <option value="velho">Mais Antigos</option>
               </select>
             </div>
 

@@ -111,6 +111,8 @@ export default function Catalog() {
   if (sort === 'menor') filtered.sort((a, b) => a.preco - b.preco)
   else if (sort === 'maior') filtered.sort((a, b) => b.preco - a.preco)
   else if (sort === 'az') filtered.sort((a, b) => a.nome.localeCompare(b.nome))
+  else if (sort === 'novo') filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  else if (sort === 'velho') filtered.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))
   const safePage = Math.min(page, totalPages)
@@ -140,6 +142,8 @@ export default function Catalog() {
             <option value="menor">Menor Preço</option>
             <option value="maior">Maior Preço</option>
             <option value="az">A - Z</option>
+            <option value="novo">Mais Novos</option>
+            <option value="velho">Mais Antigos</option>
           </select>
         </div>
 
