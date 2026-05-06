@@ -29,8 +29,11 @@ export default function Catalog() {
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState('padrao')
   const [setor, setSetor] = useState('')
+  const [page, setPage] = useState(1)
   const [detailItem, setDetailItem] = useState(null)
   const [toggling, setToggling] = useState(null)
+
+  const ITEMS_PER_PAGE = 16
 
   useEffect(() => {
     if (!currentUser) { navigate('/auth'); return }
@@ -109,6 +112,10 @@ export default function Catalog() {
   else if (sort === 'maior') filtered.sort((a, b) => b.preco - a.preco)
   else if (sort === 'az') filtered.sort((a, b) => a.nome.localeCompare(b.nome))
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))
+  const safePage = Math.min(page, totalPages)
+  const paginated = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE)
+
   const listaItensComCatalogo = listaItens
     .map((li) => li.catalogo ?? catalogo.find((c) => c.id === li.catalogo_id))
     .filter(Boolean)
@@ -123,12 +130,12 @@ export default function Catalog() {
         <div className="page-header">
           <div className="page-header-text"><h1>Catálogo de Presentes</h1></div>
           <div className="search-bar">
-            <input type="text" placeholder="Buscar item..." value={search} onChange={(e) => setSearch(e.target.value)} />
+            <input type="text" placeholder="Buscar item..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} />
             <button type="button">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" /></svg>
             </button>
           </div>
-          <select className="sort-select catalog-sort-select" value={sort} onChange={(e) => setSort(e.target.value)}>
+          <select className="sort-select catalog-sort-select" value={sort} onChange={(e) => { setSort(e.target.value); setPage(1) }}>
             <option value="padrao">Ordenar por Padrão</option>
             <option value="menor">Menor Preço</option>
             <option value="maior">Maior Preço</option>
@@ -139,49 +146,70 @@ export default function Catalog() {
         <div className="catalog-layout-2col">
           <div>
             <div className="cat-filter-bar">
-              <button type="button" className={`cat-filter${setor === '' ? ' active' : ''}`} onClick={() => setSetor('')}>Todos</button>
+              <button type="button" className={`cat-filter${setor === '' ? ' active' : ''}`} onClick={() => { setSetor(''); setPage(1) }}>Todos</button>
               {SETORES.map((s) => (
-                <button type="button" key={s} className={`cat-filter${setor === s ? ' active' : ''}`} onClick={() => setSetor(s)}>{s}</button>
+                <button type="button" key={s} className={`cat-filter${setor === s ? ' active' : ''}`} onClick={() => { setSetor(s); setPage(1) }}>{s}</button>
               ))}
             </div>
 
-            <select className="cat-filter-select" value={setor} onChange={(e) => setSetor(e.target.value)}>
+            <select className="cat-filter-select" value={setor} onChange={(e) => { setSetor(e.target.value); setPage(1) }}>
               <option value="">Todas as categorias</option>
               {SETORES.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
 
-            {loading ? <SkeletonGrid count={9} /> : filtered.length === 0 ? (
+            {loading ? <SkeletonGrid count={16} /> : filtered.length === 0 ? (
               <div className="empty-state" style={{ gridColumn: '1/-1', padding: '3rem' }}>
                 <span className="script">Hmm...</span>
                 <p>Nenhum item encontrado para esta busca ou filtro.</p>
               </div>
             ) : (
-              <div className="catalog-grid catalog-grid-large">
-                {filtered.map((item) => {
-                  const inList = listaItens.some((li) => li.catalogo_id === item.id)
-                  return (
-                    <div key={item.id} className="item-card" style={inList ? { outline: '2px solid var(--ouro)' } : {}}>
-                      <div style={{ cursor: 'pointer' }} onClick={() => setDetailItem(item)}>
-                        <ItemCarousel item={item} context="cat" />
+              <>
+                <div className="catalog-grid catalog-grid-large">
+                  {paginated.map((item) => {
+                    const inList = listaItens.some((li) => li.catalogo_id === item.id)
+                    return (
+                      <div key={item.id} className="item-card" style={inList ? { outline: '2px solid var(--ouro)' } : {}}>
+                        <div style={{ cursor: 'pointer' }} onClick={() => setDetailItem(item)}>
+                          <ItemCarousel item={item} context="cat" />
+                        </div>
+                        <div className="item-card-body">
+                          <div className="catalog-item-brand">{item.marca || ''}</div>
+                          <h4 style={{ cursor: 'pointer' }} onClick={() => setDetailItem(item)}>{item.nome}</h4>
+                          <div className="tamanho">{item.tamanho}</div>
+                          <div className="preco">{formatMoney(item.preco)}</div>
+                          <div className="estoque">{item.estoque} em estoque</div>
+                          <button
+                            type="button"
+                            className={`btn btn-sm${inList ? '' : ' btn-verde'}`}
+                            style={inList ? { background: 'rgba(0,48,13,0.08)', color: 'var(--verde)' } : {}}
+                            disabled={toggling === item.id || (!inList && item.estoque === 0)}
+                            onClick={() => toggleItem(item.id)}
+                          >{inList ? 'Remover' : item.estoque === 0 ? 'Indisponível' : 'Adicionar'}</button>
+                        </div>
                       </div>
-                      <div className="item-card-body">
-                        <div className="catalog-item-brand">{item.marca || ''}</div>
-                        <h4 style={{ cursor: 'pointer' }} onClick={() => setDetailItem(item)}>{item.nome}</h4>
-                        <div className="tamanho">{item.tamanho}</div>
-                        <div className="preco">{formatMoney(item.preco)}</div>
-                        <div className="estoque">{item.estoque} em estoque</div>
-                        <button
-                          type="button"
-                          className={`btn btn-sm${inList ? '' : ' btn-verde'}`}
-                          style={inList ? { background: 'rgba(0,48,13,0.08)', color: 'var(--verde)' } : {}}
-                          disabled={toggling === item.id || (!inList && item.estoque === 0)}
-                          onClick={() => toggleItem(item.id)}
-                        >{inList ? 'Remover' : item.estoque === 0 ? 'Indisponível' : 'Adicionar'}</button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+                    )
+                  })}
+                </div>
+                {totalPages > 1 && (
+                  <div className="catalog-pagination">
+                    <button
+                      type="button"
+                      className="catalog-pagination__btn"
+                      disabled={safePage === 1}
+                      onClick={() => setPage((p) => p - 1)}
+                    >&#8592;</button>
+                    <span className="catalog-pagination__info">
+                      {safePage} de {totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      className="catalog-pagination__btn"
+                      disabled={safePage === totalPages}
+                      onClick={() => setPage((p) => p + 1)}
+                    >&#8594;</button>
+                  </div>
+                )}
+              </>
             )}
           </div>
 

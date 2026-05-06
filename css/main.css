@@ -2224,6 +2224,40 @@ tbody tr:last-child td {
   margin-bottom: 1rem;
 }
 
+/* ─── CATALOG PAGINATION ─────────────────────── */
+.catalog-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2rem;
+  padding: 1.5rem 0 0.5rem;
+}
+.catalog-pagination__btn {
+  background: var(--verde);
+  color: var(--branco);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.15s;
+}
+.catalog-pagination__btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.catalog-pagination__info {
+  font-family: "Montserrat", sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+  letter-spacing: 0.04em;
+}
+
 /* ─── SORT SELECT ────────────────────────────── */
 .sort-select {
   padding: 0.7rem 1rem;
