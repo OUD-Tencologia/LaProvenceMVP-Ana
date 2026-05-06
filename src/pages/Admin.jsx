@@ -283,6 +283,9 @@ export default function Admin() {
   const [listaStoryModal, setListaStoryModal] = useState(null)
   const [itemModal, setItemModal] = useState(null)
   const [pmModal, setPmModal] = useState(null)
+  const [pmItemSearch, setPmItemSearch] = useState('')
+  const [pmItemSetor, setPmItemSetor] = useState('')
+  const [pmShowSelected, setPmShowSelected] = useState(false)
   const [pmIndisponiveisModal, setPmIndisponiveisModal] = useState(null)
   const [saving, setSaving] = useState(false)
   const [newGiftsAlert, setNewGiftsAlert] = useState(null) // { count, firstLista }
@@ -1237,12 +1240,12 @@ export default function Admin() {
       </Modal>
 
       {/* ── MODAL PRÉ-MONTADA ── */}
-      <Modal open={!!pmModal} onClose={() => setPmModal(null)}
+      <Modal open={!!pmModal} onClose={() => { setPmModal(null); setPmItemSearch(''); setPmItemSetor(''); setPmShowSelected(false) }}
         title={pmModal ? (pmModal.id ? `Editar: ${pmModal.nome}` : 'Nova Pré-montada') : ''}
-        maxWidth="660px"
+        maxWidth="960px"
         footer={
           <>
-            <button type="button" className="btn btn-outline-dark btn-sm" onClick={() => setPmModal(null)}>Cancelar</button>
+            <button type="button" className="btn btn-outline-dark btn-sm" onClick={() => { setPmModal(null); setPmItemSearch(''); setPmItemSetor(''); setPmShowSelected(false) }}>Cancelar</button>
             <button type="button" className="btn btn-verde" onClick={handleSalvarPremontada} disabled={saving}>
               {saving ? 'Salvando...' : 'Salvar'}
             </button>
@@ -1250,83 +1253,112 @@ export default function Admin() {
         }
       >
         {pmModal && (
-          <>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
-              <div className="form-group" style={{ marginBottom: 0 }}>
+          <div className="pm-modal-layout">
+            {/* ── Coluna esquerda: dados da lista ── */}
+            <div className="pm-modal-form">
+              <div className="form-group">
                 <label htmlFor="pm-nome">Nome</label>
                 <input id="pm-nome" type="text" placeholder="Ex: Clássica" value={pmModal.nome}
                   onChange={(e) => setPmModal({ ...pmModal, nome: e.target.value })} />
               </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
+              <div className="form-group">
                 <label htmlFor="pm-badge">Badge <span style={{ fontWeight: 400, color: 'var(--texto-suave)' }}>(opcional)</span></label>
                 <input id="pm-badge" type="text" placeholder="Ex: Mais Popular" value={pmModal.badge || ''}
                   onChange={(e) => setPmModal({ ...pmModal, badge: e.target.value })} />
               </div>
-              <div className="form-group" style={{ marginBottom: 0, gridColumn: '1/-1' }}>
-                <label htmlFor="pm-img">URL da Imagem <span style={{ fontWeight: 400, color: 'var(--texto-suave)' }}>(opcional)</span></label>
+              <div className="form-group">
+                <label htmlFor="pm-img">Imagem <span style={{ fontWeight: 400, color: 'var(--texto-suave)' }}>(opcional)</span></label>
                 <input type="file" ref={pmImgInputRef} accept="image/*" style={{ display: 'none' }} onChange={handlePmImageFile} />
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                  {pmModal.img && (
-                    <img src={pmModal.img} alt="preview" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 3, border: '1px solid rgba(0,48,13,0.15)', flexShrink: 0 }}
-                      onError={(e) => { e.target.style.display = 'none' }} />
-                  )}
+                {pmModal.img && (
+                  <img src={pmModal.img} alt="preview" style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 6, marginBottom: '0.5rem', border: '1px solid rgba(0,48,13,0.15)' }}
+                    onError={(e) => { e.target.style.display = 'none' }} />
+                )}
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <input id="pm-img" type="text" placeholder="https://..." value={pmModal.img?.startsWith('data:') ? '' : (pmModal.img || '')}
                     style={{ flex: 1 }}
                     onChange={(e) => setPmModal({ ...pmModal, img: e.target.value })} />
-                  <button type="button" title="Fazer upload de arquivo"
-                    onClick={() => pmImgInputRef.current?.click()}
-                    style={{ background: 'none', border: '1px solid var(--verde)', borderRadius: 4, cursor: 'pointer', color: 'var(--verde)', fontSize: '0.75rem', padding: '0.25rem 0.5rem', flexShrink: 0, whiteSpace: 'nowrap' }}>
+                  <button type="button" onClick={() => pmImgInputRef.current?.click()}
+                    style={{ background: 'none', border: '1px solid var(--verde)', borderRadius: 4, cursor: 'pointer', color: 'var(--verde)', fontSize: '0.75rem', padding: '0.25rem 0.5rem', flexShrink: 0 }}>
                     Upload
                   </button>
                 </div>
               </div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem' }}>
+                <input type="checkbox" checked={!!pmModal.popular} style={{ width: 'auto' }}
+                  onChange={(e) => {
+                    const novasPopulares = premontadas.filter((p) => p.popular && p.id !== pmModal.id).length
+                    if (e.target.checked && novasPopulares >= 3) { toast('Máximo de 3 listas em destaque no cadastro.', 'error'); return }
+                    setPmModal({ ...pmModal, popular: e.target.checked })
+                  }} />
+                Destaque <span style={{ color: 'var(--texto-suave)' }}>({premontadas.filter((p) => p.popular && p.id !== pmModal.id).length + (pmModal.popular ? 1 : 0)}/3)</span>
+              </label>
+              <div className="pm-modal-count" style={{ marginTop: 'auto', paddingTop: '1rem' }}>
+                <strong>{pmModal.selectedItens.length}</strong> itens selecionados
+              </div>
             </div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', cursor: 'pointer', fontSize: '0.85rem' }}>
-              <input type="checkbox" checked={!!pmModal.popular} style={{ width: 'auto' }}
-                onChange={(e) => {
-                  const novasPopulares = premontadas.filter((p) => p.popular && p.id !== pmModal.id).length
-                  if (e.target.checked && novasPopulares >= 3) {
-                    toast('Máximo de 3 listas em destaque no cadastro.', 'error')
-                    return
-                  }
-                  setPmModal({ ...pmModal, popular: e.target.checked })
-                }} />
-              Exibir no cadastro como destaque <span style={{ color: 'var(--texto-suave)' }}>({premontadas.filter((p) => p.popular && p.id !== pmModal.id).length + (pmModal.popular ? 1 : 0)}/3)</span>
-            </label>
-            <div className="pm-modal-hint">Selecione os itens que farão parte desta lista pré-montada:</div>
-            <div className="pm-items-grid">
-              {catalogo.map((item) => {
-                const checked = pmModal.selectedItens.includes(item.id)
-                const indisponivel = item.status !== 'Ativo' || Number(item.estoque) <= 0
-                return (
-                  <label key={item.id} className={`pm-item-label${checked ? ' checked' : ''}${indisponivel ? ' pm-item-label--indisponivel' : ''}`}>
-                    <input type="checkbox" checked={checked} disabled={indisponivel} onChange={() => {
-                      if (indisponivel) return
-                      const itens = checked
-                        ? pmModal.selectedItens.filter((id) => id !== item.id)
-                        : [...pmModal.selectedItens, item.id]
-                      setPmModal({ ...pmModal, selectedItens: itens })
-                    }} />
-                    <div className="pm-item-label__img">
-                      {item.imgs?.[0]
-                        ? <img src={item.imgs[0]} alt={item.nome} />
-                        : <span className="pm-item-label__img-placeholder">📦</span>
-                      }
-                    </div>
-                    <div className="pm-item-label__body">
-                      <div className="pm-item-label__check">
-                        <span className="pm-item-label__check-tick">✓</span>
-                      </div>
-                      <span className="pm-item-name">{item.nome}</span>
-                      <div className="pm-item-price">{formatMoney(item.preco)}</div>
-                      {indisponivel && <div className="pm-item-unavailable-tag">{item.status !== 'Ativo' ? 'Inativo' : 'Sem estoque'}</div>}
-                    </div>
-                  </label>
-                )
-              })}
+
+            {/* ── Coluna direita: seleção de itens ── */}
+            <div className="pm-modal-selector">
+              <div className="pm-selector-controls">
+                <input
+                  type="text"
+                  className="pm-selector-search"
+                  placeholder="Buscar item..."
+                  value={pmItemSearch}
+                  onChange={(e) => setPmItemSearch(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className={`pm-selector-toggle${pmShowSelected ? ' active' : ''}`}
+                  onClick={() => setPmShowSelected((v) => !v)}
+                >
+                  {pmShowSelected ? 'Ver todos' : `Selecionados (${pmModal.selectedItens.length})`}
+                </button>
+              </div>
+              <div className="pm-selector-setores">
+                <button type="button" className={`pm-setor-btn${pmItemSetor === '' ? ' active' : ''}`} onClick={() => setPmItemSetor('')}>Todos</button>
+                {Object.values(SETOR_DISPLAY).map((s) => (
+                  <button type="button" key={s} className={`pm-setor-btn${pmItemSetor === s ? ' active' : ''}`} onClick={() => setPmItemSetor(s)}>{s}</button>
+                ))}
+              </div>
+              <div className="pm-items-grid">
+                {catalogo
+                  .filter((item) => {
+                    if (pmShowSelected) return pmModal.selectedItens.includes(item.id)
+                    if (pmItemSetor && item.setor !== pmItemSetor) return false
+                    if (pmItemSearch && !item.nome.toLowerCase().includes(pmItemSearch.toLowerCase())) return false
+                    return true
+                  })
+                  .map((item) => {
+                    const checked = pmModal.selectedItens.includes(item.id)
+                    const indisponivel = item.status !== 'Ativo' || Number(item.estoque) <= 0
+                    return (
+                      <label key={item.id} className={`pm-item-label${checked ? ' checked' : ''}${indisponivel ? ' pm-item-label--indisponivel' : ''}`}>
+                        <input type="checkbox" checked={checked} disabled={indisponivel} onChange={() => {
+                          if (indisponivel) return
+                          const itens = checked
+                            ? pmModal.selectedItens.filter((id) => id !== item.id)
+                            : [...pmModal.selectedItens, item.id]
+                          setPmModal({ ...pmModal, selectedItens: itens })
+                        }} />
+                        <div className="pm-item-label__img">
+                          {item.imgs?.[0]
+                            ? <img src={item.imgs[0]} alt={item.nome} />
+                            : <span className="pm-item-label__img-placeholder">📦</span>
+                          }
+                        </div>
+                        <div className="pm-item-label__body">
+                          <div className="pm-item-label__check"><span className="pm-item-label__check-tick">✓</span></div>
+                          <span className="pm-item-name">{item.nome}</span>
+                          <div className="pm-item-price">{formatMoney(item.preco)}</div>
+                          {indisponivel && <div className="pm-item-unavailable-tag">{item.status !== 'Ativo' ? 'Inativo' : 'Sem estoque'}</div>}
+                        </div>
+                      </label>
+                    )
+                  })}
+              </div>
             </div>
-            <div className="pm-modal-count">{pmModal.selectedItens.length} itens selecionados</div>
-          </>
+          </div>
         )}
       </Modal>
 

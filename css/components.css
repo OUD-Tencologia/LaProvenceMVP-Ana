@@ -167,7 +167,7 @@
 }
 .list-card-body { padding: 1.2rem; display: flex; flex-direction: column; flex: 1; }
 .list-card-code { font-size: 0.58rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ouro); margin-bottom: 0.3rem; }
-.list-card-name { font-weight: 700; color: var(--verde); font-size: 0.95rem; margin-bottom: 0.3rem; }
+.list-card-name { font-weight: 700; color: var(--verde); font-size: 1.05rem; margin-bottom: 0.3rem; }
 .list-card-date { font-size: 0.75rem; color: var(--texto-suave); margin-bottom: 0.8rem; }
 .list-card-actions { display: flex; gap: 0.5rem; margin-top: auto; }
 
@@ -572,7 +572,88 @@
 
 /* --- PM modal --- */
 .pm-modal-hint  { margin-bottom: 1rem; font-size: 0.8rem; color: var(--texto-suave); }
-.pm-items-grid  { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.6rem; max-height: 420px; overflow-y: auto; padding: 0.25rem 2px 0.5rem; }
+
+/* ── Layout do modal de pré-montada ── */
+.pm-modal-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 1.5rem;
+  min-height: 480px;
+}
+.pm-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border-right: 1px solid rgba(0,48,13,0.1);
+  padding-right: 1.5rem;
+}
+.pm-modal-form .form-group { margin-bottom: 0; }
+.pm-modal-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 0;
+}
+.pm-selector-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.pm-selector-search {
+  flex: 1;
+  padding: 0.45rem 0.75rem;
+  border: 1.5px solid rgba(0,48,13,0.15);
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-family: "Montserrat", sans-serif;
+  color: var(--verde);
+  background: var(--branco);
+  outline: none;
+}
+.pm-selector-search:focus { border-color: var(--verde); }
+.pm-selector-toggle {
+  padding: 0.45rem 0.85rem;
+  border: 1.5px solid rgba(0,48,13,0.2);
+  border-radius: 6px;
+  background: var(--branco);
+  font-size: 0.75rem;
+  font-family: "Montserrat", sans-serif;
+  font-weight: 600;
+  color: var(--texto-suave);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.pm-selector-toggle.active {
+  background: var(--verde);
+  color: var(--branco);
+  border-color: var(--verde);
+}
+.pm-selector-setores {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.pm-setor-btn {
+  padding: 0.3rem 0.7rem;
+  border: 1.5px solid rgba(0,48,13,0.15);
+  border-radius: 20px;
+  background: var(--branco);
+  font-size: 0.72rem;
+  font-family: "Montserrat", sans-serif;
+  font-weight: 600;
+  color: var(--texto-suave);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.pm-setor-btn.active, .pm-setor-btn:hover {
+  background: var(--verde);
+  color: var(--branco);
+  border-color: var(--verde);
+}
+
+.pm-items-grid  { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.6rem; max-height: 420px; overflow-y: auto; padding: 0.25rem 2px 0.5rem; flex: 1; }
 .pm-item-label  {
   display: flex; flex-direction: column;
   border: 1.5px solid rgba(0, 48, 13, 0.12); border-radius: 4px;

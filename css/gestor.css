@@ -314,6 +314,21 @@
     justify-content: center;
   }
   .pm-items-grid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    max-height: 300px;
+  }
+  .pm-modal-layout {
     grid-template-columns: 1fr;
+  }
+  .pm-modal-form {
+    border-right: none;
+    border-bottom: 1px solid rgba(0,48,13,0.1);
+    padding-right: 0;
+    padding-bottom: 1rem;
+  }
+  .pm-selector-setores {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
   }
 }

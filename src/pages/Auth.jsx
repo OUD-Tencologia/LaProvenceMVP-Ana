@@ -28,6 +28,7 @@ export default function Auth() {
   const [loginLoading, setLoginLoading] = useState(false)
   const [showLoginSenha, setShowLoginSenha] = useState(false)
   const [showForgotModal, setShowForgotModal] = useState(false)
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false)
 
   const [regForm, setRegForm] = useState({ nomeNoiva: '', nomeNoivo: '', email: '', tel: '', data: '', senha: '', lgpd: false })
   const [regErrors, setRegErrors] = useState({})
@@ -292,7 +293,7 @@ export default function Auth() {
                 onChange={(e) => setRegForm({ ...regForm, lgpd: e.target.checked })}
                 style={{ width: 'auto', marginTop: 2 }} />
               <label htmlFor="reg-lgpd" className="auth-lgpd-label">
-                Li e aceito a <a href="#" style={{ color: 'var(--verde)' }}>Política de Privacidade</a> e o uso dos meus dados conforme descrito.
+                Li e aceito a <button type="button" style={{ background: 'none', border: 'none', padding: 0, color: 'var(--verde)', fontWeight: 700, cursor: 'pointer', fontSize: 'inherit' }} onClick={() => setShowPrivacyModal(true)}>Política de Privacidade</button> e o uso dos meus dados conforme descrito.
               </label>
             </div>
             {regErrors.geral && <span className="form-error show" style={{ marginBottom: '1rem', fontSize: '0.8rem' }}>{regErrors.geral}</span>}
@@ -302,6 +303,54 @@ export default function Auth() {
           </div>
         </div>
       </div>
+
+      <Modal
+        open={showPrivacyModal}
+        onClose={() => setShowPrivacyModal(false)}
+        title="Política de Privacidade"
+        maxWidth="620px"
+        footer={
+          <button type="button" className="btn btn-verde btn-sm" style={{ width: '100%' }} onClick={() => setShowPrivacyModal(false)}>
+            Fechar
+          </button>
+        }
+      >
+        <div style={{ fontSize: '0.88rem', lineHeight: 1.75, color: 'var(--texto)', maxHeight: '60vh', overflowY: 'auto', paddingRight: '0.5rem' }}>
+          <p style={{ marginBottom: '1rem' }}>
+            A <strong>La Provence</strong> valoriza a privacidade dos seus clientes e está comprometida com a proteção dos seus dados pessoais, em conformidade com a Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018).
+          </p>
+
+          <p style={{ fontWeight: 700, color: 'var(--verde)', marginBottom: '0.4rem', fontSize: '0.8rem', letterSpacing: '0.08em', textTransform: 'uppercase' }}>1. Dados coletados</p>
+          <p style={{ marginBottom: '1rem' }}>
+            Coletamos os seguintes dados fornecidos voluntariamente no cadastro: nome do casal, endereço de e-mail, telefone e foto do casal (opcional). Esses dados são necessários para a criação e gestão da lista de presentes.
+          </p>
+
+          <p style={{ fontWeight: 700, color: 'var(--verde)', marginBottom: '0.4rem', fontSize: '0.8rem', letterSpacing: '0.08em', textTransform: 'uppercase' }}>2. Finalidade do uso</p>
+          <p style={{ marginBottom: '1rem' }}>
+            Seus dados são utilizados exclusivamente para: criação e gerenciamento da lista de casamento; comunicação com os noivos sobre presentes e compras realizadas; personalização da experiência na plataforma.
+          </p>
+
+          <p style={{ fontWeight: 700, color: 'var(--verde)', marginBottom: '0.4rem', fontSize: '0.8rem', letterSpacing: '0.08em', textTransform: 'uppercase' }}>3. Compartilhamento de dados</p>
+          <p style={{ marginBottom: '1rem' }}>
+            Não vendemos, alugamos ou compartilhamos seus dados pessoais com terceiros para fins comerciais. Os dados podem ser acessados apenas pela equipe autorizada da La Provence para fins operacionais.
+          </p>
+
+          <p style={{ fontWeight: 700, color: 'var(--verde)', marginBottom: '0.4rem', fontSize: '0.8rem', letterSpacing: '0.08em', textTransform: 'uppercase' }}>4. Armazenamento e segurança</p>
+          <p style={{ marginBottom: '1rem' }}>
+            Seus dados são armazenados em servidores seguros e protegidos por medidas técnicas e organizacionais adequadas para prevenir acesso não autorizado, perda ou divulgação indevida.
+          </p>
+
+          <p style={{ fontWeight: 700, color: 'var(--verde)', marginBottom: '0.4rem', fontSize: '0.8rem', letterSpacing: '0.08em', textTransform: 'uppercase' }}>5. Seus direitos</p>
+          <p style={{ marginBottom: '1rem' }}>
+            Nos termos da LGPD, você tem direito a: acessar seus dados; corrigir informações incorretas; solicitar a exclusão dos seus dados; revogar o consentimento a qualquer momento. Para exercer esses direitos, entre em contato conosco.
+          </p>
+
+          <p style={{ fontWeight: 700, color: 'var(--verde)', marginBottom: '0.4rem', fontSize: '0.8rem', letterSpacing: '0.08em', textTransform: 'uppercase' }}>6. Contato</p>
+          <p style={{ marginBottom: '0' }}>
+            Em caso de dúvidas sobre esta Política de Privacidade, entre em contato com a La Provence através dos nossos canais oficiais de atendimento.
+          </p>
+        </div>
+      </Modal>
 
       <Modal
         open={showForgotModal}
