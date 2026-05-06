@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import Sidebar from '../components/layout/Sidebar'
 import Modal from '../components/ui/Modal'
+import ItemCarousel from '../components/ui/ItemCarousel'
 import Toast from '../components/ui/Toast'
 import InfoRow from '../components/ui/InfoRow'
 import StatusBadge from '../components/ui/StatusBadge'
@@ -274,6 +275,11 @@ export default function Admin() {
   const [search, setSearch] = useState('')
   const [catSearch, setCatSearch] = useState('')
   const [catSetor, setCatSetor] = useState('')
+  const [catSort, setCatSort] = useState('az')
+  const [previewSearch, setPreviewSearch] = useState('')
+  const [previewSetor, setPreviewSetor] = useState('')
+  const [previewSort, setPreviewSort] = useState('padrao')
+  const [previewPage, setPreviewPage] = useState(1)
 
   const [modalData, setModalData] = useState(null) // { lista, compras, listaItens }
   const [compraDetalheModal, setCompraDetalheModal] = useState(null)
@@ -351,9 +357,11 @@ export default function Admin() {
     !search || l.nome_noivos.toLowerCase().includes(search.toLowerCase()) || l.codigo.toLowerCase().includes(search.toLowerCase())
   )
 
-  let filteredCat = catalogo
+  let filteredCat = [...catalogo]
   if (catSetor) filteredCat = filteredCat.filter((i) => i.setor === catSetor)
   if (catSearch) filteredCat = filteredCat.filter((i) => i.nome.toLowerCase().includes(catSearch.toLowerCase()))
+  if (catSort === 'az') filteredCat.sort((a, b) => a.nome.localeCompare(b.nome))
+  else if (catSort === 'za') filteredCat.sort((a, b) => b.nome.localeCompare(a.nome))
 
   async function openListaModal(lista) {
     try {
@@ -623,7 +631,21 @@ export default function Admin() {
     if (pmItemSetor && item.setor !== pmItemSetor) return false
     if (pmItemSearch && !item.nome.toLowerCase().includes(pmItemSearch.toLowerCase())) return false
     return true
-  }) : []
+  }).sort((a, b) => a.nome.localeCompare(b.nome)) : []
+
+  const PREVIEW_PER_PAGE = 16
+  let previewFiltered = catalogo.filter((i) => i.status === 'Ativo')
+  if (previewSetor) previewFiltered = previewFiltered.filter((i) => i.setor === previewSetor)
+  if (previewSearch) previewFiltered = previewFiltered.filter((i) =>
+    i.nome.toLowerCase().includes(previewSearch.toLowerCase()) ||
+    (i.descricao || '').toLowerCase().includes(previewSearch.toLowerCase())
+  )
+  if (previewSort === 'menor') previewFiltered = [...previewFiltered].sort((a, b) => a.preco - b.preco)
+  else if (previewSort === 'maior') previewFiltered = [...previewFiltered].sort((a, b) => b.preco - a.preco)
+  else if (previewSort === 'az') previewFiltered = [...previewFiltered].sort((a, b) => a.nome.localeCompare(b.nome))
+  const previewTotalPages = Math.max(1, Math.ceil(previewFiltered.length / PREVIEW_PER_PAGE))
+  const previewSafePage = Math.min(previewPage, previewTotalPages)
+  const previewPaginated = previewFiltered.slice((previewSafePage - 1) * PREVIEW_PER_PAGE, previewSafePage * PREVIEW_PER_PAGE)
   const pmTotalPages = Math.max(1, Math.ceil(pmFiltered.length / PM_PER_PAGE))
   const pmSafePage = Math.min(pmPage, pmTotalPages)
   const pmPaginated = pmFiltered.slice((pmSafePage - 1) * PM_PER_PAGE, pmSafePage * PM_PER_PAGE)
@@ -729,6 +751,11 @@ export default function Admin() {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" /></svg>
                 </button>
               </div>
+              <select className="sort-select" value={catSort} onChange={(e) => setCatSort(e.target.value)} style={{ flexShrink: 0 }}>
+                <option value="padrao">Padrão</option>
+                <option value="az">A → Z</option>
+                <option value="za">Z → A</option>
+              </select>
               <div className="cat-filter-bar" style={{ flex: 1, marginBottom: 0, minWidth: 0 }}>
                 <button type="button" className={`cat-filter${catSetor === '' ? ' active' : ''}`} onClick={() => setCatSetor('')}>Todos</button>
                 {SETORES.map((s) => <button type="button" key={s} className={`cat-filter${catSetor === s ? ' active' : ''}`} onClick={() => setCatSetor(s)}>{s}</button>)}
@@ -826,6 +853,76 @@ export default function Admin() {
                 </div>
               ))}
             </div>
+          </>
+        )}
+
+        {/* ── TAB PREVIEW NOIVO ── */}
+        {tab === 'preview' && (
+          <>
+            <div className="page-header">
+              <div className="page-header-text">
+                <span className="label-caps">Simulação</span>
+                <h1>Visualização do Catálogo</h1>
+              </div>
+              <div className="search-bar" style={{ maxWidth: 260 }}>
+                <input type="text" placeholder="Buscar item..." value={previewSearch} onChange={(e) => { setPreviewSearch(e.target.value); setPreviewPage(1) }} />
+                <button type="button">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" /></svg>
+                </button>
+              </div>
+              <select className="sort-select catalog-sort-select" value={previewSort} onChange={(e) => { setPreviewSort(e.target.value); setPreviewPage(1) }}>
+                <option value="padrao">Padrão</option>
+                <option value="menor">Menor Preço</option>
+                <option value="maior">Maior Preço</option>
+                <option value="az">A → Z</option>
+              </select>
+            </div>
+
+            <div style={{ background: 'rgba(235,171,10,0.1)', border: '1px solid rgba(235,171,10,0.3)', borderRadius: 4, padding: '0.6rem 1rem', marginBottom: '1.25rem', fontSize: '0.78rem', color: 'var(--ouro)', fontWeight: 700, letterSpacing: '0.04em' }}>
+              Simulação — esta é exatamente a visão que o noivo/noiva tem ao acessar o catálogo. Itens inativos não aparecem aqui.
+            </div>
+
+            <div className="cat-filter-bar">
+              <button type="button" className={`cat-filter${previewSetor === '' ? ' active' : ''}`} onClick={() => { setPreviewSetor(''); setPreviewPage(1) }}>Todos</button>
+              {SETORES.map((s) => (
+                <button type="button" key={s} className={`cat-filter${previewSetor === s ? ' active' : ''}`} onClick={() => { setPreviewSetor(s); setPreviewPage(1) }}>{s}</button>
+              ))}
+            </div>
+            <select className="cat-filter-select" value={previewSetor} onChange={(e) => { setPreviewSetor(e.target.value); setPreviewPage(1) }}>
+              <option value="">Todas as categorias</option>
+              {SETORES.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+
+            {previewFiltered.length === 0 ? (
+              <div className="empty-state" style={{ padding: '3rem' }}>
+                <span className="script">Hmm...</span>
+                <p>Nenhum item encontrado.</p>
+              </div>
+            ) : (
+              <>
+                <div className="catalog-grid catalog-grid-large">
+                  {previewPaginated.map((item) => (
+                    <div key={item.id} className="item-card">
+                      <ItemCarousel item={item} context="cat" />
+                      <div className="item-card-body">
+                        <div className="catalog-item-brand">{item.marca || ''}</div>
+                        <h4>{item.nome}</h4>
+                        <div className="tamanho">{item.tamanho}</div>
+                        <div className="preco">{formatMoney(item.preco)}</div>
+                        <div className="estoque">{item.estoque} em estoque</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {previewTotalPages > 1 && (
+                  <div className="catalog-pagination">
+                    <button type="button" className="catalog-pagination__btn" disabled={previewSafePage === 1} onClick={() => setPreviewPage((p) => p - 1)}>&#8592;</button>
+                    <span className="catalog-pagination__info">{previewSafePage} de {previewTotalPages}</span>
+                    <button type="button" className="catalog-pagination__btn" disabled={previewSafePage === previewTotalPages} onClick={() => setPreviewPage((p) => p + 1)}>&#8594;</button>
+                  </div>
+                )}
+              </>
+            )}
           </>
         )}
       </main>
