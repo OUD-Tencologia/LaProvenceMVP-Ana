@@ -571,28 +571,43 @@ export default function Admin() {
     }
   }
 
+  function compressImage(file, maxWidth = 1400, quality = 0.82) {
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        const img = new window.Image()
+        img.onload = () => {
+          const scale = Math.min(1, maxWidth / img.width)
+          const canvas = document.createElement('canvas')
+          canvas.width = Math.round(img.width * scale)
+          canvas.height = Math.round(img.height * scale)
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
+          resolve(canvas.toDataURL('image/jpeg', quality))
+        }
+        img.src = ev.target.result
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+
   function handleCatalogImageFile(e) {
     const file = e.target.files[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = (ev) => {
-      const idx = uploadingImgIdxRef.current
+    const idx = uploadingImgIdxRef.current
+    compressImage(file).then((compressed) => {
       setItemModal((prev) => {
         const imgs = [...(prev.imgs?.length ? prev.imgs : [''])]
-        imgs[idx] = ev.target.result
+        imgs[idx] = compressed
         return { ...prev, imgs }
       })
-    }
-    reader.readAsDataURL(file)
+    })
     e.target.value = ''
   }
 
   function handlePmImageFile(e) {
     const file = e.target.files[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = (ev) => setPmModal((prev) => ({ ...prev, img: ev.target.result }))
-    reader.readAsDataURL(file)
+    compressImage(file).then((compressed) => setPmModal((prev) => ({ ...prev, img: compressed })))
     e.target.value = ''
   }
 
