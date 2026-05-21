@@ -381,3 +381,119 @@
   flex-direction: column;
   gap: 0.7rem;
 }
+
+/* ── PIX Payment Screen ── */
+.co-pix-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: calc(100vh - 62px);
+  padding: 2.5rem 5% 4rem;
+  background: #fff;
+  text-align: center;
+}
+.co-pix-page h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--verde);
+  margin-bottom: 0.5rem;
+}
+.co-pix-page p {
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+  max-width: 380px;
+  line-height: 1.7;
+  margin: 0 auto 1.5rem;
+}
+.co-pix-header { margin-bottom: 0.25rem; }
+.co-pix-qrcode {
+  width: 220px;
+  height: 220px;
+  border: 1.5px solid rgba(0, 48, 13, 0.12);
+  border-radius: 12px;
+  padding: 8px;
+  background: #fff;
+  margin-bottom: 1.5rem;
+}
+.co-pix-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 2rem;
+  background: var(--verde);
+  color: var(--ouro-claro);
+  border: none;
+  border-radius: 8px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-bottom: 1.2rem;
+}
+.co-pix-copy-btn:hover { background: var(--verde-medio); }
+.co-pix-copy-btn.copied { background: #1a8a3c; }
+.co-pix-timer {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--texto-suave);
+  margin-bottom: 1.2rem;
+}
+.co-pix-timer strong { color: var(--verde); font-size: 0.9rem; }
+.co-pix-waiting {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-size: 0.68rem;
+  color: #aaa;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 2.5rem;
+}
+.co-pix-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(0, 48, 13, 0.18);
+  border-top-color: var(--verde);
+  border-radius: 50%;
+  animation: co-spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes co-spin { to { transform: rotate(360deg); } }
+.co-pix-back-link {
+  font-size: 0.75rem;
+  color: var(--texto-suave);
+  text-decoration: underline;
+  margin-top: auto;
+  padding-top: 1rem;
+}
+.co-link-button {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-family: "Montserrat", sans-serif;
+}
+.co-card-back-link {
+  display: block;
+  margin: 1rem auto 0;
+  padding-top: 0;
+}
+.co-pix-expired-icon {
+  font-size: 3.5rem;
+  line-height: 1;
+  margin-bottom: 1rem;
+}
+
+/* ── Processing Spinner ── */
+.co-proc-spinner {
+  width: 52px;
+  height: 52px;
+  border: 3px solid rgba(0, 48, 13, 0.12);
+  border-top-color: var(--verde);
+  border-radius: 50%;
+  animation: co-spin 0.9s linear infinite;
+}

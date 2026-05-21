@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams, Link } from 'react-router-dom'
+import { useSearchParams, Link, useNavigate } from 'react-router-dom'
 import Modal from '../components/ui/Modal'
 import ItemCarousel from '../components/ui/ItemCarousel'
 import Toast from '../components/ui/Toast'
@@ -26,6 +26,7 @@ function maskPhone(v) {
 
 export default function PublicList() {
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const codigo = searchParams.get('codigo')
   const { toasts, toast } = useToast()
 
@@ -36,6 +37,7 @@ export default function PublicList() {
   const [notFound, setNotFound] = useState(false)
 
   const [setor, setSetor] = useState('')
+  const [statusFiltro, setStatusFiltro] = useState('todos')
   const [sort, setSort] = useState('padrao')
   const [detailItem, setDetailItem] = useState(null)
 
@@ -99,19 +101,25 @@ export default function PublicList() {
     return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)
   })
 
+  const total = listaItens.length
+  const comprasAtivas = compras.filter((c) => c.status_pagamento !== 'Rejeitado')
+  const presenteados = new Set(comprasAtivas.map((c) => c.catalogo_id).filter(Boolean)).size
+
+  // ── Gift modal helpers ─────────────────────────────────
+  function getCompraAtiva(catalogoId) {
+    return comprasAtivas.find((c) => c.catalogo_id === catalogoId) || null
+  }
+
+  function isPresenteado(catalogoId) {
+    return Boolean(getCompraAtiva(catalogoId))
+  }
+
   let itens = setor ? itensBase.filter((i) => i.setor === setor) : itensBase
+  if (statusFiltro === 'disponiveis') itens = itens.filter((i) => !getCompraAtiva(i.id))
+  else if (statusFiltro === 'presenteados') itens = itens.filter((i) => getCompraAtiva(i.id))
   if (sort === 'menor') itens = [...itens].sort((a, b) => a.preco - b.preco)
   else if (sort === 'maior') itens = [...itens].sort((a, b) => b.preco - a.preco)
   else if (sort === 'az') itens = [...itens].sort((a, b) => a.nome.localeCompare(b.nome))
-
-  const total = listaItens.length
-  const presenteados = compras.filter((c) => c.status_pagamento !== 'Rejeitado').length
-
-  // ── Gift modal helpers ─────────────────────────────────
-  function isPresenteado(catalogoId) {
-    const c = compras.find((c) => c.catalogo_id === catalogoId)
-    return c && c.status_pagamento !== 'Rejeitado'
-  }
 
   function abrirGiftModal(item, listaItem) {
     if (!item) return
@@ -120,9 +128,11 @@ export default function PublicList() {
       return
     }
     setDetailItem(null)
-    setGuestErrors({})
-    setGiftValor(200)
-    setGiftModal({ item, listaItem: listaItem ?? listaItens.find((li) => li.catalogo_id === item.id) })
+    if (item.isCartaoPresente) {
+      navigate(`/checkout?tipo=credito&codigo=${codigo}`)
+      return
+    }
+    navigate(`/checkout?itemId=${item.id}&codigo=${codigo}`)
   }
 
   function validarGuest() {
@@ -224,11 +234,18 @@ export default function PublicList() {
           </div>
 
           <div className="public-filter-row">
-            <div className="public-filters">
-              <button type="button" className={`public-filter${setor === '' ? ' active' : ''}`} onClick={() => setSetor('')}>Todos</button>
-              {setores.map((s) => (
-                <button type="button" key={s} className={`public-filter${setor === s ? ' active' : ''}`} onClick={() => setSetor(s)}>{s}</button>
-              ))}
+            <div className="public-filter-groups">
+              <div className="public-filters">
+                <button type="button" className={`public-filter${setor === '' ? ' active' : ''}`} onClick={() => setSetor('')}>Todos</button>
+                {setores.map((s) => (
+                  <button type="button" key={s} className={`public-filter${setor === s ? ' active' : ''}`} onClick={() => setSetor(s)}>{s}</button>
+                ))}
+              </div>
+              <div className="public-status-filters" aria-label="Filtrar por disponibilidade">
+                <button type="button" className={`public-filter public-filter-status${statusFiltro === 'todos' ? ' active' : ''}`} onClick={() => setStatusFiltro('todos')}>Todos</button>
+                <button type="button" className={`public-filter public-filter-status${statusFiltro === 'disponiveis' ? ' active' : ''}`} onClick={() => setStatusFiltro('disponiveis')}>Disponíveis</button>
+                <button type="button" className={`public-filter public-filter-status${statusFiltro === 'presenteados' ? ' active' : ''}`} onClick={() => setStatusFiltro('presenteados')}>Já presenteados</button>
+              </div>
             </div>
             <select className="sort-select public-sort-select" value={sort} onChange={(e) => setSort(e.target.value)}>
               <option value="padrao">Padrão</option>
@@ -241,7 +258,7 @@ export default function PublicList() {
           {loading ? <SkeletonGrid count={8} /> : null}
 
           <div className="catalog-grid catalog-grid-large" style={loading ? { display: 'none' } : {}}>
-            {setor === '' && (
+            {setor === '' && statusFiltro !== 'presenteados' && (
               <div className="item-card" style={{ border: '2px solid var(--ouro)' }}>
                 <div style={{ background: 'var(--verde)', height: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--ouro-claro)', textAlign: 'center', padding: '1rem' }}>
                   <div className="script" style={{ fontSize: '2.8rem', lineHeight: 1 }}>Cartão Presente</div>
@@ -264,20 +281,24 @@ export default function PublicList() {
 
             {itens.map((item) => {
               const listaItem = listaItens.find((li) => li.catalogo_id === item.id)
-              const compra = compras.find((c) => c.catalogo_id === item.id)
+              const compra = getCompraAtiva(item.id)
               const isPendente = compra && compra.status_pagamento === 'Pendente'
-              const isPresent = compra && compra.status_pagamento !== 'Rejeitado'
+              const isPresent = Boolean(compra)
               return (
-                <div key={item.id} className={`item-card${isPresent ? ' purchased' : ''}`} style={isPendente ? { opacity: 0.7, filter: 'grayscale(0.6)' } : {}}>
+                <div key={item.id} className={`item-card${isPresent ? ' purchased' : ' available'}${isPendente ? ' purchased--pending' : ''}`}>
                   {isPresent && (
-                    <div className="purchased-overlay" style={isPendente ? { background: 'rgba(107,107,107,0.7)' } : {}}>
-                      <span className="purchased-stamp" style={isPendente ? { color: '#fff', borderColor: '#fff' } : {}}>{isPendente ? 'Em andamento' : 'Presenteado'}</span>
+                    <div className="purchased-overlay">
+                      <span className="purchased-stamp">{isPendente ? 'Reservado' : 'Presenteado'}</span>
                     </div>
                   )}
                   <div style={{ cursor: 'pointer' }} onClick={() => setDetailItem({ item, listaItem })}>
                     <ItemCarousel item={item} context="pub" />
                   </div>
                   <div className="item-card-body">
+                    <div className={`public-item-state ${isPresent ? 'public-item-state--purchased' : 'public-item-state--available'}`}>
+                      <span className={`item-status-dot ${isPresent ? 'dot-purchased' : 'dot-available'}`}></span>
+                      {isPresent ? (isPendente ? 'Reservado' : 'Já presenteado') : 'Disponível'}
+                    </div>
                     <div style={{ fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--texto-suave)', marginBottom: '0.3rem' }}>{item.marca || ''}</div>
                     <h4 style={{ cursor: 'pointer' }} onClick={() => setDetailItem({ item, listaItem })}>{item.nome}</h4>
                     <div className="tamanho">{item.tamanho}</div>
@@ -286,7 +307,7 @@ export default function PublicList() {
                       ? <button type="button" className="btn btn-verde btn-sm" style={{ marginTop: 'auto' }} onClick={() => abrirGiftModal(item, listaItem)}>
                           Presentear
                         </button>
-                      : <span style={{ fontSize: '0.72rem', color: 'var(--texto-suave)' }}>{isPendente ? 'Em processamento' : 'Já foi presenteado'}</span>
+                      : <span style={{ fontSize: '0.72rem', color: 'var(--texto-suave)' }}>{isPendente ? 'Pagamento em processamento' : 'Já foi presenteado'}</span>
                     }
                   </div>
                 </div>
