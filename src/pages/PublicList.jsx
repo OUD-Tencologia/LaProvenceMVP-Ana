@@ -8,6 +8,7 @@ import { SkeletonGrid } from '../components/ui/Skeleton'
 import { formatMoney, formatDate } from '../utils/formatters'
 import { listasService } from '../services/listas.js'
 import { comprasService } from '../services/compras.js'
+import { getRecaptchaToken } from '../services/recaptcha.js'
 
 const SETOR_ORDER = ['Mesa posta', 'Prataria', 'Adornos', 'Aromas', 'Mobiliário', 'Vasos', 'Complementos']
 const WA_NUMBER = '5565996828577'
@@ -152,6 +153,7 @@ export default function PublicList() {
 
     setConfirmando(true)
     try {
+      const recaptchaToken = await getRecaptchaToken('gift_confirm')
       await comprasService.create({
         listas_id: lista.id,
         catalogo_id: item.isCartaoPresente ? null : item.id,
@@ -162,6 +164,7 @@ export default function PublicList() {
         forma_pagamento: guestData.formaPagamento,
         status_pagamento: 'Pendente',
         is_new_gestor: true,
+        recaptcha_token: recaptchaToken,
       })
     } catch {
       // item continuará sendo tentado pelo gestor via WhatsApp

@@ -6,17 +6,13 @@ export const pagBankService = {
     return (res.data ?? res).public_key
   },
 
-  async createPixOrder(compra_id) {
-    const res = await api.post('/pagbank/orders/pix', { compra_id }, false)
+  async createPixOrder(compra_id, recaptcha_token) {
+    const res = await api.post('/pagbank/orders/pix', { compra_id, recaptcha_token }, false)
     return res.data ?? res
   },
 
   async createCreditCardOrder(payload) {
-    const res = await api.post(
-      '/pagbank/orders/credit-card',
-      payload,
-      false
-    )
+    const res = await api.post('/pagbank/orders/credit-card', payload, false)
     return res.data ?? res
   },
 

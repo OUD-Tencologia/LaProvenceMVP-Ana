@@ -6,6 +6,7 @@ import { catalogoService } from '../services/catalogo.js'
 import { listasService } from '../services/listas.js'
 import { comprasService } from '../services/compras.js'
 import { pagBankService } from '../services/pagbank.js'
+import { getRecaptchaToken } from '../services/recaptcha.js'
 
 function formatPriceSplit(valor) {
   const str = formatMoney(valor)
@@ -243,6 +244,7 @@ export default function Checkout() {
     setSubmitting(true)
     try {
       const pgtoStr = pgto === 'Cartão' ? `Cartão ${parcelas}x` : 'Pix'
+      const checkoutRecaptchaToken = await getRecaptchaToken('checkout_start')
       const compra = await comprasService.create({
         listas_id: lista.id,
         catalogo_id: isCreditGift ? null : checkoutItem.id,
@@ -252,12 +254,14 @@ export default function Checkout() {
         telefone: form.tel.replace(/\D/g, ''),
         valor_pago: checkoutPrice.toFixed(2),
         forma_pagamento: pgtoStr,
+        recaptcha_token: checkoutRecaptchaToken,
       })
       setCompraId(compra.id)
 
       if (pgto === 'Pix') {
         try {
-          const order = await pagBankService.createPixOrder(compra.id)
+          const pixRecaptchaToken = await getRecaptchaToken('pagbank_pix_order')
+          const order = await pagBankService.createPixOrder(compra.id, pixRecaptchaToken)
           const qr = order.qr_codes?.[0]
           if (!qr) throw new Error('QR Code não disponível. Tente novamente.')
           const pngLink = qr.links?.find(l => l.rel === 'QRCODE.PNG')?.href
@@ -318,6 +322,7 @@ export default function Checkout() {
         throw new Error(firstErr?.message || 'Dados do cartão inválidos')
       }
       paymentPayload.card_encrypted = enc.encryptedCard
+      paymentPayload.recaptcha_token = await getRecaptchaToken('pagbank_card_order')
 
       const order = await pagBankService.createCreditCardOrder(paymentPayload)
 
