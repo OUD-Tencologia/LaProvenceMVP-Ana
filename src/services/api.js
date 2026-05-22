@@ -27,13 +27,7 @@ async function req(method, path, body, requiresAuth = true) {
   try { data = await res.json() } catch { /* empty body */ }
 
   if (!res.ok) {
-    const details = Array.isArray(data.details)
-      ? data.details
-        .map((detail) => [detail.path, detail.message].filter(Boolean).join(': '))
-        .filter(Boolean)
-        .join('; ')
-      : ''
-    throw new Error(details ? `${data.message || `Erro ${res.status}`}: ${details}` : data.message || `Erro ${res.status}`)
+    throw new Error(data.message || `Erro ${res.status}`)
   }
 
   return data

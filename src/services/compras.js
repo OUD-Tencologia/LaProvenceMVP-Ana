@@ -31,10 +31,10 @@ export const comprasService = {
    * Para checkout de convidados (sem login) funcionar, o endpoint precisa
    * ter o preHandler de auth removido no backend.
    */
-  async create({ listas_id, catalogo_id, nome_convidado, email, cpf, telefone, valor_pago, forma_pagamento, status_pagamento, is_new_gestor }) {
+  async create({ listas_id, catalogo_id, nome_convidado, cpf, telefone, valor_pago, forma_pagamento, status_pagamento, is_new_gestor }) {
     const res = await api.post(
       '/compras',
-      { listas_id, catalogo_id, nome_convidado, email, cpf, telefone, valor_pago, forma_pagamento, status_pagamento, is_new_gestor },
+      { listas_id, catalogo_id, nome_convidado, cpf, telefone, valor_pago, forma_pagamento, status_pagamento, is_new_gestor },
       false // sem auth — rota pública para convidados
     )
     return normalizarCompra(res.data ?? res)
