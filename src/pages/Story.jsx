@@ -91,7 +91,8 @@ export default function Story() {
     const ctx = canvas.getContext('2d');
     const W = 1080, H = 1920;
     const tpl = TEMPLATES[tplIdxRef.current];
-    const displayNome = nomeRef.current || 'Seus Nomes';
+    const rawNome = nomeRef.current || 'Seus Nomes'
+    const displayNome = rawNome.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
     const displayData = dataRef.current || 'Data do Casamento';
 
     ctx.fillStyle = tpl.bg;
