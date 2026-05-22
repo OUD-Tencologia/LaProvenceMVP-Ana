@@ -5,20 +5,12 @@ import ItemCarousel from '../components/ui/ItemCarousel'
 import Toast from '../components/ui/Toast'
 import { useToast } from '../hooks/useToast'
 import { SkeletonGrid } from '../components/ui/Skeleton'
-import { formatMoney, formatDate } from '../utils/formatters'
+import { formatMoney, formatDate, formatNomeNoivos } from '../utils/formatters'
 import { listasService } from '../services/listas.js'
 import { comprasService } from '../services/compras.js'
 
 const SETOR_ORDER = ['Mesa posta', 'Prataria', 'Adornos', 'Aromas', 'Mobiliário', 'Vasos', 'Complementos']
 const WA_NUMBER = '5565996828577'
-
-function toTitleCase(str) {
-  return str.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
-}
-
-function formatNomeNoivos(nome) {
-  return toTitleCase(nome).replace(/\s*&\s*/g, ' e ')
-}
 
 function maskCPF(v) {
   return v.replace(/\D/g, '').slice(0, 11)

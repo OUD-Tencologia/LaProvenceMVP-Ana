@@ -7,7 +7,7 @@ import Toast from '../components/ui/Toast'
 import { useToast } from '../hooks/useToast'
 import { SkeletonStatsGrid, SkeletonGrid } from '../components/ui/Skeleton'
 import useStore from '../store/useStore'
-import { formatMoney, formatDate } from '../utils/formatters'
+import { formatMoney, formatDate, formatNomeNoivos } from '../utils/formatters'
 import { listasService } from '../services/listas.js'
 import { comprasService } from '../services/compras.js'
 
@@ -98,7 +98,7 @@ export default function Dashboard() {
   function copiarLink() { copyText(getListaUrl(), 'Link copiado!') }
   function compartilharWhatsApp() {
     const url = getListaUrl()
-    const msg = encodeURIComponent(`Oi! ${lista.nome_noivos} estão se casando e montaram a lista de presentes no La Provence.\n\nAcesse aqui: ${url}\n\nOu use o código: ${lista.codigo}`)
+    const msg = encodeURIComponent(`Oi! ${formatNomeNoivos(lista.nome_noivos)} estão se casando e montaram a lista de presentes no La Provence.\n\nAcesse aqui: ${url}\n\nOu use o código: ${lista.codigo}`)
     window.open('https://wa.me/?text=' + msg, '_blank')
   }
 
@@ -136,7 +136,7 @@ export default function Dashboard() {
         <div className="page-header">
           <div className="page-header-text">
             <span className="label-caps">Bem-vindos</span>
-            <h1>{lista?.nome_noivos ?? '...'}</h1>
+            <h1>{lista ? formatNomeNoivos(lista.nome_noivos) : '...'}</h1>
           </div>
           <Link to="/catalogo" className="btn btn-verde">Adicionar Itens</Link>
         </div>
@@ -144,7 +144,7 @@ export default function Dashboard() {
         {lista && (
           <div className="list-summary-card">
             <div className="label-caps" style={{ color: 'rgba(251,221,144,0.45)', marginBottom: '0.3rem' }}>Lista de Casamento</div>
-            <div className="summary-noivos">{lista.nome_noivos}</div>
+            <div className="summary-noivos">{formatNomeNoivos(lista.nome_noivos)}</div>
             {lista.data_casamento && <div className="summary-meta">Casamento em {formatDate(lista.data_casamento)}</div>}
             <div className="summary-code-row">
               <div className="summary-code" onClick={copiarCodigo} title="Clique para copiar" style={{ cursor: 'pointer' }}>{lista.codigo}</div>

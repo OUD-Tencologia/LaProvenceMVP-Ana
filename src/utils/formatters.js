@@ -1,3 +1,8 @@
+export function formatNomeNoivos(nome) {
+  if (!nome) return ''
+  return nome.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()).replace(/\s*&\s*/g, ' e ')
+}
+
 export function formatMoney(v) {
   return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 }
