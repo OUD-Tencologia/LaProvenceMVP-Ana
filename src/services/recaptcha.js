@@ -1,6 +1,20 @@
 const SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY
+const RECAPTCHA_TIMEOUT_MS = 12000
 
 let scriptPromise = null
+
+function recaptchaError() {
+  return new Error('Nao foi possivel validar a seguranca do checkout. Atualize a pagina e tente novamente.')
+}
+
+function withTimeout(promise) {
+  let timeoutId
+  const timeout = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => reject(recaptchaError()), RECAPTCHA_TIMEOUT_MS)
+  })
+
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId))
+}
 
 function loadScript() {
   if (!SITE_KEY) return Promise.resolve()
@@ -13,7 +27,10 @@ function loadScript() {
     script.async = true
     script.defer = true
     script.onload = resolve
-    script.onerror = () => reject(new Error('Nao foi possivel carregar a validacao de seguranca'))
+    script.onerror = () => {
+      scriptPromise = null
+      reject(recaptchaError())
+    }
     document.head.appendChild(script)
   })
 
@@ -23,14 +40,23 @@ function loadScript() {
 export async function getRecaptchaToken(action) {
   if (!SITE_KEY) return undefined
 
-  await loadScript()
+  await withTimeout(loadScript())
 
-  return new Promise((resolve, reject) => {
+  return withTimeout(new Promise((resolve, reject) => {
+    if (!window.grecaptcha?.ready || !window.grecaptcha?.execute) {
+      reject(recaptchaError())
+      return
+    }
+
     window.grecaptcha.ready(() => {
-      window.grecaptcha
-        .execute(SITE_KEY, { action })
-        .then(resolve)
-        .catch(() => reject(new Error('Nao foi possivel validar a seguranca do checkout')))
+      try {
+        window.grecaptcha
+          .execute(SITE_KEY, { action })
+          .then(resolve)
+          .catch(() => reject(recaptchaError()))
+      } catch {
+        reject(recaptchaError())
+      }
     })
-  })
+  }))
 }
