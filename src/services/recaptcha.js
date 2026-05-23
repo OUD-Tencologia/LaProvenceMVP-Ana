@@ -16,6 +16,10 @@ function withTimeout(promise) {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId))
 }
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
 function loadScript() {
   if (!SITE_KEY) return Promise.resolve()
   if (window.grecaptcha?.execute) return Promise.resolve()
@@ -48,15 +52,20 @@ export async function getRecaptchaToken(action) {
       return
     }
 
-    window.grecaptcha.ready(() => {
-      try {
-        window.grecaptcha
-          .execute(SITE_KEY, { action })
-          .then(resolve)
-          .catch(() => reject(recaptchaError()))
-      } catch {
-        reject(recaptchaError())
+    window.grecaptcha.ready(async () => {
+      const deadline = Date.now() + RECAPTCHA_TIMEOUT_MS
+
+      while (Date.now() < deadline) {
+        try {
+          const token = await window.grecaptcha.execute(SITE_KEY, { action })
+          resolve(token)
+          return
+        } catch {
+          await sleep(300)
+        }
       }
+
+      reject(recaptchaError())
     })
   }))
 }
