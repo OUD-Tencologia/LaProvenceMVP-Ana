@@ -47,7 +47,7 @@ export async function getRecaptchaToken(action) {
   await withTimeout(loadScript())
 
   return withTimeout(new Promise((resolve, reject) => {
-    if (!window.grecaptcha?.ready || !window.grecaptcha?.execute) {
+    if (!window.grecaptcha?.ready) {
       reject(recaptchaError())
       return
     }
@@ -56,6 +56,11 @@ export async function getRecaptchaToken(action) {
       const deadline = Date.now() + RECAPTCHA_TIMEOUT_MS
 
       while (Date.now() < deadline) {
+        if (!window.grecaptcha?.execute) {
+          await sleep(300)
+          continue
+        }
+
         try {
           const token = await window.grecaptcha.execute(SITE_KEY, { action })
           resolve(token)
