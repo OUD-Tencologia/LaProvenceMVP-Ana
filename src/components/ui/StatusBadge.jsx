@@ -4,6 +4,7 @@ const VARIANT_MAP = {
   Pendente:   'pending',
   Aprovado:   'approved',
   Confirmado: 'approved',
+  Cancelado:  'inactive',
 };
 
 export default function StatusBadge({ status }) {

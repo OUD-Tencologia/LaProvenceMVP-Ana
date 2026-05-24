@@ -45,6 +45,7 @@
   width: 100%;
   transition: border-color 0.2s;
   overflow: hidden;
+  font-family: "Montserrat", sans-serif;
 }
 .gestor-item-card--pending {
   border-color: #EBAB0A;
@@ -80,6 +81,7 @@
   color: var(--verde);
   line-height: 1.35;
   margin-bottom: 0.25rem;
+  font-family: "Montserrat", sans-serif;
 }
 .gestor-item-card-sub {
   font-size: 0.65rem;
@@ -246,7 +248,7 @@
 .item-form-grid .full { grid-column: 1 / -1; }
 @media (max-width: 600px) { .item-form-grid { grid-template-columns: 1fr; } }
 
-/* ─── APROVAÇÕES PENDENTES ─── */
+/* ─── PRESENTES EM PROCESSAMENTO ─── */
 .gestor-pendente-row {
   display: flex;
   align-items: center;

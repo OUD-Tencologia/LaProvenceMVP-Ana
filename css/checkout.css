@@ -132,6 +132,13 @@
   letter-spacing: 0.06em;
   margin-left: 0.6rem;
 }
+.co-parcelas-hint {
+  padding: 0.8rem 1.1rem;
+  background: rgba(235, 171, 10, 0.09);
+  color: #8a6100;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
 
 /* Submit button */
 .co-submit-btn {
@@ -175,6 +182,19 @@
   font-weight: 600;
   margin-top: 0.6rem;
   text-align: center;
+}
+.co-reservation-alert {
+  background: rgba(235, 171, 10, 0.1);
+  border: 1px solid rgba(235, 171, 10, 0.34);
+  border-radius: 8px;
+  color: var(--texto);
+  font-size: 0.77rem;
+  line-height: 1.55;
+  padding: 0.75rem 0.9rem;
+  margin-bottom: 1rem;
+}
+.co-reservation-alert strong {
+  color: var(--verde);
 }
 
 /* Summary column */
@@ -435,6 +455,13 @@
 }
 .co-pix-copy-btn:hover { background: var(--verde-medio); }
 .co-pix-copy-btn.copied { background: #1a8a3c; }
+.co-copy-feedback {
+  color: #1a7035;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: -0.55rem;
+  margin-bottom: 1rem;
+}
 .co-pix-timer {
   display: flex;
   align-items: center;

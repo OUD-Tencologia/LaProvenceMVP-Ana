@@ -61,12 +61,8 @@ export const comprasService = {
     return normalizarCompra(res.data ?? res)
   },
 
-  async aprovar(id) {
-    return comprasService.update(id, { status_pagamento: 'Aprovado' })
-  },
-
-  async rejeitar(id) {
-    return comprasService.update(id, { status_pagamento: 'Rejeitado' })
+  async cancelar(id) {
+    return comprasService.update(id, { status_pagamento: 'Cancelado' })
   },
 
   async delete(id) {

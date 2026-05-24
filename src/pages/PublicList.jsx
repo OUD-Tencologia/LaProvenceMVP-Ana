@@ -77,6 +77,14 @@ export default function PublicList() {
     load()
   }, [codigo])
 
+  useEffect(() => {
+    if (!lista?.id || !compras.some((c) => c.status_pagamento === 'Pendente')) return
+    const refresh = setInterval(() => {
+      comprasService.getByLista(lista.id).then(setCompras).catch(() => {})
+    }, 15000)
+    return () => clearInterval(refresh)
+  }, [lista?.id, compras.some((c) => c.status_pagamento === 'Pendente')])
+
   if (!codigo || notFound) {
     return (
       <div>
@@ -103,7 +111,7 @@ export default function PublicList() {
   })
 
   const total = listaItens.length
-  const comprasAtivas = compras.filter((c) => c.status_pagamento !== 'Rejeitado')
+  const comprasAtivas = compras.filter((c) => !['Rejeitado', 'Cancelado'].includes(c.status_pagamento))
   const presenteados = new Set(comprasAtivas.map((c) => c.catalogo_id).filter(Boolean)).size
 
   // ── Gift modal helpers ─────────────────────────────────
@@ -124,8 +132,14 @@ export default function PublicList() {
 
   function abrirGiftModal(item, listaItem) {
     if (!item) return
-    if (!item.isCartaoPresente && isPresenteado(item.id)) {
-      toast('Este item já foi presenteado por outra pessoa.', 'error')
+    const compra = !item.isCartaoPresente ? getCompraAtiva(item.id) : null
+    if (compra) {
+      toast(
+        compra.status_pagamento === 'Pendente'
+          ? 'Este item está em processamento por outro convidado.'
+          : 'Este item já foi presenteado por outra pessoa.',
+        'error'
+      )
       return
     }
     setDetailItem(null)
@@ -233,7 +247,8 @@ export default function PublicList() {
 
           <div className="legend">
             <div className="legend-item"><span className="item-status-dot dot-available"></span> Disponível</div>
-            <div className="legend-item"><span className="item-status-dot dot-purchased"></span> Já presenteado</div>
+            <div className="legend-item"><span className="item-status-dot dot-processing"></span> Em processamento</div>
+            <div className="legend-item"><span className="item-status-dot dot-purchased"></span> Presenteado</div>
           </div>
 
           <div className="public-filter-row">
@@ -247,7 +262,7 @@ export default function PublicList() {
               <div className="public-status-filters" aria-label="Filtrar por disponibilidade">
                 <button type="button" className={`public-filter public-filter-status${statusFiltro === 'todos' ? ' active' : ''}`} onClick={() => setStatusFiltro('todos')}>Todos</button>
                 <button type="button" className={`public-filter public-filter-status${statusFiltro === 'disponiveis' ? ' active' : ''}`} onClick={() => setStatusFiltro('disponiveis')}>Disponíveis</button>
-                <button type="button" className={`public-filter public-filter-status${statusFiltro === 'presenteados' ? ' active' : ''}`} onClick={() => setStatusFiltro('presenteados')}>Já presenteados</button>
+                <button type="button" className={`public-filter public-filter-status${statusFiltro === 'presenteados' ? ' active' : ''}`} onClick={() => setStatusFiltro('presenteados')}>Indisponíveis</button>
               </div>
             </div>
             <select className="sort-select public-sort-select" value={sort} onChange={(e) => setSort(e.target.value)}>
@@ -286,12 +301,13 @@ export default function PublicList() {
               const listaItem = listaItens.find((li) => li.catalogo_id === item.id)
               const compra = getCompraAtiva(item.id)
               const isPendente = compra && compra.status_pagamento === 'Pendente'
+              const isAprovado = compra && (compra.status_pagamento === 'Aprovado' || compra.status_pagamento === 'Confirmado')
               const isPresent = Boolean(compra)
               return (
-                <div key={item.id} className={`item-card${isPresent ? ' purchased' : ' available'}${isPendente ? ' purchased--pending' : ''}`}>
+                <div key={item.id} className={`item-card${isPresent ? ' purchased' : ' available'}${isPendente ? ' purchased--pending' : ''}${isAprovado ? ' purchased--completed' : ''}`}>
                   {isPresent && (
                     <div className="purchased-overlay">
-                      <span className="purchased-stamp">{isPendente ? 'Reservado' : 'Presenteado'}</span>
+                      <span className="purchased-stamp">{isPendente ? 'Em processamento' : 'Presenteado'}</span>
                     </div>
                   )}
                   <div style={{ cursor: 'pointer' }} onClick={() => setDetailItem({ item, listaItem })}>
@@ -299,8 +315,8 @@ export default function PublicList() {
                   </div>
                   <div className="item-card-body">
                     <div className={`public-item-state ${isPresent ? 'public-item-state--purchased' : 'public-item-state--available'}`}>
-                      <span className={`item-status-dot ${isPresent ? 'dot-purchased' : 'dot-available'}`}></span>
-                      {isPresent ? (isPendente ? 'Reservado' : 'Já presenteado') : 'Disponível'}
+                      <span className={`item-status-dot ${isPendente ? 'dot-processing' : isPresent ? 'dot-purchased' : 'dot-available'}`}></span>
+                      {isPresent ? (isPendente ? 'Em processamento' : 'Presenteado') : 'Disponível'}
                     </div>
                     <div style={{ fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--texto-suave)', marginBottom: '0.3rem' }}>{item.marca || ''}</div>
                     <h4 style={{ cursor: 'pointer' }} onClick={() => setDetailItem({ item, listaItem })}>{item.nome}</h4>
@@ -310,7 +326,7 @@ export default function PublicList() {
                       ? <button type="button" className="btn btn-verde btn-sm" style={{ marginTop: 'auto' }} onClick={() => abrirGiftModal(item, listaItem)}>
                           Presentear
                         </button>
-                      : <span style={{ fontSize: '0.72rem', color: 'var(--texto-suave)' }}>{isPendente ? 'Pagamento em processamento' : 'Já foi presenteado'}</span>
+                      : <span style={{ fontSize: '0.72rem', color: 'var(--texto-suave)' }}>{isPendente ? 'Pagamento em processamento' : 'Item presenteado'}</span>
                     }
                   </div>
                 </div>
@@ -332,7 +348,9 @@ export default function PublicList() {
               <button type="button" className="btn btn-outline-dark btn-sm" onClick={() => setDetailItem(null)}>Fechar</button>
               {!isPresenteado(detailItem.item.id)
                 ? <button type="button" className="btn btn-verde btn-sm" onClick={() => abrirGiftModal(detailItem.item, detailItem.listaItem)}>Presentear</button>
-                : <span style={{ fontSize: '0.8rem', color: 'var(--texto-suave)', padding: '0.5rem' }}>Já presenteado</span>
+                : <span style={{ fontSize: '0.8rem', color: 'var(--texto-suave)', padding: '0.5rem' }}>
+                    {getCompraAtiva(detailItem.item.id)?.status_pagamento === 'Pendente' ? 'Em processamento' : 'Item presenteado'}
+                  </span>
               }
             </>
           }
