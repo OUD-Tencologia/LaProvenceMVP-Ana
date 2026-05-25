@@ -90,6 +90,7 @@ export default function Checkout() {
   const [pixInfo, setPixInfo] = useState(null) // { text, pngLink, expiresAt }
   const [pixTimeLeft, setPixTimeLeft] = useState(null)
   const [pixCopied, setPixCopied] = useState(false)
+  const [pixCopyError, setPixCopyError] = useState(false)
   const [pixRetrying, setPixRetrying] = useState(false)
   const pixExpiredRef = useRef(false)
 
@@ -397,6 +398,7 @@ export default function Checkout() {
     setPixInfo(null)
     setPixTimeLeft(null)
     setPixCopied(false)
+    setPixCopyError(false)
     setReservationExpiresAt(null)
     setReservationTimeLeft(null)
     setCardErrors({})
@@ -433,12 +435,50 @@ export default function Checkout() {
     setStep('form')
   }
 
-  function copyPix() {
+  function copyPixFallback(text) {
+    const textarea = document.createElement('textarea')
+    textarea.value = text
+    textarea.setAttribute('readonly', '')
+    textarea.style.cssText = 'position:fixed;opacity:0;top:0;left:0'
+    document.body.appendChild(textarea)
+    textarea.focus()
+    textarea.select()
+    textarea.setSelectionRange(0, text.length)
+
+    let copied = false
+    try {
+      copied = document.execCommand('copy')
+    } catch {
+      copied = false
+    }
+
+    document.body.removeChild(textarea)
+    return copied
+  }
+
+  async function copyPix() {
     if (!pixInfo?.text) return
-    navigator.clipboard.writeText(pixInfo.text).then(() => {
+    setPixCopyError(false)
+
+    let copied = false
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(pixInfo.text)
+        copied = true
+      } catch {
+        copied = false
+      }
+    }
+
+    if (!copied) copied = copyPixFallback(pixInfo.text)
+
+    if (copied) {
       setPixCopied(true)
       setTimeout(() => setPixCopied(false), 2000)
-    })
+      return
+    }
+
+    setPixCopyError(true)
   }
 
   // ── JSX compartilhado ──
@@ -608,6 +648,16 @@ export default function Checkout() {
                   onError={e => { e.currentTarget.style.display = 'none' }} />
               )}
 
+              <label className="co-pix-code-label" htmlFor="pix-copy-code">Pix copia e cola</label>
+              <textarea
+                id="pix-copy-code"
+                className="co-pix-code"
+                value={pixInfo?.text ?? ''}
+                readOnly
+                onFocus={e => e.target.select()}
+                aria-label="Código Pix copia e cola"
+              />
+
               <button type="button" className={`co-pix-copy-btn${pixCopied ? ' copied' : ''}`} onClick={copyPix}>
                 {pixCopied ? (
                   <>
@@ -622,6 +672,11 @@ export default function Checkout() {
                 )}
               </button>
               {pixCopied && <div className="co-copy-feedback" role="status">Código Pix copiado com sucesso!</div>}
+              {pixCopyError && (
+                <div className="co-copy-feedback co-copy-feedback--error" role="alert">
+                  Não foi possível copiar automaticamente. Selecione o código acima e copie manualmente.
+                </div>
+              )}
 
               <div className="co-pix-timer">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z" /></svg>
