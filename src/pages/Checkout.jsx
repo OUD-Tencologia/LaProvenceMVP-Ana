@@ -25,6 +25,18 @@ function maskExpiry(v) {
   return d
 }
 
+function maskPostalCode(v) {
+  const digits = v.replace(/\D/g, '').slice(0, 8)
+  if (digits.length > 5) return `${digits.slice(0, 5)}-${digits.slice(5)}`
+  return digits
+}
+
+function safePaymentError(message) {
+  const error = new Error(message)
+  error.userSafe = true
+  return error
+}
+
 function fmtCountdown(secs) {
   if (secs == null || secs < 0) return '00:00'
   const m = Math.floor(secs / 60).toString().padStart(2, '0')
@@ -96,6 +108,14 @@ export default function Checkout() {
 
   // ── Card form
   const [cardForm, setCardForm] = useState({ number: '', holder: '', expiry: '', cvv: '' })
+  const [billingAddress, setBillingAddress] = useState({
+    postalCode: '',
+    street: '',
+    number: '',
+    complement: '',
+    city: '',
+    regionCode: '',
+  })
   const [cardErrors, setCardErrors] = useState({})
   const [cardGlobalErr, setCardGlobalErr] = useState('')
   const [cardSubmitting, setCardSubmitting] = useState(false)
@@ -319,11 +339,17 @@ export default function Checkout() {
     const errs = {}
     setCardGlobalErr('')
     const cleanNum = cardForm.number.replace(/\s/g, '')
+    const postalCode = billingAddress.postalCode.replace(/\D/g, '')
     if (cleanNum.length < 13) errs.number = 'Número do cartão inválido'
     if (!cardForm.holder.trim()) errs.holder = 'Informe o nome do titular'
     const [expM, expY] = cardForm.expiry.split('/')
     if (!expM || expM.length < 2 || !expY || expY.length < 2) errs.expiry = 'Data inválida'
     if (!cardForm.cvv || cardForm.cvv.length < 3) errs.cvv = 'CVV inválido'
+    if (postalCode.length !== 8) errs.postalCode = 'CEP inválido'
+    if (!billingAddress.street.trim()) errs.street = 'Informe o endereço'
+    if (!billingAddress.number.trim()) errs.addressNumber = 'Informe o número'
+    if (!billingAddress.city.trim()) errs.city = 'Informe a cidade'
+    if (!/^[A-Za-z]{2}$/.test(billingAddress.regionCode.trim())) errs.regionCode = 'UF inválida'
     setCardErrors(errs)
     if (Object.keys(errs).length) return
 
@@ -336,12 +362,13 @@ export default function Checkout() {
         card_holder_name: cardForm.holder.trim(),
       }
 
-      if (!window.PagSeguro?.encryptCard) {
-        throw new Error('SDK do PagBank não carregado. Atualize a página e tente novamente.')
+      const sdk = window.PagSeguro
+      if (!sdk?.encryptCard || !sdk?.setUp || !sdk?.authenticate3DS) {
+        throw safePaymentError('Não foi possível carregar a autenticação segura do cartão. Atualize a página e tente novamente.')
       }
 
       const publicKey = await pagBankService.getPublicKey()
-      const enc = window.PagSeguro.encryptCard({
+      const enc = sdk.encryptCard({
         publicKey,
         holder: cardForm.holder.trim(),
         number: cleanNum,
@@ -351,9 +378,68 @@ export default function Checkout() {
       })
       if (enc.hasErrors) {
         const firstErr = Object.values(enc.errors || {})[0]
-        throw new Error(firstErr?.message || 'Dados do cartão inválidos')
+        throw safePaymentError(firstErr?.message || 'Dados do cartão inválidos')
       }
+
+      const sessionToken = await getRecaptchaToken('pagbank_card_3ds_session')
+      const threeDsSession = await pagBankService.createThreeDsSession(compraId, sessionToken)
+      sdk.setUp({
+        session: threeDsSession.session,
+        env: threeDsSession.environment,
+      })
+
+      let authentication
+      try {
+        const phone = form.tel.replace(/\D/g, '')
+        authentication = await sdk.authenticate3DS({
+          data: {
+            customer: {
+              name: form.nome.trim(),
+              email: form.email.trim(),
+              phones: [{
+                country: '55',
+                area: phone.slice(0, 2),
+                number: phone.slice(2),
+                type: 'MOBILE',
+              }],
+            },
+            paymentMethod: {
+              type: 'CREDIT_CARD',
+              installments: parcelas,
+              card: { encrypted: enc.encryptedCard },
+            },
+            amount: {
+              value: Math.round(checkoutPrice * 100),
+              currency: 'BRL',
+            },
+            billingAddress: {
+              street: billingAddress.street.trim(),
+              number: billingAddress.number.trim(),
+              ...(billingAddress.complement.trim() && { complement: billingAddress.complement.trim() }),
+              city: billingAddress.city.trim(),
+              regionCode: billingAddress.regionCode.trim().toUpperCase(),
+              country: 'BRA',
+              postalCode,
+            },
+            dataOnly: false,
+          },
+        })
+      } catch {
+        throw safePaymentError('Não foi possível autenticar este cartão pelo 3DS. Tente outro cartão ou escolha Pix.')
+      }
+
+      if (authentication?.status === 'CHANGE_PAYMENT_METHOD') {
+        throw safePaymentError('A autenticação foi recusada. Escolha Pix ou utilize outro cartão.')
+      }
+      if (authentication?.status === 'AUTH_NOT_SUPPORTED') {
+        throw safePaymentError('Este cartão não permite autenticação 3DS. Escolha Pix ou utilize outro cartão.')
+      }
+      if (authentication?.status !== 'AUTH_FLOW_COMPLETED' || !authentication.id) {
+        throw safePaymentError('A autenticação 3DS não foi concluída. Tente novamente ou escolha Pix.')
+      }
+
       paymentPayload.card_encrypted = enc.encryptedCard
+      paymentPayload.authentication_id = authentication.id
       paymentPayload.recaptcha_token = await getRecaptchaToken('pagbank_card_order')
 
       const order = await pagBankService.createCreditCardOrder(paymentPayload)
@@ -372,7 +458,7 @@ export default function Checkout() {
       await cancelCurrentAttempt()
       resetAttemptState()
       setStep('form')
-      setGlobalErr(PAYMENT_ERROR_MESSAGE)
+      setGlobalErr(e.userSafe ? e.message : PAYMENT_ERROR_MESSAGE)
     } finally {
       setCardSubmitting(false)
     }
@@ -401,6 +487,8 @@ export default function Checkout() {
     setPixCopyError(false)
     setReservationExpiresAt(null)
     setReservationTimeLeft(null)
+    setCardForm({ number: '', holder: '', expiry: '', cvv: '' })
+    setBillingAddress({ postalCode: '', street: '', number: '', complement: '', city: '', regionCode: '' })
     setCardErrors({})
     setCardGlobalErr('')
     pixExpiredRef.current = false
@@ -744,6 +832,37 @@ export default function Checkout() {
               {cardErrors.cvv && <div className="co-err-label show" style={{ flex: 1 }}>{cardErrors.cvv}</div>}
             </div>
 
+            <div className="co-form-title">Endereço de Cobrança</div>
+            <div className="co-field-row co-field-row-wrap">
+              <input type="text" className="co-field" placeholder="CEP"
+                autoComplete="postal-code" maxLength={9} inputMode="numeric" value={billingAddress.postalCode}
+                onChange={e => setBillingAddress({ ...billingAddress, postalCode: maskPostalCode(e.target.value) })} />
+              <input type="text" className="co-field" placeholder="UF"
+                autoComplete="address-level1" maxLength={2} value={billingAddress.regionCode}
+                onChange={e => setBillingAddress({ ...billingAddress, regionCode: e.target.value.replace(/[^A-Za-z]/g, '').slice(0, 2).toUpperCase() })} />
+            </div>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '-0.5rem', marginBottom: '0.75rem' }}>
+              {cardErrors.postalCode && <div className="co-err-label show" style={{ flex: 1 }}>{cardErrors.postalCode}</div>}
+              {cardErrors.regionCode && <div className="co-err-label show" style={{ flex: 1 }}>{cardErrors.regionCode}</div>}
+            </div>
+            <input type="text" className="co-field" placeholder="Endereço"
+              autoComplete="address-line1" value={billingAddress.street}
+              onChange={e => setBillingAddress({ ...billingAddress, street: e.target.value })} />
+            {cardErrors.street && <div className="co-err-label show">{cardErrors.street}</div>}
+            <div className="co-field-row co-field-row-wrap">
+              <input type="text" className="co-field" placeholder="Número"
+                value={billingAddress.number}
+                onChange={e => setBillingAddress({ ...billingAddress, number: e.target.value })} />
+              <input type="text" className="co-field" placeholder="Complemento (opcional)"
+                autoComplete="address-line2" value={billingAddress.complement}
+                onChange={e => setBillingAddress({ ...billingAddress, complement: e.target.value })} />
+            </div>
+            {cardErrors.addressNumber && <div className="co-err-label show">{cardErrors.addressNumber}</div>}
+            <input type="text" className="co-field" placeholder="Cidade"
+              autoComplete="address-level2" value={billingAddress.city}
+              onChange={e => setBillingAddress({ ...billingAddress, city: e.target.value })} />
+            {cardErrors.city && <div className="co-err-label show">{cardErrors.city}</div>}
+
             {cardGlobalErr && <div className="co-global-err">{cardGlobalErr}</div>}
 
             <button type="button" className="co-submit-btn" onClick={pagarCartao} disabled={cardSubmitting}>
@@ -753,7 +872,7 @@ export default function Checkout() {
 
             <div className="co-secure">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" /></svg>
-              Cartão criptografado · Transação segura
+              Cartão criptografado · Protegido por 3DS
             </div>
 
             <button type="button" className="co-pix-back-link co-link-button co-card-back-link" onClick={backToList}>

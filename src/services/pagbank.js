@@ -16,6 +16,11 @@ export const pagBankService = {
     return res.data ?? res
   },
 
+  async createThreeDsSession(compra_id, recaptcha_token) {
+    const res = await api.post('/pagbank/3ds/session', { compra_id, recaptcha_token }, false)
+    return res.data ?? res
+  },
+
   async getOrderStatus(compra_id) {
     const res = await api.get(`/pagbank/orders/${compra_id}/status`, false)
     return res.data ?? res
