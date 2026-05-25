@@ -44,3 +44,24 @@ As próximas evoluções previstas para o projeto incluem:
 - **integração com regras de negócio e futuras APIs**
 
 ---
+
+## **Checkout PagBank**
+
+O checkout React integrado oferece Pix e cartão de crédito. No cartão, os
+dados são criptografados no navegador pelo SDK PagBank e a cobrança somente é
+enviada após a autenticação 3DS retornar `AUTH_FLOW_COMPLETED`.
+
+Para executar o frontend, configure:
+
+```env
+VITE_API_URL="https://sua-api.com"
+VITE_RECAPTCHA_SITE_KEY="sua_site_key_recaptcha_v3"
+```
+
+Em homologação e produção, a página deve ser servida em HTTPS. Se houver uma
+Content Security Policy no servidor web, ela deve permitir o SDK em
+`https://assets.pagseguro.com.br` e a abertura dos frames 3DS de
+`*.cardinalcommerce.com` e `*.cardinaltrusted.com`.
+
+O endereço de cobrança solicitado no fluxo de cartão é encaminhado diretamente
+ao SDK para autenticação 3DS; a aplicação não o armazena.

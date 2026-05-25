@@ -1,24 +1,14 @@
 const BASE = import.meta.env.VITE_API_URL || 'http://localhost:3668'
 
-export function getToken() {
-  return localStorage.getItem('lp_token') || null
-}
-
-export function setToken(token) {
-  if (token) localStorage.setItem('lp_token', token)
-  else localStorage.removeItem('lp_token')
-}
-
-async function req(method, path, body, requiresAuth = true) {
-  const headers = {}
+async function req(method, path, body, requiresAuth = true, customHeaders = {}) {
+  const headers = { ...customHeaders }
   if (body !== undefined) headers['Content-Type'] = 'application/json'
 
-  if (requiresAuth) {
-    const token = getToken()
-    if (token) headers['Authorization'] = `Bearer ${token}`
+  if (requiresAuth && !['GET', 'HEAD'].includes(method)) {
+    headers['X-CSRF-Protection'] = '1'
   }
 
-  const options = { method, headers }
+  const options = { method, headers, credentials: 'include' }
   if (body !== undefined) options.body = JSON.stringify(body)
 
   const res = await fetch(BASE + path, options)
@@ -40,8 +30,8 @@ async function req(method, path, body, requiresAuth = true) {
 }
 
 export const api = {
-  get:  (path, auth = true)        => req('GET',    path, undefined, auth),
-  post: (path, body, auth = true)  => req('POST',   path, body,      auth),
-  put:  (path, body, auth = true)  => req('PUT',    path, body,      auth),
-  del:  (path, auth = true)        => req('DELETE', path, undefined, auth),
+  get:  (path, auth = true, headers)       => req('GET',    path, undefined, auth, headers),
+  post: (path, body, auth = true, headers) => req('POST',   path, body,      auth, headers),
+  put:  (path, body, auth = true, headers) => req('PUT',    path, body,      auth, headers),
+  del:  (path, auth = true, headers)       => req('DELETE', path, undefined, auth, headers),
 }

@@ -118,6 +118,8 @@ const Store = {
   remove: (key) => localStorage.removeItem('lp_' + key),
 };
 
+const LEGACY_GESTOR_PASSWORD = window.LA_PROVENCE_LEGACY_GESTOR_PASSWORD || null;
+
 function init() {
   // Force-reset catalog when version changes
   if (Store.get('catalogoVersion') !== CATALOG_VERSION) {
@@ -172,7 +174,7 @@ function init() {
     
     // RESET: Excluir todos os usuários (exceto gestor) e limpar dados de testes (listas/compras)
     Store.set('usuarios', [
-      { id: 'gestor-01', nome: 'Gestor La Provence', email: 'gestor@laprovence.com', senha: 'Gestor@123', role: 'gestor', telefone: '' }
+      { id: 'gestor-01', nome: 'Gestor La Provence', email: 'gestor@laprovence.com', senha: LEGACY_GESTOR_PASSWORD, role: 'gestor', telefone: '' }
     ]);
     Store.set('listas', []);
     Store.set('compras', []);
@@ -180,7 +182,7 @@ function init() {
   // Always refresh premontadas seed
   Store.set('premontadas', PREMONTADAS_SEED);
   if (!Store.get('usuarios')) Store.set('usuarios', [
-    { id: 'gestor-01', nome: 'Gestor La Provence', email: 'gestor@laprovence.com', senha: 'Gestor@123', role: 'gestor', telefone: '' }
+    { id: 'gestor-01', nome: 'Gestor La Provence', email: 'gestor@laprovence.com', senha: LEGACY_GESTOR_PASSWORD, role: 'gestor', telefone: '' }
   ]);
   if (!Store.get('listas')) Store.set('listas', []);
   if (!Store.get('compras')) Store.set('compras', []);
@@ -200,7 +202,7 @@ function requireAuth(role) {
 
 function login(email, senha) {
   const usuarios = Store.get('usuarios') || [];
-  const user = usuarios.find(u => u.email === email && u.senha === senha);
+  const user = usuarios.find(u => u.email === email && u.senha && u.senha === senha);
   if (!user) throw new Error('E-mail ou senha incorretos.');
   setCurrentUser(user);
   return user;

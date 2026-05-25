@@ -283,6 +283,7 @@ export default function Admin() {
 
   const [modalData, setModalData] = useState(null) // { lista, compras, listaItens }
   const [compraDetalheModal, setCompraDetalheModal] = useState(null)
+  const [cancelGiftModal, setCancelGiftModal] = useState(null)
   const [archiveConfirmModal, setArchiveConfirmModal] = useState(null)
   const [deleteConfirmItem, setDeleteConfirmItem] = useState(null)
   const [casalInfoModal, setCasalInfoModal] = useState(null)
@@ -380,6 +381,7 @@ export default function Admin() {
   function closeListaModal() {
     setModalData(null)
     setCompraDetalheModal(null)
+    setCancelGiftModal(null)
   }
 
   function downloadCSV() {
@@ -424,29 +426,19 @@ export default function Admin() {
     }
   }
 
-  async function handleAprovar(compraId) {
+  async function handleCancelarPresente() {
+    if (!cancelGiftModal?.compra?.id) return
+    const compraId = cancelGiftModal.compra.id
     try {
-      await comprasService.aprovar(compraId)
+      await comprasService.cancelar(compraId)
       setModalData((prev) => ({
         ...prev,
-        compras: prev.compras.map((c) => c.id === compraId ? { ...c, status_pagamento: 'Aprovado' } : c),
+        compras: prev.compras.map((c) => c.id === compraId ? { ...c, status_pagamento: 'Cancelado' } : c),
       }))
-      setTodasCompras((prev) => prev.map((c) => c.id === compraId ? { ...c, status_pagamento: 'Aprovado' } : c))
+      setTodasCompras((prev) => prev.map((c) => c.id === compraId ? { ...c, status_pagamento: 'Cancelado' } : c))
+      setCancelGiftModal(null)
       setCompraDetalheModal(null)
-      toast('Pagamento aprovado!')
-    } catch (e) { toast(e.message, 'error') }
-  }
-
-  async function handleRejeitar(compraId) {
-    try {
-      await comprasService.rejeitar(compraId)
-      setModalData((prev) => ({
-        ...prev,
-        compras: prev.compras.map((c) => c.id === compraId ? { ...c, status_pagamento: 'Rejeitado' } : c),
-      }))
-      setTodasCompras((prev) => prev.map((c) => c.id === compraId ? { ...c, status_pagamento: 'Rejeitado' } : c))
-      setCompraDetalheModal(null)
-      toast('Compra cancelada.')
+      toast('Presente cancelado. O item voltou a ficar disponível.')
     } catch (e) { toast(e.message, 'error') }
   }
 
@@ -685,7 +677,7 @@ export default function Admin() {
                   if (lista) openListaModal(lista)
                 }}
               >
-                <span className="label-caps">Pendentes</span>
+                <span className="label-caps">Em processamento</span>
                 <div className="value" style={pendentes > 0 ? { color: '#EBAB0A' } : {}}>{pendentes}</div>
                 {pendentes > 0 && <div style={{ fontSize: '0.6rem', color: '#EBAB0A', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: '0.25rem' }}>Ver lista →</div>}
               </button>
@@ -719,7 +711,7 @@ export default function Admin() {
                           <div className="chips-row">
                             <span className="chip chip--default">{itensCount} itens</span>
                             <span className="chip chip--green">{aprovadas.length} aprovados</span>
-                            {pend.length > 0 && <span className="chip chip--yellow">{pend.length} pendente{pend.length > 1 ? 's' : ''}</span>}
+                            {pend.length > 0 && <span className="chip chip--yellow">{pend.length} em processamento</span>}
                           </div>
                           <div className="list-card-actions">
                             <button type="button" className="btn btn-outline-dark btn-sm" style={{ flex: 1 }} onClick={() => openListaModal(lista)}>Ver Detalhes</button>
@@ -972,7 +964,7 @@ export default function Admin() {
               <div>
                 <div className="gestor-modal-stat-label">Total Presenteado</div>
                 <div className="gestor-modal-stat-value" style={{ color: 'var(--ouro)' }}>
-                  {formatMoney(modalData.compras.filter((c) => c.status_pagamento !== 'Rejeitado').reduce((s, c) => s + Number(c.valor_pago), 0))}
+                  {formatMoney(modalData.compras.filter((c) => !['Rejeitado', 'Cancelado'].includes(c.status_pagamento)).reduce((s, c) => s + Number(c.valor_pago), 0))}
                 </div>
               </div>
             </div>
@@ -1013,16 +1005,20 @@ export default function Admin() {
               {modalData.listaItens.map((li) => {
                 const item = li.catalogo
                 if (!item) return null
-                const compra = modalData.compras.find((c) => c.catalogo_id === li.catalogo_id)
+                const compra = modalData.compras.find((c) =>
+                  c.catalogo_id === li.catalogo_id &&
+                  (c.status_pagamento === 'Pendente' || c.status_pagamento === 'Aprovado' || c.status_pagamento === 'Confirmado')
+                )
                 const isPendente = compra?.status_pagamento === 'Pendente'
                 const isAprovado = compra && (compra.status_pagamento === 'Aprovado' || compra.status_pagamento === 'Confirmado')
+                const hasGift = isPendente || isAprovado
                 return (
                   <button
                     type="button"
                     key={li.id}
                     className={`gestor-item-card${isPendente ? ' gestor-item-card--pending' : ''}${isAprovado ? ' gestor-item-card--approved' : ''}`}
-                    onClick={() => isPendente && setCompraDetalheModal({ item, compra })}
-                    style={{ cursor: isPendente ? 'pointer' : 'default' }}
+                    onClick={() => hasGift && setCompraDetalheModal({ item, compra })}
+                    style={{ cursor: hasGift ? 'pointer' : 'default' }}
                   >
                     {isAprovado && <div className="gestor-item-stamp">Presenteado</div>}
                     {item.imgs?.[0] && (
@@ -1033,17 +1029,17 @@ export default function Admin() {
                     <div className="gestor-item-card-name">{item.nome}</div>
                     <div className="gestor-item-card-sub">{item.setor || item.tamanho || ''}</div>
                     <div className="gestor-item-card-price">{formatMoney(item.preco)}</div>
-                    {isPendente && <div className="gestor-item-card-status">AGUARDANDO PGTO</div>}
+                    {isPendente && <div className="gestor-item-card-status">EM PROCESSAMENTO</div>}
                   </button>
                 )
               })}
             </div>
 
-            {/* Aprovações pendentes */}
+            {/* Presentes em processamento */}
             {modalData.compras.filter((c) => c.status_pagamento === 'Pendente').length > 0 && (
               <>
                 <div className="gestor-modal-section-title" style={{ marginTop: '1.5rem' }}>
-                  Aprovações Pendentes ({modalData.compras.filter((c) => c.status_pagamento === 'Pendente').length})
+                  Presentes em Processamento ({modalData.compras.filter((c) => c.status_pagamento === 'Pendente').length})
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {modalData.compras
@@ -1064,7 +1060,7 @@ export default function Admin() {
                           </div>
                           <div className="gestor-pendente-row__right">
                             <span className="gestor-pendente-row__valor">{formatMoney(compra.valor_pago)}</span>
-                            <span className="gestor-pendente-row__action">Aprovar →</span>
+                            <span className="gestor-pendente-row__action">Ver detalhes →</span>
                           </div>
                         </button>
                       )
@@ -1164,11 +1160,10 @@ export default function Admin() {
       {/* ── MODAL DETALHES DA COMPRA ── */}
       <Modal open={!!compraDetalheModal} onClose={() => setCompraDetalheModal(null)} title="Detalhes do Presente" maxWidth="460px"
         footer={
-          compraDetalheModal?.compra?.status_pagamento === 'Pendente' ? (
+          ['Pendente', 'Aprovado', 'Confirmado'].includes(compraDetalheModal?.compra?.status_pagamento) ? (
             <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
               <button type="button" className="btn btn-outline-dark btn-sm" onClick={() => setCompraDetalheModal(null)} style={{ flexShrink: 0 }}>Fechar</button>
-              <button type="button" className="btn btn-sm btn-rejeitar" style={{ flex: 1 }} onClick={() => handleRejeitar(compraDetalheModal.compra.id)}>CANCELAR COMPRA</button>
-              <button type="button" className="btn btn-verde" style={{ flex: 1 }} onClick={() => handleAprovar(compraDetalheModal.compra.id)}>APROVAR</button>
+              <button type="button" className="btn btn-sm btn-rejeitar" style={{ flex: 1 }} onClick={() => setCancelGiftModal(compraDetalheModal)}>CANCELAR PRESENTE</button>
             </div>
           ) : (
             <button type="button" className="btn btn-outline-dark btn-sm" onClick={() => setCompraDetalheModal(null)}>Fechar</button>
@@ -1196,7 +1191,7 @@ export default function Admin() {
             <InfoRow label="CPF">{compraDetalheModal.compra.cpf}</InfoRow>
             <InfoRow label="Telefone">{compraDetalheModal.compra.telefone}</InfoRow>
             <InfoRow label="Forma de Pagamento">{compraDetalheModal.compra.forma_pagamento}</InfoRow>
-            <InfoRow label="Status">{compraDetalheModal.compra.status_pagamento}</InfoRow>
+            <InfoRow label="Status">{compraDetalheModal.compra.status_pagamento === 'Pendente' ? 'Em processamento' : compraDetalheModal.compra.status_pagamento}</InfoRow>
             <InfoRow label="Data da Compra">
               {new Date(compraDetalheModal.compra.data_compra).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
             </InfoRow>
@@ -1205,6 +1200,28 @@ export default function Admin() {
       </Modal>
 
       {/* ── MODAL CONFIRMAR ARQUIVAMENTO ── */}
+      <Modal open={!!cancelGiftModal} onClose={() => setCancelGiftModal(null)} title="Cancelar Presente" maxWidth="430px"
+        footer={
+          <>
+            <button type="button" className="btn btn-outline-dark btn-sm" onClick={() => setCancelGiftModal(null)}>Voltar</button>
+            <button type="button" className="btn btn-sm btn-danger" onClick={handleCancelarPresente}>Sim, Cancelar Presente</button>
+          </>
+        }
+      >
+        {cancelGiftModal && (
+          <div className="archive-confirm">
+            <div className="archive-confirm__icon">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="#c0392b"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
+            </div>
+            <p className="archive-confirm__subtitle">Deseja cancelar o presente</p>
+            <p className="archive-confirm__name">{cancelGiftModal.item.nome}?</p>
+            <p className="archive-confirm__warning">
+              O item voltará a ficar disponível para outros convidados. Se houver pagamento aprovado ou posteriormente liquidado no PagBank, faça também o estorno correspondente.
+            </p>
+          </div>
+        )}
+      </Modal>
+
       <Modal open={!!archiveConfirmModal} onClose={() => setArchiveConfirmModal(null)} title="Arquivar Lista" maxWidth="420px"
         footer={
           <>

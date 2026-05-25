@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams, useNavigate, Link } from 'react-router-dom'
-import { formatMoney } from '../utils/formatters'
+import { formatMoney, maskMoney, parseMoney, numToMaskMoney } from '../utils/formatters'
 import { validateCPF, maskPhone, maskCPF } from '../utils/validators'
 import { catalogoService } from '../services/catalogo.js'
 import { listasService } from '../services/listas.js'
 import { comprasService } from '../services/compras.js'
 import { pagBankService } from '../services/pagbank.js'
+import { getRecaptchaToken } from '../services/recaptcha.js'
 
 function formatPriceSplit(valor) {
   const str = formatMoney(valor)
@@ -24,6 +25,18 @@ function maskExpiry(v) {
   return d
 }
 
+function maskPostalCode(v) {
+  const digits = v.replace(/\D/g, '').slice(0, 8)
+  if (digits.length > 5) return `${digits.slice(0, 5)}-${digits.slice(5)}`
+  return digits
+}
+
+function safePaymentError(message) {
+  const error = new Error(message)
+  error.userSafe = true
+  return error
+}
+
 function fmtCountdown(secs) {
   if (secs == null || secs < 0) return '00:00'
   const m = Math.floor(secs / 60).toString().padStart(2, '0')
@@ -32,6 +45,8 @@ function fmtCountdown(secs) {
 }
 
 const CREDIT_MIN_VALUE = 200
+const INSTALLMENT_MIN_VALUE = 1000
+const PAYMENT_ERROR_MESSAGE = 'Não foi possível concluir seu pagamento. Recarregue a página e tente novamente.'
 
 function parseCreditValue(raw) {
   const value = Number(String(raw ?? '').replace(',', '.'))
@@ -79,16 +94,29 @@ export default function Checkout() {
 
   // ── Compra
   const [compraId, setCompraId] = useState(null)
+  const [checkoutAccessToken, setCheckoutAccessToken] = useState(null)
+  const [reservationExpiresAt, setReservationExpiresAt] = useState(null)
+  const [reservationTimeLeft, setReservationTimeLeft] = useState(null)
+  const reservationExpiredRef = useRef(false)
 
   // ── PIX
   const [pixInfo, setPixInfo] = useState(null) // { text, pngLink, expiresAt }
   const [pixTimeLeft, setPixTimeLeft] = useState(null)
   const [pixCopied, setPixCopied] = useState(false)
+  const [pixCopyError, setPixCopyError] = useState(false)
   const [pixRetrying, setPixRetrying] = useState(false)
   const pixExpiredRef = useRef(false)
 
   // ── Card form
   const [cardForm, setCardForm] = useState({ number: '', holder: '', expiry: '', cvv: '' })
+  const [billingAddress, setBillingAddress] = useState({
+    postalCode: '',
+    street: '',
+    number: '',
+    complement: '',
+    city: '',
+    regionCode: '',
+  })
   const [cardErrors, setCardErrors] = useState({})
   const [cardGlobalErr, setCardGlobalErr] = useState('')
   const [cardSubmitting, setCardSubmitting] = useState(false)
@@ -116,9 +144,11 @@ export default function Checkout() {
         setItem(cat)
         setLista(l)
         setLoadError(null)
-        const compras = await comprasService.getByLista(l.id)
-        const existente = compras.find(c => c.catalogo_id === itemId && c.status_pagamento !== 'Rejeitado')
-        if (existente) setLoadError('taken')
+        const compras = await comprasService.getPublicAvailabilityByLista(l.id)
+        const existente = compras.find(c =>
+          c.catalogo_id === itemId && !['Rejeitado', 'Cancelado'].includes(c.status_pagamento)
+        )
+        if (existente) setLoadError(existente.status_pagamento === 'Pendente' ? 'processing' : 'taken')
       } catch {
         setLoadError(true)
       } finally {
@@ -129,16 +159,16 @@ export default function Checkout() {
   }, [itemId, codigo, isCreditGift, navigate])
 
   useEffect(() => {
-    if (isCreditGift && giftCreditValue < 1000 && parcelas > 1) setParcelas(1)
+    if (isCreditGift && giftCreditValue <= INSTALLMENT_MIN_VALUE && parcelas > 1) setParcelas(1)
   }, [giftCreditValue, isCreditGift, parcelas])
 
   // ── PIX polling (3s, para quando pago ou expirado)
   useEffect(() => {
-    if (step !== 'pix' || !compraId) return
+    if (step !== 'pix' || !compraId || !checkoutAccessToken) return
     const interval = setInterval(async () => {
       if (pixExpiredRef.current) { clearInterval(interval); return }
       try {
-        const { compra_status } = await pagBankService.getOrderStatus(compraId)
+        const { compra_status } = await pagBankService.getOrderStatus(compraId, checkoutAccessToken)
         if (compra_status === 'Aprovado') { clearInterval(interval); setStep('success') }
         if (compra_status === 'Rejeitado') {
           clearInterval(interval)
@@ -148,7 +178,7 @@ export default function Checkout() {
       } catch { /* ignore */ }
     }, 3000)
     return () => clearInterval(interval)
-  }, [step, compraId])
+  }, [step, compraId, checkoutAccessToken])
 
   // ── PIX countdown (1s)
   useEffect(() => {
@@ -163,6 +193,25 @@ export default function Checkout() {
     const timer = setInterval(tick, 1000)
     return () => clearInterval(timer)
   }, [step, pixInfo])
+
+  useEffect(() => {
+    if (!reservationExpiresAt || (step !== 'card' && step !== 'processing')) return
+    const tick = () => {
+      const remaining = Math.max(0, Math.floor((new Date(reservationExpiresAt) - Date.now()) / 1000))
+      setReservationTimeLeft(remaining)
+      if (remaining === 0 && step === 'card' && !reservationExpiredRef.current) {
+        reservationExpiredRef.current = true
+        cancelCurrentAttempt().finally(() => {
+          resetAttemptState()
+          setGlobalErr('O tempo para finalizar este presente expirou. Inicie uma nova tentativa.')
+          setStep('form')
+        })
+      }
+    }
+    tick()
+    const timer = setInterval(tick, 1000)
+    return () => clearInterval(timer)
+  }, [step, reservationExpiresAt])
 
   if (!codigo || (!isCreditGift && !itemId)) return null
 
@@ -181,16 +230,19 @@ export default function Checkout() {
   }
 
   // ── Item já presenteado
-  if (loadError === 'taken') {
+  if (loadError === 'taken' || loadError === 'processing') {
+    const processing = loadError === 'processing'
     return (
       <>
         <nav className="co-navbar">
           <Link to="/"><img src="/assets/img/LaProvenceDecor-Logo.png" alt="La Provence" /></Link>
         </nav>
         <div className="co-error-screen">
-          <span className="label-caps" style={{ color: 'var(--ocre)' }}>Item já presenteado</span>
+          <span className="label-caps" style={{ color: 'var(--ocre)' }}>{processing ? 'Item em processamento' : 'Item presenteado'}</span>
           <p style={{ color: 'var(--texto-suave)', marginTop: '0.6rem', fontSize: '0.88rem', lineHeight: 1.7 }}>
-            Este item já foi presenteado. Volte à lista para escolher outro presente.
+            {processing
+              ? 'Outro convidado está finalizando este presente. Volte à lista para escolher outro item.'
+              : 'Este item já foi presenteado. Volte à lista para escolher outro presente.'}
           </p>
           <Link to={`/lista?codigo=${codigo}`} className="btn btn-verde btn-sm" style={{ marginTop: '1.2rem' }}>Voltar à lista</Link>
         </div>
@@ -243,6 +295,7 @@ export default function Checkout() {
     setSubmitting(true)
     try {
       const pgtoStr = pgto === 'Cartão' ? `Cartão ${parcelas}x` : 'Pix'
+      const checkoutRecaptchaToken = await getRecaptchaToken('checkout_start')
       const compra = await comprasService.create({
         listas_id: lista.id,
         catalogo_id: isCreditGift ? null : checkoutItem.id,
@@ -252,19 +305,28 @@ export default function Checkout() {
         telefone: form.tel.replace(/\D/g, ''),
         valor_pago: checkoutPrice.toFixed(2),
         forma_pagamento: pgtoStr,
+        recaptcha_token: checkoutRecaptchaToken,
       })
+      if (!compra.checkout_access_token) {
+        throw safePaymentError(PAYMENT_ERROR_MESSAGE)
+      }
+      const attemptToken = compra.checkout_access_token
       setCompraId(compra.id)
+      setCheckoutAccessToken(attemptToken)
+      setReservationExpiresAt(compra.reserva_expira_em ?? null)
+      reservationExpiredRef.current = false
 
       if (pgto === 'Pix') {
         try {
-          const order = await pagBankService.createPixOrder(compra.id)
+          const pixRecaptchaToken = await getRecaptchaToken('pagbank_pix_order')
+          const order = await pagBankService.createPixOrder(compra.id, pixRecaptchaToken, attemptToken)
           const qr = order.qr_codes?.[0]
           if (!qr) throw new Error('QR Code não disponível. Tente novamente.')
           const pngLink = qr.links?.find(l => l.rel === 'QRCODE.PNG')?.href
-          setPixInfo({ text: qr.text, pngLink, expiresAt: qr.expiration_date })
+          setPixInfo({ text: qr.text, pngLink, expiresAt: compra.reserva_expira_em ?? qr.expiration_date })
           setStep('pix')
         } catch (e) {
-          pagBankService.cancelOrder(compra.id).catch(() => {})
+          pagBankService.cancelOrder(compra.id, attemptToken).catch(() => {})
           throw e
         }
       } else {
@@ -273,6 +335,7 @@ export default function Checkout() {
       }
     } catch (e) {
       setCompraId(null)
+      setCheckoutAccessToken(null)
       setGlobalErr(e.message || 'Erro ao processar. Tente novamente.')
     } finally {
       setSubmitting(false)
@@ -283,11 +346,17 @@ export default function Checkout() {
     const errs = {}
     setCardGlobalErr('')
     const cleanNum = cardForm.number.replace(/\s/g, '')
+    const postalCode = billingAddress.postalCode.replace(/\D/g, '')
     if (cleanNum.length < 13) errs.number = 'Número do cartão inválido'
     if (!cardForm.holder.trim()) errs.holder = 'Informe o nome do titular'
     const [expM, expY] = cardForm.expiry.split('/')
     if (!expM || expM.length < 2 || !expY || expY.length < 2) errs.expiry = 'Data inválida'
     if (!cardForm.cvv || cardForm.cvv.length < 3) errs.cvv = 'CVV inválido'
+    if (postalCode.length !== 8) errs.postalCode = 'CEP inválido'
+    if (!billingAddress.street.trim()) errs.street = 'Informe o endereço'
+    if (!billingAddress.number.trim()) errs.addressNumber = 'Informe o número'
+    if (!billingAddress.city.trim()) errs.city = 'Informe a cidade'
+    if (!/^[A-Za-z]{2}$/.test(billingAddress.regionCode.trim())) errs.regionCode = 'UF inválida'
     setCardErrors(errs)
     if (Object.keys(errs).length) return
 
@@ -300,12 +369,13 @@ export default function Checkout() {
         card_holder_name: cardForm.holder.trim(),
       }
 
-      if (!window.PagSeguro?.encryptCard) {
-        throw new Error('SDK do PagBank não carregado. Atualize a página e tente novamente.')
+      const sdk = window.PagSeguro
+      if (!sdk?.encryptCard || !sdk?.setUp || !sdk?.authenticate3DS) {
+        throw safePaymentError('Não foi possível carregar a autenticação segura do cartão. Atualize a página e tente novamente.')
       }
 
       const publicKey = await pagBankService.getPublicKey()
-      const enc = window.PagSeguro.encryptCard({
+      const enc = sdk.encryptCard({
         publicKey,
         holder: cardForm.holder.trim(),
         number: cleanNum,
@@ -315,11 +385,71 @@ export default function Checkout() {
       })
       if (enc.hasErrors) {
         const firstErr = Object.values(enc.errors || {})[0]
-        throw new Error(firstErr?.message || 'Dados do cartão inválidos')
+        throw safePaymentError(firstErr?.message || 'Dados do cartão inválidos')
       }
-      paymentPayload.card_encrypted = enc.encryptedCard
 
-      const order = await pagBankService.createCreditCardOrder(paymentPayload)
+      const sessionToken = await getRecaptchaToken('pagbank_card_3ds_session')
+      const threeDsSession = await pagBankService.createThreeDsSession(compraId, sessionToken, checkoutAccessToken)
+      sdk.setUp({
+        session: threeDsSession.session,
+        env: threeDsSession.environment,
+      })
+
+      let authentication
+      try {
+        const phone = form.tel.replace(/\D/g, '')
+        authentication = await sdk.authenticate3DS({
+          data: {
+            customer: {
+              name: form.nome.trim(),
+              email: form.email.trim(),
+              phones: [{
+                country: '55',
+                area: phone.slice(0, 2),
+                number: phone.slice(2),
+                type: 'MOBILE',
+              }],
+            },
+            paymentMethod: {
+              type: 'CREDIT_CARD',
+              installments: parcelas,
+              card: { encrypted: enc.encryptedCard },
+            },
+            amount: {
+              value: Math.round(checkoutPrice * 100),
+              currency: 'BRL',
+            },
+            billingAddress: {
+              street: billingAddress.street.trim(),
+              number: billingAddress.number.trim(),
+              ...(billingAddress.complement.trim() && { complement: billingAddress.complement.trim() }),
+              city: billingAddress.city.trim(),
+              regionCode: billingAddress.regionCode.trim().toUpperCase(),
+              country: 'BRA',
+              postalCode,
+            },
+            dataOnly: false,
+          },
+        })
+      } catch {
+        throw safePaymentError('Não foi possível autenticar este cartão pelo 3DS. Tente outro cartão ou escolha Pix.')
+      }
+
+      if (authentication?.status === 'CHANGE_PAYMENT_METHOD') {
+        throw safePaymentError('A autenticação foi recusada. Escolha Pix ou utilize outro cartão.')
+      }
+      if (authentication?.status === 'AUTH_NOT_SUPPORTED') {
+        throw safePaymentError('Este cartão não permite autenticação 3DS. Escolha Pix ou utilize outro cartão.')
+      }
+      if (authentication?.status !== 'AUTH_FLOW_COMPLETED' || !authentication.id) {
+        throw safePaymentError('A autenticação 3DS não foi concluída. Tente novamente ou escolha Pix.')
+      }
+
+      paymentPayload.card_encrypted = enc.encryptedCard
+      paymentPayload.authentication_id = authentication.id
+      paymentPayload.recaptcha_token = await getRecaptchaToken('pagbank_card_order')
+
+      const order = await pagBankService.createCreditCardOrder(paymentPayload, checkoutAccessToken)
 
       const status = order.charges?.[0]?.status
       if (status === 'PAID' || status === 'AUTHORIZED') {
@@ -329,24 +459,24 @@ export default function Checkout() {
       } else {
         // WAITING ou IN_ANALYSIS — aguarda webhook via polling
         setStep('processing')
-        startPolling(compraId)
+        startPolling(compraId, checkoutAccessToken)
       }
     } catch (e) {
       await cancelCurrentAttempt()
       resetAttemptState()
       setStep('form')
-      setGlobalErr(e.message || 'Erro ao processar pagamento. Tente novamente.')
+      setGlobalErr(e.userSafe ? e.message : PAYMENT_ERROR_MESSAGE)
     } finally {
       setCardSubmitting(false)
     }
   }
 
-  function startPolling(cId) {
+  function startPolling(cId, accessToken) {
     let attempts = 0
     const poll = async () => {
       attempts++
       try {
-        const { compra_status } = await pagBankService.getOrderStatus(cId)
+        const { compra_status } = await pagBankService.getOrderStatus(cId, accessToken)
         if (compra_status === 'Aprovado') return setStep('success')
         if (compra_status === 'Rejeitado') return setStep('declined')
       } catch { /* ignore */ }
@@ -358,18 +488,25 @@ export default function Checkout() {
 
   function resetAttemptState() {
     setCompraId(null)
+    setCheckoutAccessToken(null)
     setPixInfo(null)
     setPixTimeLeft(null)
     setPixCopied(false)
+    setPixCopyError(false)
+    setReservationExpiresAt(null)
+    setReservationTimeLeft(null)
+    setCardForm({ number: '', holder: '', expiry: '', cvv: '' })
+    setBillingAddress({ postalCode: '', street: '', number: '', complement: '', city: '', regionCode: '' })
     setCardErrors({})
     setCardGlobalErr('')
     pixExpiredRef.current = false
+    reservationExpiredRef.current = false
   }
 
   async function cancelCurrentAttempt() {
-    if (!compraId) return
+    if (!compraId || !checkoutAccessToken) return
     try {
-      await pagBankService.cancelOrder(compraId)
+      await pagBankService.cancelOrder(compraId, checkoutAccessToken)
     } catch { /* best effort */ }
   }
 
@@ -394,12 +531,50 @@ export default function Checkout() {
     setStep('form')
   }
 
-  function copyPix() {
+  function copyPixFallback(text) {
+    const textarea = document.createElement('textarea')
+    textarea.value = text
+    textarea.setAttribute('readonly', '')
+    textarea.style.cssText = 'position:fixed;opacity:0;top:0;left:0'
+    document.body.appendChild(textarea)
+    textarea.focus()
+    textarea.select()
+    textarea.setSelectionRange(0, text.length)
+
+    let copied = false
+    try {
+      copied = document.execCommand('copy')
+    } catch {
+      copied = false
+    }
+
+    document.body.removeChild(textarea)
+    return copied
+  }
+
+  async function copyPix() {
     if (!pixInfo?.text) return
-    navigator.clipboard.writeText(pixInfo.text).then(() => {
+    setPixCopyError(false)
+
+    let copied = false
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(pixInfo.text)
+        copied = true
+      } catch {
+        copied = false
+      }
+    }
+
+    if (!copied) copied = copyPixFallback(pixInfo.text)
+
+    if (copied) {
       setPixCopied(true)
       setTimeout(() => setPixCopied(false), 2000)
-    })
+      return
+    }
+
+    setPixCopyError(true)
   }
 
   // ── JSX compartilhado ──
@@ -452,14 +627,13 @@ export default function Checkout() {
               <>
                 <div className="co-form-title">Valor do Crédito</div>
                 <input
-                  type="number"
+                  type="text"
                   className="co-field"
-                  min={CREDIT_MIN_VALUE}
-                  step="50"
-                  placeholder="Valor do crédito"
-                  value={giftCreditValue || ''}
+                  inputMode="numeric"
+                  placeholder="R$ 200,00"
+                  value={giftCreditValue ? numToMaskMoney(giftCreditValue) : ''}
                   onChange={e => {
-                    setGiftCreditValue(Number(e.target.value))
+                    setGiftCreditValue(parseMoney(maskMoney(e.target.value)))
                     setErrors(prev => {
                       if (!prev.valor) return prev
                       const next = { ...prev }
@@ -510,7 +684,7 @@ export default function Checkout() {
 
             <div className={`co-parcelas-box${pgto === 'Cartão' ? ' visible' : ''}`}>
               {[1, 2, 3].map(n => {
-                if (n > 1 && checkoutPrice < 1000) return null
+                if (n > 1 && checkoutPrice <= INSTALLMENT_MIN_VALUE) return null
                 return (
                   <div key={n} className={`co-parcela-opt${parcelas === n ? ' selected' : ''}`}
                     onClick={() => setParcelas(n)} role="button" tabIndex={0}
@@ -522,6 +696,11 @@ export default function Checkout() {
                   </div>
                 )
               })}
+              {checkoutPrice <= INSTALLMENT_MIN_VALUE && (
+                <div className="co-parcelas-hint">
+                  Parcelamento disponível apenas para valores acima de {formatMoney(INSTALLMENT_MIN_VALUE)}.
+                </div>
+              )}
             </div>
 
             {globalErr && <div className="co-global-err">{globalErr}</div>}
@@ -565,6 +744,16 @@ export default function Checkout() {
                   onError={e => { e.currentTarget.style.display = 'none' }} />
               )}
 
+              <label className="co-pix-code-label" htmlFor="pix-copy-code">Pix copia e cola</label>
+              <textarea
+                id="pix-copy-code"
+                className="co-pix-code"
+                value={pixInfo?.text ?? ''}
+                readOnly
+                onFocus={e => e.target.select()}
+                aria-label="Código Pix copia e cola"
+              />
+
               <button type="button" className={`co-pix-copy-btn${pixCopied ? ' copied' : ''}`} onClick={copyPix}>
                 {pixCopied ? (
                   <>
@@ -578,10 +767,16 @@ export default function Checkout() {
                   </>
                 )}
               </button>
+              {pixCopied && <div className="co-copy-feedback" role="status">Código Pix copiado com sucesso!</div>}
+              {pixCopyError && (
+                <div className="co-copy-feedback co-copy-feedback--error" role="alert">
+                  Não foi possível copiar automaticamente. Selecione o código acima e copie manualmente.
+                </div>
+              )}
 
               <div className="co-pix-timer">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z" /></svg>
-                Expira em <strong>{fmtCountdown(pixTimeLeft)}</strong>
+                Sua reserva expira em <strong>{fmtCountdown(pixTimeLeft)}</strong>
               </div>
 
               <div className="co-pix-waiting">
@@ -616,6 +811,11 @@ export default function Checkout() {
         <div className="co-page">
           <div className="co-form-col">
             <div className="co-form-title">Dados do Cartão</div>
+            {reservationTimeLeft != null && (
+              <div className="co-reservation-alert" role="status">
+                Este item está reservado para você por <strong>{fmtCountdown(reservationTimeLeft)}</strong>. Finalize o pagamento antes que volte à lista.
+              </div>
+            )}
 
             <input type="text" className="co-field" placeholder="Número do cartão"
               inputMode="numeric" maxLength={19} value={cardForm.number}
@@ -640,6 +840,37 @@ export default function Checkout() {
               {cardErrors.cvv && <div className="co-err-label show" style={{ flex: 1 }}>{cardErrors.cvv}</div>}
             </div>
 
+            <div className="co-form-title">Endereço de Cobrança</div>
+            <div className="co-field-row co-field-row-wrap">
+              <input type="text" className="co-field" placeholder="CEP"
+                autoComplete="postal-code" maxLength={9} inputMode="numeric" value={billingAddress.postalCode}
+                onChange={e => setBillingAddress({ ...billingAddress, postalCode: maskPostalCode(e.target.value) })} />
+              <input type="text" className="co-field" placeholder="UF"
+                autoComplete="address-level1" maxLength={2} value={billingAddress.regionCode}
+                onChange={e => setBillingAddress({ ...billingAddress, regionCode: e.target.value.replace(/[^A-Za-z]/g, '').slice(0, 2).toUpperCase() })} />
+            </div>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '-0.5rem', marginBottom: '0.75rem' }}>
+              {cardErrors.postalCode && <div className="co-err-label show" style={{ flex: 1 }}>{cardErrors.postalCode}</div>}
+              {cardErrors.regionCode && <div className="co-err-label show" style={{ flex: 1 }}>{cardErrors.regionCode}</div>}
+            </div>
+            <input type="text" className="co-field" placeholder="Endereço"
+              autoComplete="address-line1" value={billingAddress.street}
+              onChange={e => setBillingAddress({ ...billingAddress, street: e.target.value })} />
+            {cardErrors.street && <div className="co-err-label show">{cardErrors.street}</div>}
+            <div className="co-field-row co-field-row-wrap">
+              <input type="text" className="co-field" placeholder="Número"
+                value={billingAddress.number}
+                onChange={e => setBillingAddress({ ...billingAddress, number: e.target.value })} />
+              <input type="text" className="co-field" placeholder="Complemento (opcional)"
+                autoComplete="address-line2" value={billingAddress.complement}
+                onChange={e => setBillingAddress({ ...billingAddress, complement: e.target.value })} />
+            </div>
+            {cardErrors.addressNumber && <div className="co-err-label show">{cardErrors.addressNumber}</div>}
+            <input type="text" className="co-field" placeholder="Cidade"
+              autoComplete="address-level2" value={billingAddress.city}
+              onChange={e => setBillingAddress({ ...billingAddress, city: e.target.value })} />
+            {cardErrors.city && <div className="co-err-label show">{cardErrors.city}</div>}
+
             {cardGlobalErr && <div className="co-global-err">{cardGlobalErr}</div>}
 
             <button type="button" className="co-submit-btn" onClick={pagarCartao} disabled={cardSubmitting}>
@@ -649,7 +880,7 @@ export default function Checkout() {
 
             <div className="co-secure">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" /></svg>
-              Cartão criptografado · Transação segura
+              Cartão criptografado · Protegido por 3DS
             </div>
 
             <button type="button" className="co-pix-back-link co-link-button co-card-back-link" onClick={backToList}>
@@ -670,6 +901,7 @@ export default function Checkout() {
         <h2 style={{ marginTop: '1.5rem', color: 'var(--verde)', fontWeight: 600 }}>Processando pagamento...</h2>
         <p style={{ color: 'var(--texto-suave)', fontSize: '0.85rem', marginTop: '0.5rem', lineHeight: 1.6 }}>
           Aguarde enquanto confirmamos seu pagamento.
+          {reservationTimeLeft != null && <> Sua reserva expira em <strong>{fmtCountdown(reservationTimeLeft)}</strong>.</>}
         </p>
       </div>
     )
@@ -706,7 +938,7 @@ export default function Checkout() {
         </div>
         <h2 style={{ color: 'var(--ocre)' }}>Pagamento não aprovado</h2>
         <p style={{ color: 'var(--texto-suave)', fontSize: '0.85rem', lineHeight: 1.7, maxWidth: 360, textAlign: 'center' }}>
-          O pagamento não foi autorizado. Verifique os dados e tente novamente.
+          Não foi possível concluir seu pagamento. Recarregue a página e tente novamente.
         </p>
         <button type="button" className="btn btn-verde"
           style={{ maxWidth: 340, width: '100%', marginBottom: '0.8rem' }}

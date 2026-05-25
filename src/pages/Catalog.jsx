@@ -83,7 +83,9 @@ export default function Catalog() {
     try {
       const listaItem = listaItens.find((li) => li.catalogo_id === catalogoId)
       if (listaItem) {
-        const compra = compras.find((c) => c.catalogo_id === catalogoId)
+        const compra = compras.find((c) =>
+          c.catalogo_id === catalogoId && !['Rejeitado', 'Cancelado'].includes(c.status_pagamento)
+        )
         if (compra) { toast('Este item já foi presenteado e não pode ser removido.', 'error'); return }
         await listasService.removeItem(listaItem.id)
         setListaItens((prev) => prev.filter((li) => li.id !== listaItem.id))

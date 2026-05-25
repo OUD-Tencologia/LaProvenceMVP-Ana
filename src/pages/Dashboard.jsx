@@ -61,10 +61,16 @@ export default function Dashboard() {
 
   if (!currentUser) return null
 
+  function getActiveCompra(catalogoId) {
+    return compras.find((c) =>
+      c.catalogo_id === catalogoId && !['Rejeitado', 'Cancelado'].includes(c.status_pagamento)
+    )
+  }
+
   // Stats
   const totalItens = listaItens.length
   const comprados = listaItens.filter((li) => {
-    const c = compras.find((c) => c.catalogo_id === li.catalogo_id)
+    const c = getActiveCompra(li.catalogo_id)
     return c && (c.status_pagamento === 'Aprovado' || c.status_pagamento === 'Confirmado')
   }).length
   const pct = totalItens > 0 ? Math.round((comprados / totalItens) * 100) : 0
@@ -103,7 +109,7 @@ export default function Dashboard() {
   }
 
   async function removerItem(listaItemId, catalogoId) {
-    const compra = compras.find((c) => c.catalogo_id === catalogoId)
+    const compra = getActiveCompra(catalogoId)
     if (compra) { toast('Não é possível remover um item já presenteado.', 'error'); return }
     try {
       await listasService.removeItem(listaItemId)
@@ -204,15 +210,17 @@ export default function Dashboard() {
               {listaItens.map((li) => {
                 const item = li.catalogo
                 if (!item) return null
-                const compra = compras.find((c) => c.catalogo_id === li.catalogo_id)
+                const compra = getActiveCompra(li.catalogo_id)
                 const presenteado = compra && (compra.status_pagamento === 'Aprovado' || compra.status_pagamento === 'Confirmado')
+                const emProcessamento = compra?.status_pagamento === 'Pendente'
+                const bloqueado = presenteado || emProcessamento
                 return (
-                  <div key={li.id} className="dashboard-item-card" style={{ opacity: presenteado ? 0.65 : 1 }}>
+                  <div key={li.id} className="dashboard-item-card" style={{ opacity: bloqueado ? 0.65 : 1 }}>
                     <div className="item-card-status-bar">
                       <span>{item.setor}</span>
                       <span className="item-status-dot-label">
-                        <span className={`item-status-dot ${presenteado ? 'dot-purchased' : 'dot-available'}`}></span>
-                        {presenteado ? 'Presenteado' : 'Disponível'}
+                        <span className={`item-status-dot ${emProcessamento ? 'dot-processing' : presenteado ? 'dot-purchased' : 'dot-available'}`}></span>
+                        {emProcessamento ? 'Em processamento' : presenteado ? 'Presenteado' : 'Disponível'}
                       </span>
                     </div>
                     <ItemCarousel item={item} context="dash" />
@@ -220,7 +228,7 @@ export default function Dashboard() {
                       <div className="dashboard-item-name">{item.nome}</div>
                       <div className="dashboard-item-size">{item.tamanho}</div>
                       <div className="dashboard-item-price">{formatMoney(item.preco)}</div>
-                      {presenteado
+                      {bloqueado
                         ? <button type="button" className="btn btn-outline-dark btn-sm" style={{ width: '100%' }} onClick={() => setCompraModal({ compra, item })}>Ver Detalhes</button>
                         : <button type="button" className="btn btn-sm btn-rejeitar" style={{ width: '100%' }} onClick={() => removerItem(li.id, li.catalogo_id)}>Remover</button>
                       }
@@ -238,7 +246,9 @@ export default function Dashboard() {
       >
         {compraModal && (
           <>
-            <div className="label-caps" style={{ marginBottom: '0.5rem' }}>Item Presenteado</div>
+            <div className="label-caps" style={{ marginBottom: '0.5rem' }}>
+              {compraModal.compra.status_pagamento === 'Pendente' ? 'Item em processamento' : 'Item Presenteado'}
+            </div>
             <h4 style={{ fontSize: '1.1rem', color: 'var(--verde)', marginBottom: '1.5rem' }}>{compraModal.item.nome}</h4>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <div><div className="label-caps" style={{ fontSize: '0.6rem', marginBottom: '0.2rem' }}>Convidado</div><div style={{ fontSize: '0.9rem', fontWeight: 500 }}>{compraModal.compra.nome_convidado}</div></div>

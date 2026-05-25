@@ -1,30 +1,35 @@
 import { create } from 'zustand'
-import { setToken } from '../services/api.js'
+import { authService } from '../services/auth.js'
 
-const lp = {
-  get:    (key) => { try { return JSON.parse(localStorage.getItem('lp_' + key)) } catch { return null } },
-  set:    (key, val) => localStorage.setItem('lp_' + key, JSON.stringify(val)),
-  remove: (key) => localStorage.removeItem('lp_' + key),
+function clearLegacySessionStorage() {
+  localStorage.removeItem('lp_token')
+  localStorage.removeItem('lp_currentUser')
 }
 
 const useStore = create((set) => ({
-  currentUser: lp.get('currentUser'),
+  currentUser: null,
+  sessionChecked: false,
 
-  login(user, token) {
-    lp.set('currentUser', user)
-    setToken(token)
-    set({ currentUser: user })
+  async loadSession() {
+    clearLegacySessionStorage()
+    try {
+      const user = await authService.session()
+      set({ currentUser: user, sessionChecked: true })
+    } catch {
+      set({ currentUser: null, sessionChecked: true })
+    }
+  },
+
+  login(user) {
+    set({ currentUser: user, sessionChecked: true })
   },
 
   logout() {
-    lp.remove('currentUser')
-    setToken(null)
-    set({ currentUser: null })
+    set({ currentUser: null, sessionChecked: true })
+    return authService.logout().catch(() => {})
   },
 
-  // Atualiza dados do usuário sem novo login (ex: após editar perfil)
   setCurrentUser(user) {
-    lp.set('currentUser', user)
     set({ currentUser: user })
   },
 }))

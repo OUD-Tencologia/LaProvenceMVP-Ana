@@ -5,17 +5,21 @@ function normalizarCompra(c) {
   return {
     ...c,
     valor_pago: Number(c.valor_pago ?? 0),
-    // aliases para compatibilidade com código existente
-    item_id:    c.catalogo_id,
-    lista_id:   c.listas_id,
+    item_id: c.catalogo_id,
+    lista_id: c.listas_id,
     data_compra: c.data_compra ?? c.created_at,
   }
 }
 
 export const comprasService = {
-  // Público — qualquer um pode ver as compras de uma lista
   async getByLista(listaId) {
-    const res = await api.get(`/compras/lista/${listaId}`, false)
+    const res = await api.get(`/compras/lista/${listaId}`)
+    const data = res.data ?? res
+    return Array.isArray(data) ? data.map(normalizarCompra) : []
+  },
+
+  async getPublicAvailabilityByLista(listaId) {
+    const res = await api.get(`/compras/lista/${listaId}/disponibilidade`, false)
     const data = res.data ?? res
     return Array.isArray(data) ? data.map(normalizarCompra) : []
   },
@@ -25,17 +29,35 @@ export const comprasService = {
     return normalizarCompra(res.data ?? res)
   },
 
-  /**
-   * Registrar compra (presentear).
-   * ATENÇÃO: a rota POST /compras exige autenticação no backend atual.
-   * Para checkout de convidados (sem login) funcionar, o endpoint precisa
-   * ter o preHandler de auth removido no backend.
-   */
-  async create({ listas_id, catalogo_id, nome_convidado, email, cpf, telefone, valor_pago, forma_pagamento, status_pagamento, is_new_gestor }) {
+  async create({
+    listas_id,
+    catalogo_id,
+    nome_convidado,
+    email,
+    cpf,
+    telefone,
+    valor_pago,
+    forma_pagamento,
+    status_pagamento,
+    is_new_gestor,
+    recaptcha_token,
+  }) {
     const res = await api.post(
       '/compras',
-      { listas_id, catalogo_id, nome_convidado, email, cpf, telefone, valor_pago, forma_pagamento, status_pagamento, is_new_gestor },
-      false // sem auth — rota pública para convidados
+      {
+        listas_id,
+        catalogo_id,
+        nome_convidado,
+        email,
+        cpf,
+        telefone,
+        valor_pago,
+        forma_pagamento,
+        status_pagamento,
+        is_new_gestor,
+        recaptcha_token,
+      },
+      false
     )
     return normalizarCompra(res.data ?? res)
   },
@@ -45,12 +67,8 @@ export const comprasService = {
     return normalizarCompra(res.data ?? res)
   },
 
-  async aprovar(id) {
-    return comprasService.update(id, { status_pagamento: 'Aprovado' })
-  },
-
-  async rejeitar(id) {
-    return comprasService.update(id, { status_pagamento: 'Rejeitado' })
+  async cancelar(id) {
+    return comprasService.update(id, { status_pagamento: 'Cancelado' })
   },
 
   async delete(id) {

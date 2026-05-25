@@ -551,7 +551,6 @@
 .btn-danger          { background: #c0392b; color: white; border: none; }
 .btn-toggle-inativar { background: rgba(220, 50, 50, 0.08); color: #c0392b; border: none; }
 .btn-toggle-ativar   { background: rgba(39, 174, 96, 0.08); color: #27ae60; border: none; }
-.btn-aprovar         { background: rgba(39, 174, 96, 0.1); color: #27ae60; border: none; font-size: 0.7rem; }
 .btn-rejeitar        { background: rgba(220, 50, 50, 0.08); color: #c0392b; border: none; font-size: 0.7rem; }
 .btn-sm-icon         { font-size: 0.72rem; display: inline-flex; align-items: center; gap: 0.4rem; }
 .btn-upload-label {
