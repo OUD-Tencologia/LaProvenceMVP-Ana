@@ -64,7 +64,7 @@ export default function PublicList() {
 
         const [itens, comprasData] = await Promise.all([
           listasService.getItens(l.id, false),
-          comprasService.getByLista(l.id).catch(() => []),
+          comprasService.getPublicAvailabilityByLista(l.id).catch(() => []),
         ])
         setListaItens(itens)
         setCompras(comprasData)
@@ -80,7 +80,7 @@ export default function PublicList() {
   useEffect(() => {
     if (!lista?.id || !compras.some((c) => c.status_pagamento === 'Pendente')) return
     const refresh = setInterval(() => {
-      comprasService.getByLista(lista.id).then(setCompras).catch(() => {})
+      comprasService.getPublicAvailabilityByLista(lista.id).then(setCompras).catch(() => {})
     }, 15000)
     return () => clearInterval(refresh)
   }, [lista?.id, compras.some((c) => c.status_pagamento === 'Pendente')])
@@ -184,7 +184,7 @@ export default function PublicList() {
       // item continuará sendo tentado pelo gestor via WhatsApp
     }
     try {
-      const novasCompras = await comprasService.getByLista(lista.id)
+      const novasCompras = await comprasService.getPublicAvailabilityByLista(lista.id)
       setCompras(novasCompras)
     } catch { /* manter estado atual */ }
 

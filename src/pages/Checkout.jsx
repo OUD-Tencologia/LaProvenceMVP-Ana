@@ -94,6 +94,7 @@ export default function Checkout() {
 
   // ── Compra
   const [compraId, setCompraId] = useState(null)
+  const [checkoutAccessToken, setCheckoutAccessToken] = useState(null)
   const [reservationExpiresAt, setReservationExpiresAt] = useState(null)
   const [reservationTimeLeft, setReservationTimeLeft] = useState(null)
   const reservationExpiredRef = useRef(false)
@@ -143,7 +144,7 @@ export default function Checkout() {
         setItem(cat)
         setLista(l)
         setLoadError(null)
-        const compras = await comprasService.getByLista(l.id)
+        const compras = await comprasService.getPublicAvailabilityByLista(l.id)
         const existente = compras.find(c =>
           c.catalogo_id === itemId && !['Rejeitado', 'Cancelado'].includes(c.status_pagamento)
         )
@@ -163,11 +164,11 @@ export default function Checkout() {
 
   // ── PIX polling (3s, para quando pago ou expirado)
   useEffect(() => {
-    if (step !== 'pix' || !compraId) return
+    if (step !== 'pix' || !compraId || !checkoutAccessToken) return
     const interval = setInterval(async () => {
       if (pixExpiredRef.current) { clearInterval(interval); return }
       try {
-        const { compra_status } = await pagBankService.getOrderStatus(compraId)
+        const { compra_status } = await pagBankService.getOrderStatus(compraId, checkoutAccessToken)
         if (compra_status === 'Aprovado') { clearInterval(interval); setStep('success') }
         if (compra_status === 'Rejeitado') {
           clearInterval(interval)
@@ -177,7 +178,7 @@ export default function Checkout() {
       } catch { /* ignore */ }
     }, 3000)
     return () => clearInterval(interval)
-  }, [step, compraId])
+  }, [step, compraId, checkoutAccessToken])
 
   // ── PIX countdown (1s)
   useEffect(() => {
@@ -306,21 +307,26 @@ export default function Checkout() {
         forma_pagamento: pgtoStr,
         recaptcha_token: checkoutRecaptchaToken,
       })
+      if (!compra.checkout_access_token) {
+        throw safePaymentError(PAYMENT_ERROR_MESSAGE)
+      }
+      const attemptToken = compra.checkout_access_token
       setCompraId(compra.id)
+      setCheckoutAccessToken(attemptToken)
       setReservationExpiresAt(compra.reserva_expira_em ?? null)
       reservationExpiredRef.current = false
 
       if (pgto === 'Pix') {
         try {
           const pixRecaptchaToken = await getRecaptchaToken('pagbank_pix_order')
-          const order = await pagBankService.createPixOrder(compra.id, pixRecaptchaToken)
+          const order = await pagBankService.createPixOrder(compra.id, pixRecaptchaToken, attemptToken)
           const qr = order.qr_codes?.[0]
           if (!qr) throw new Error('QR Code não disponível. Tente novamente.')
           const pngLink = qr.links?.find(l => l.rel === 'QRCODE.PNG')?.href
           setPixInfo({ text: qr.text, pngLink, expiresAt: compra.reserva_expira_em ?? qr.expiration_date })
           setStep('pix')
         } catch (e) {
-          pagBankService.cancelOrder(compra.id).catch(() => {})
+          pagBankService.cancelOrder(compra.id, attemptToken).catch(() => {})
           throw e
         }
       } else {
@@ -329,6 +335,7 @@ export default function Checkout() {
       }
     } catch (e) {
       setCompraId(null)
+      setCheckoutAccessToken(null)
       setGlobalErr(e.message || 'Erro ao processar. Tente novamente.')
     } finally {
       setSubmitting(false)
@@ -382,7 +389,7 @@ export default function Checkout() {
       }
 
       const sessionToken = await getRecaptchaToken('pagbank_card_3ds_session')
-      const threeDsSession = await pagBankService.createThreeDsSession(compraId, sessionToken)
+      const threeDsSession = await pagBankService.createThreeDsSession(compraId, sessionToken, checkoutAccessToken)
       sdk.setUp({
         session: threeDsSession.session,
         env: threeDsSession.environment,
@@ -442,7 +449,7 @@ export default function Checkout() {
       paymentPayload.authentication_id = authentication.id
       paymentPayload.recaptcha_token = await getRecaptchaToken('pagbank_card_order')
 
-      const order = await pagBankService.createCreditCardOrder(paymentPayload)
+      const order = await pagBankService.createCreditCardOrder(paymentPayload, checkoutAccessToken)
 
       const status = order.charges?.[0]?.status
       if (status === 'PAID' || status === 'AUTHORIZED') {
@@ -452,7 +459,7 @@ export default function Checkout() {
       } else {
         // WAITING ou IN_ANALYSIS — aguarda webhook via polling
         setStep('processing')
-        startPolling(compraId)
+        startPolling(compraId, checkoutAccessToken)
       }
     } catch (e) {
       await cancelCurrentAttempt()
@@ -464,12 +471,12 @@ export default function Checkout() {
     }
   }
 
-  function startPolling(cId) {
+  function startPolling(cId, accessToken) {
     let attempts = 0
     const poll = async () => {
       attempts++
       try {
-        const { compra_status } = await pagBankService.getOrderStatus(cId)
+        const { compra_status } = await pagBankService.getOrderStatus(cId, accessToken)
         if (compra_status === 'Aprovado') return setStep('success')
         if (compra_status === 'Rejeitado') return setStep('declined')
       } catch { /* ignore */ }
@@ -481,6 +488,7 @@ export default function Checkout() {
 
   function resetAttemptState() {
     setCompraId(null)
+    setCheckoutAccessToken(null)
     setPixInfo(null)
     setPixTimeLeft(null)
     setPixCopied(false)
@@ -496,9 +504,9 @@ export default function Checkout() {
   }
 
   async function cancelCurrentAttempt() {
-    if (!compraId) return
+    if (!compraId || !checkoutAccessToken) return
     try {
-      await pagBankService.cancelOrder(compraId)
+      await pagBankService.cancelOrder(compraId, checkoutAccessToken)
     } catch { /* best effort */ }
   }
 

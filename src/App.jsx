@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import useStore from './store/useStore';
 import Index from './pages/Index';
@@ -12,7 +13,8 @@ import Story from './pages/Story';
 const VALID_ROLES = ['noivo', 'gestor'];
 
 function PrivateRoute({ children, role }) {
-  const { currentUser, logout } = useStore();
+  const { currentUser, sessionChecked, logout } = useStore();
+  if (!sessionChecked) return null;
   if (!currentUser || !VALID_ROLES.includes(currentUser.role)) {
     if (currentUser) logout();
     return <Navigate to="/auth" replace />;
@@ -24,6 +26,12 @@ function PrivateRoute({ children, role }) {
 }
 
 export default function App() {
+  const loadSession = useStore((state) => state.loadSession);
+
+  useEffect(() => {
+    loadSession();
+  }, [loadSession]);
+
   return (
     <BrowserRouter>
       <Routes>

@@ -57,8 +57,8 @@ export default function Auth() {
     if (Object.keys(errs).length) return
     setLoginLoading(true)
     try {
-      const { token, user } = await authService.login(loginForm.email, loginForm.senha)
-      login(user, token)
+      const { user } = await authService.login(loginForm.email, loginForm.senha)
+      login(user)
       navigate(user.role === 'gestor' ? '/admin' : '/dashboard')
     } catch (e) {
       setLoginErrors({ geral: e.message })
@@ -80,7 +80,7 @@ export default function Auth() {
     setRegLoading(true)
     try {
       const nome = `${regForm.nomeNoiva} & ${regForm.nomeNoivo}`
-      const { token, user } = await authService.register({
+      const { user } = await authService.register({
         nome_noiva: regForm.nomeNoiva,
         nome_noivo: regForm.nomeNoivo,
         email: regForm.email,
@@ -88,8 +88,7 @@ export default function Auth() {
         data_casamento: regForm.data || null,
         password: regForm.senha,
       })
-      // Token is already in localStorage from authService.register() — create the lista
-      // before calling login() to avoid the useEffect navigation racing with lista creation.
+      // The session cookie is already set; create the list before navigation.
       const lista = await listasService.create({
         user_id: user.id,
         nome_noivos: nome,
@@ -105,7 +104,7 @@ export default function Auth() {
         } catch { /* não bloqueia o cadastro */ }
       }
 
-      login(user, token)
+      login(user)
       navigate('/dashboard?novo=1')
     } catch (e) {
       setRegErrors({ geral: e.message })

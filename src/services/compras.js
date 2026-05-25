@@ -13,7 +13,13 @@ function normalizarCompra(c) {
 
 export const comprasService = {
   async getByLista(listaId) {
-    const res = await api.get(`/compras/lista/${listaId}`, false)
+    const res = await api.get(`/compras/lista/${listaId}`)
+    const data = res.data ?? res
+    return Array.isArray(data) ? data.map(normalizarCompra) : []
+  },
+
+  async getPublicAvailabilityByLista(listaId) {
+    const res = await api.get(`/compras/lista/${listaId}/disponibilidade`, false)
     const data = res.data ?? res
     return Array.isArray(data) ? data.map(normalizarCompra) : []
   },

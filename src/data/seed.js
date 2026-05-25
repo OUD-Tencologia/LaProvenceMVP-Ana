@@ -131,7 +131,7 @@ export const GESTOR_USER = {
   id: 'gestor-01',
   nome: 'Gestor La Provence',
   email: 'gestor@laprovence.com',
-  senha: 'Gestor@123',
+  senha: null,
   role: 'gestor',
   telefone: ''
 }
