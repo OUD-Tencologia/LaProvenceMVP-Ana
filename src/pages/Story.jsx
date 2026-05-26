@@ -5,6 +5,9 @@ import useStore from '../store/useStore';
 import { listasService } from '../services/listas.js';
 import { formatDate } from '../utils/formatters';
 
+function loadStoryStorage(uid) { try { return JSON.parse(localStorage.getItem(`story_${uid}`) || '{}'); } catch { return {}; } }
+function saveStoryStorage(uid, updates) { try { localStorage.setItem(`story_${uid}`, JSON.stringify({ ...loadStoryStorage(uid), ...updates })); } catch {} }
+
 const TEMPLATES = [
   { bg: '#00300D', fg: '#FBDD90', accent: '#EBAB0A', pattern: 'verde' },
   { bg: '#F5EDD8', fg: '#00300D', accent: '#EBAB0A', pattern: 'bege' },
@@ -50,6 +53,7 @@ export default function Story() {
   const [photoSrc, setPhotoSrc] = useState(null);
   const [igHint, setIgHint] = useState(false);
 
+
   // Sync refs on every render so async callbacks always read current values
   nomeRef.current = nome;
   dataRef.current = data;
@@ -60,21 +64,32 @@ export default function Story() {
     if (!currentUser) { navigate('/auth'); return; }
     if (currentUser.role !== 'noivo' && currentUser.role !== 'gestor') { navigate('/auth'); return; }
 
+    const saved = loadStoryStorage(currentUser.id);
+    if (saved.tplIdx !== undefined) { setTplIdx(saved.tplIdx); tplIdxRef.current = saved.tplIdx; }
+
     if (currentUser.role === 'noivo') {
       listasService.getByUser(currentUser.id).then((lista) => {
         if (!lista) return;
-        setNome(lista.nome_noivos || '');
+        setNome(saved.nome !== undefined ? saved.nome : (lista.nome_noivos || ''));
         setCodigo(lista.codigo || '');
         if (lista.data_casamento) {
           const d = new Date(lista.data_casamento + 'T00:00:00');
           setData(d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }));
         }
-        if (lista.foto_casal) {
+        const photoToLoad = saved.photoSrc || lista.foto_casal;
+        if (photoToLoad) {
           const img = new Image();
-          img.onload = () => { photoImgRef.current = img; setPhotoSrc(lista.foto_casal); };
-          img.src = lista.foto_casal;
+          img.onload = () => { photoImgRef.current = img; setPhotoSrc(photoToLoad); };
+          img.src = photoToLoad;
         }
       }).catch(() => {});
+    } else {
+      if (saved.nome) setNome(saved.nome);
+      if (saved.photoSrc) {
+        const img = new Image();
+        img.onload = () => { photoImgRef.current = img; setPhotoSrc(saved.photoSrc); };
+        img.src = saved.photoSrc;
+      }
     }
 
     // Pre-load brand logo — uses refs inside renderStory, so no stale closure issue
@@ -84,6 +99,14 @@ export default function Story() {
   }, [currentUser]);
 
   useEffect(() => { renderStory(); }, [tplIdx, nome, data, codigo, photoSrc]);
+
+  useEffect(() => { if (currentUser) saveStoryStorage(currentUser.id, { tplIdx }); }, [tplIdx, currentUser]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    const t = setTimeout(() => saveStoryStorage(currentUser.id, { nome }), 400);
+    return () => clearTimeout(t);
+  }, [nome, currentUser]);
 
   function renderStory() {
     const canvas = canvasRef.current;
@@ -209,6 +232,7 @@ export default function Story() {
       const img = new Image();
       img.onload = () => { photoImgRef.current = img; setPhotoSrc(ev.target.result); };
       img.src = ev.target.result;
+      if (currentUser) saveStoryStorage(currentUser.id, { photoSrc: ev.target.result });
     };
     reader.readAsDataURL(file);
   }
