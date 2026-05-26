@@ -23,6 +23,14 @@ export const SETOR_API = {
 }
 
 export const authService = {
+  async forgotPassword(email) {
+    return api.post('/forgot-password', { email }, false)
+  },
+
+  async resetPassword(token, password) {
+    return api.post('/reset-password', { token, password }, false)
+  },
+
   /**
    * POST /login creates an HttpOnly session cookie and returns { user }.
    * user shape: { id, nome_noiva, nome_noivo, email, telefone, role, ... }
