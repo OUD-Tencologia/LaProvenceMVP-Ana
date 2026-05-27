@@ -4,7 +4,7 @@ import WAIcon from '../ui/WAIcon';
 const FAQS = [
   { q: 'A lista tem algum custo de adesão?', a: 'Não! Criar e manter a sua lista de casamento na La Provence Decor é totalmente gratuito.' },
   { q: 'Como funciona a entrega dos presentes?', a: 'Vocês podem optar por receber os produtos físicos no conforto do seu endereço cadastrado, ou converter o valor em créditos (vale-troca) para uso futuro na loja.' },
-  { q: 'Como realizo o pagamento do presente?', a: 'Após escolher o presente no site, você será direcionado para o nosso WhatsApp. Lá, nossa equipe enviará as orientações para a finalização do pagamento via Pix ou Cartão de forma 100% segura.' },
+  { q: 'Como realizo o pagamento do presente?', a: 'O pagamento é realizado diretamente no site de forma 100% segura, processado pela plataforma PagBank. Aceitamos Pix e Cartão de Crédito, com toda a transação protegida e transparente.' },
   { q: 'Posso trocar presentes repetidos?', a: 'Como os presentes são baixados da lista assim que a reserva é feita, não há risco de presentes repetidos. No entanto, se os noivos desejarem trocar alguma peça posteriormente, poderão utilizar o crédito como vale-troca.' },
 ];
 
