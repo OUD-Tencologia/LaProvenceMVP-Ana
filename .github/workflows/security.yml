@@ -36,9 +36,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Secret scan
-        uses: gitleaks/gitleaks-action@v2
+        run: |
+          scan_dir="$(mktemp -d)"
+          git archive HEAD | tar -x -C "$scan_dir"
+          docker run --rm \
+            -v "$scan_dir:/repo:ro" \
+            ghcr.io/gitleaks/gitleaks:latest \
+            dir --verbose --redact /repo
 

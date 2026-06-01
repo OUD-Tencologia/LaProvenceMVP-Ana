@@ -2,7 +2,7 @@ const FEATURES = [
   { t: 'Mix completo e elegante', p: 'Oferecemos um catálogo completo de produtos para casa, adornos e mesa posta para tornar este momento ainda mais inesquecível. Tudo com a sofisticação que seu novo lar merece.' },
   { t: 'Resgate com praticidade', p: 'Você pode resgatar os produtos físicos diretamente ou optar pelo vale-troca, escolhendo outros itens do nosso catálogo que combinam perfeitamente com o seu estilo.' },
   { t: 'Atendimento Personalizado', p: 'Nossa equipe acompanha cada presente de perto. A finalização é feita através de um contato direto, garantindo segurança, exclusividade e proximidade com seus convidados.' },
-  { t: 'Segurança no Pagamento:', p: 'Para sua tranquilidade, os pagamentos são finalizados via WhatsApp diretamente com a nossa equipe da loja. Aceitamos Pix ou Cartão de forma totalmente segura e transparente.' },
+  { t: 'Segurança no Pagamento', p: 'Os pagamentos são realizados diretamente no site, processados pela plataforma PagBank. Aceitamos Pix e Cartão de Crédito com total segurança e transparência, sem redirecionamentos externos.' },
 ];
 
 export default function FeaturesSection() {
