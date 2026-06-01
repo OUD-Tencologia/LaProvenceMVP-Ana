@@ -496,7 +496,7 @@ export default function Admin() {
       if (itemModal.id) {
         saved = await catalogoService.update(itemModal.id, payload)
         const oldImages = itemModal.catalogo_images ?? []
-        await Promise.all(oldImages.map((img) => catalogoService.deleteImage(img.id)))
+        await Promise.allSettled(oldImages.map((img) => catalogoService.deleteImage(img.id)))
       } else {
         saved = await catalogoService.create(payload)
       }
