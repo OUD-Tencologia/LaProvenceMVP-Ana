@@ -8,7 +8,7 @@ import InfoRow from '../components/ui/InfoRow'
 import StatusBadge from '../components/ui/StatusBadge'
 import { useToast } from '../hooks/useToast'
 import useStore from '../store/useStore'
-import { formatMoney, formatDate, maskMoney, parseMoney, numToMaskMoney } from '../utils/formatters'
+import { formatMoney, formatDate, maskMoney, parseMoney, numToMaskMoney, formatNomeNoivos } from '../utils/formatters'
 import { catalogoService } from '../services/catalogo.js'
 import { listasService } from '../services/listas.js'
 import { comprasService } from '../services/compras.js'
@@ -81,7 +81,7 @@ function StoryModal({ lista, open, onClose }) {
     const ctx = canvas.getContext('2d')
     const W = 1080, H = 1920
     const tpl = STORY_TEMPLATES[tplIdxRef.current]
-    const displayNome = l.nome_noivos || 'Seus Nomes'
+    const displayNome = formatNomeNoivos(l.nome_noivos || 'Seus Nomes')
     const effectiveData = l.data_casamento || l.user?.data_casamento
     const displayData = effectiveData
       ? new Date(`${effectiveData}T00:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -178,7 +178,7 @@ function StoryModal({ lista, open, onClose }) {
   const IG_SVG = <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" /></svg>
 
   return (
-    <Modal open={open} onClose={onClose} title={lista ? `Story — ${lista.nome_noivos}` : 'Story'} maxWidth="820px"
+    <Modal open={open} onClose={onClose} title={lista ? `Story — ${formatNomeNoivos(lista.nome_noivos)}` : 'Story'} maxWidth="820px"
       footer={
         <>
           <button type="button" className="btn btn-outline-dark btn-sm" onClick={onClose}>Fechar</button>
@@ -230,7 +230,7 @@ function StoryModal({ lista, open, onClose }) {
 
             <div className="story-data-block">
               {[
-                { label: 'Noivos', value: lista.nome_noivos },
+                { label: 'Noivos', value: formatNomeNoivos(lista.nome_noivos) },
                 (lista.data_casamento || lista.user?.data_casamento) ? { label: 'Casamento', value: formatDate(lista.data_casamento || lista.user?.data_casamento) } : null,
                 { label: 'Código', value: `#${lista.codigo}`, highlight: true },
               ].filter(Boolean).map(({ label, value, highlight }) => (
@@ -706,7 +706,7 @@ export default function Admin() {
                         {lista.foto_casal && <div className="list-card-photo" style={{ backgroundImage: `url(${lista.foto_casal})` }} />}
                         <div className="list-card-body">
                           <div className="list-card-code">#{lista.codigo}</div>
-                          <div className="list-card-name">{lista.nome_noivos}</div>
+                          <div className="list-card-name">{formatNomeNoivos(lista.nome_noivos)}</div>
                           {lista.data_casamento && <div className="list-card-date">Casamento: {formatDate(lista.data_casamento)}</div>}
                           <div className="chips-row">
                             <span className="chip chip--default">{itensCount} itens</span>
@@ -931,7 +931,7 @@ export default function Admin() {
       <Modal
         open={!!modalData}
         onClose={closeListaModal}
-        title={modalData ? `${modalData.lista.nome_noivos} — ${modalData.lista.codigo}` : ''}
+        title={modalData ? `${formatNomeNoivos(modalData.lista.nome_noivos)} — ${modalData.lista.codigo}` : ''}
         maxWidth="860px"
         footer={
           modalData ? (
@@ -1135,7 +1135,7 @@ export default function Admin() {
                 <img src={casalInfoModal.lista.foto_casal} alt="Foto do casal" className="couple-avatar couple-avatar--sm" />
               )}
               <div>
-                <div className="modal-info-header__name modal-info-header__name--sm">{casalInfoModal.lista.nome_noivos}</div>
+                <div className="modal-info-header__name modal-info-header__name--sm">{formatNomeNoivos(casalInfoModal.lista.nome_noivos)}</div>
                 {(casalInfoModal.lista.data_casamento || casalInfoModal.user?.data_casamento) && (
                   <div className="modal-info-header__sub modal-info-header__sub--sm">
                     Casamento em {formatDate(casalInfoModal.lista.data_casamento || casalInfoModal.user?.data_casamento)}
@@ -1236,7 +1236,7 @@ export default function Admin() {
               <svg width="26" height="26" viewBox="0 0 24 24" fill="#c0392b"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
             </div>
             <p className="archive-confirm__subtitle">Deseja arquivar a lista de</p>
-            <p className="archive-confirm__name">{archiveConfirmModal.nome_noivos}?</p>
+            <p className="archive-confirm__name">{formatNomeNoivos(archiveConfirmModal.nome_noivos)}?</p>
             <p className="archive-confirm__warning">A lista será inativada e não ficará mais visível ao público. Esta ação pode ser revertida manualmente.</p>
           </div>
         )}

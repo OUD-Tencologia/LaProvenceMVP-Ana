@@ -5,7 +5,7 @@ import ItemCarousel from '../components/ui/ItemCarousel'
 import Toast from '../components/ui/Toast'
 import { useToast } from '../hooks/useToast'
 import { SkeletonGrid } from '../components/ui/Skeleton'
-import { formatMoney, formatDate } from '../utils/formatters'
+import { formatMoney, formatDate, formatNomeNoivos } from '../utils/formatters'
 import { listasService } from '../services/listas.js'
 import { comprasService } from '../services/compras.js'
 import { getRecaptchaToken } from '../services/recaptcha.js'
@@ -60,7 +60,7 @@ export default function PublicList() {
         const l = await listasService.getByCodigo(codigo)
         if (!l?.id) { setNotFound(true); setLoading(false); return }
         setLista(l)
-        document.title = `${l.nome_noivos.replace(/\s*&\s*/g, ' e ')} — Lista de Casamento — La Provence`
+        document.title = `${formatNomeNoivos(l.nome_noivos)} — Lista de Casamento — La Provence`
 
         const [itens, comprasData] = await Promise.all([
           listasService.getItens(l.id, false),
@@ -198,7 +198,7 @@ export default function PublicList() {
     const totalValor = confirmModal.giftValor ?? confirmModal.items.reduce((s, i) => s + Number(i.preco), 0)
     const itensText = confirmModal.items.map((i) => `• ${i.nome} — ${formatMoney(confirmModal.giftValor ?? i.preco)}`).join('\n')
     const msg = encodeURIComponent(
-      `Olá! Gostaria de confirmar o presente para os noivos *${lista.nome_noivos}*. 🎁\n\n` +
+      `Olá! Gostaria de confirmar o presente para os noivos *${formatNomeNoivos(lista.nome_noivos)}*. 🎁\n\n` +
       `*Meus dados:*\nNome: ${confirmModal.guestNome}\nForma de pagamento: ${confirmModal.formaPagamento}\n\n` +
       `*${confirmModal.items.length > 1 ? 'Itens escolhidos' : 'Item escolhido'}:*\n${itensText}\n\n` +
       `*Total: ${formatMoney(totalValor)}*\n\nCódigo da lista: ${lista.codigo}`
@@ -223,7 +223,7 @@ export default function PublicList() {
             <>
               <span className="label-caps">Você está na lista de</span>
               <span className="script" style={{ fontSize: 'clamp(2rem, 6vw, 4.5rem)', lineHeight: 1.15, display: 'block', margin: '0.5rem 0', overflowWrap: 'break-word', wordBreak: 'break-word', whiteSpace: 'normal', maxWidth: '100%' }}>
-                {lista.nome_noivos.replace(/\s*&\s*/g, ' e ')}
+                {formatNomeNoivos(lista.nome_noivos)}
               </span>
               {lista.data_casamento && <p>Casamento em {formatDate(lista.data_casamento)}</p>}
               <div className="public-code">Código: {lista.codigo}</div>

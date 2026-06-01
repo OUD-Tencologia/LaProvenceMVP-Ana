@@ -29,6 +29,10 @@ export default function Auth() {
   const [showLoginSenha, setShowLoginSenha] = useState(false)
   const [showForgotModal, setShowForgotModal] = useState(false)
   const [showPrivacyModal, setShowPrivacyModal] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotLoading, setForgotLoading] = useState(false)
+  const [forgotError, setForgotError] = useState('')
+  const [forgotSent, setForgotSent] = useState(false)
 
   const [regForm, setRegForm] = useState({ nomeNoiva: '', nomeNoivo: '', email: '', tel: '', data: '', senha: '', lgpd: false })
   const [regErrors, setRegErrors] = useState({})
@@ -110,6 +114,23 @@ export default function Auth() {
       setRegErrors({ geral: e.message })
     } finally {
       setRegLoading(false)
+    }
+  }
+
+  async function handleForgotPassword() {
+    if (!forgotEmail || !forgotEmail.includes('@')) {
+      setForgotError('Informe um e-mail válido')
+      return
+    }
+    setForgotLoading(true)
+    setForgotError('')
+    try {
+      await authService.forgotPassword(forgotEmail)
+      setForgotSent(true)
+    } catch (e) {
+      setForgotError(e.message)
+    } finally {
+      setForgotLoading(false)
     }
   }
 
@@ -353,22 +374,48 @@ export default function Auth() {
 
       <Modal
         open={showForgotModal}
-        onClose={() => setShowForgotModal(false)}
+        onClose={() => { setShowForgotModal(false); setForgotSent(false); setForgotEmail(''); setForgotError('') }}
         title="Esqueci minha senha"
         maxWidth="380px"
         footer={
-          <button type="button" className="btn btn-verde btn-sm" style={{ width: '100%' }} onClick={() => setShowForgotModal(false)}>
-            Fechar
-          </button>
+          forgotSent ? (
+            <button type="button" className="btn btn-verde btn-sm" style={{ width: '100%' }} onClick={() => { setShowForgotModal(false); setForgotSent(false); setForgotEmail('') }}>
+              Fechar
+            </button>
+          ) : (
+            <button type="button" className="btn btn-verde btn-sm" style={{ width: '100%' }} onClick={handleForgotPassword} disabled={forgotLoading}>
+              {forgotLoading ? 'Enviando...' : 'Enviar link'}
+            </button>
+          )
         }
       >
-        <div style={{ textAlign: 'center', padding: '1rem 0' }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🚧</div>
-          <div className="script" style={{ fontSize: '1.8rem', color: 'var(--ouro)', marginBottom: '0.75rem' }}>Em construção</div>
-          <p style={{ fontSize: '0.85rem', lineHeight: 1.7, color: 'var(--texto-suave)' }}>
-            Esta funcionalidade ainda está sendo desenvolvida. Em breve será possível redefinir sua senha por aqui.
-          </p>
-        </div>
+        {forgotSent ? (
+          <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+            <p style={{ fontSize: '0.9rem', lineHeight: 1.7, color: 'var(--texto)' }}>
+              Se este e-mail estiver cadastrado, você receberá um link para redefinir sua senha em breve.
+            </p>
+            <p style={{ fontSize: '0.8rem', color: 'var(--texto-suave)', marginTop: '0.5rem' }}>
+              Verifique sua caixa de entrada e spam.
+            </p>
+          </div>
+        ) : (
+          <div style={{ padding: '0.5rem 0' }}>
+            <p style={{ fontSize: '0.85rem', color: 'var(--texto-suave)', marginBottom: '1rem' }}>
+              Informe o e-mail cadastrado e enviaremos um link para redefinir sua senha.
+            </p>
+            <div className="form-group">
+              <label>E-mail</label>
+              <input
+                type="email"
+                placeholder="seu@email.com"
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleForgotPassword()}
+              />
+              {forgotError && <span className="form-error show">{forgotError}</span>}
+            </div>
+          </div>
+        )}
       </Modal>
     </>
   )

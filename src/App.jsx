@@ -9,6 +9,7 @@ import PublicList from './pages/PublicList';
 import Checkout from './pages/Checkout';
 import Admin from './pages/Admin';
 import Story from './pages/Story';
+import ResetPassword from './pages/ResetPassword';
 
 const VALID_ROLES = ['noivo', 'gestor'];
 
@@ -37,6 +38,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/lista" element={<PublicList />} />
         <Route path="/checkout" element={<Checkout />} />
 

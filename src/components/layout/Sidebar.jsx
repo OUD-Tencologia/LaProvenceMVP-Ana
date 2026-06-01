@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import useStore from '../../store/useStore';
 import { listasService } from '../../services/listas.js';
+import { formatNomeNoivos } from '../../utils/formatters';
 
 const WA_ICON = (
   <svg viewBox="0 0 24 24" fill="currentColor">
@@ -30,7 +31,7 @@ export default function Sidebar({ role = 'noivo' }) {
       if (!lista) return;
       const url = `${window.location.origin}/lista?codigo=${lista.codigo}`;
       const msg = encodeURIComponent(
-        `Oi! ${lista.nome_noivos} estão se casando e montaram a lista de presentes no La Provence.\n\nAcesse aqui: ${url}\n\nOu use o código: ${lista.codigo}`
+        `Oi! ${formatNomeNoivos(lista.nome_noivos)} estão se casando e montaram a lista de presentes no La Provence.\n\nAcesse aqui: ${url}\n\nOu use o código: ${lista.codigo}`
       );
       window.open(`https://wa.me/?text=${msg}`, '_blank');
     } catch { /* silently fail */ }
