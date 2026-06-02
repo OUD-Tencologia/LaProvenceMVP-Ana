@@ -79,7 +79,13 @@ Antes do primeiro deploy:
 1. Em **Settings > Pages**, selecione **GitHub Actions** como origem do site.
 2. Em **Settings > Environments**, crie o ambiente `homologacao`.
 3. No ambiente `homologacao`, configure as variáveis:
-   - `VITE_API_URL`: URL da API de homologação.
+   - `VITE_API_URL`: URL da API de homologação. Se não for definida, o
+     workflow usa `https://laprovencevie.com.br/api`.
    - `VITE_RECAPTCHA_SITE_KEY`: site key pública do reCAPTCHA, se usada.
    - `VITE_BASE_PATH`: opcional. Use `/` quando houver domínio customizado; se
      não for definida, o workflow usa `/<nome-do-repositorio>/`.
+
+A API pública atual responde em `https://laprovencevie.com.br/api`. Para usar o
+front publicado no GitHub Pages sem bloqueio do navegador, inclua a origem do
+Pages em `CORS_ORIGINS` no backend, por exemplo:
+`https://oud-tencologia.github.io`.
