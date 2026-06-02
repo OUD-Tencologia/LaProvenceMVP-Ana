@@ -1,0 +1,117 @@
+name: Deploy Producao Front
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: producao-front
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build producao
+    runs-on: ubuntu-latest
+    environment: producao-front
+    env:
+      VITE_API_URL: ${{ vars.VITE_API_URL || 'https://laprovencevie.com.br/api' }}
+      VITE_RECAPTCHA_SITE_KEY: ${{ vars.VITE_RECAPTCHA_SITE_KEY }}
+      VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH || '/' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate production environment
+        run: |
+          if [ "$VITE_API_URL" = "https://laprovence.hom-oud.com.br/api" ]; then
+            echo "Producao nao pode apontar para a API de homologacao."
+            exit 1
+          fi
+
+      - name: Build
+        run: npm run build
+
+      - name: Package dist
+        run: tar -C dist -czf dist.tar.gz .
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: front-dist
+          path: dist.tar.gz
+
+  deploy:
+    name: Publicar producao
+    needs: build
+    runs-on: ubuntu-latest
+    environment: producao-front
+    env:
+      PROD_WEB_DIR: ${{ vars.PROD_WEB_DIR }}
+
+    steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: front-dist
+
+      - name: Validate deploy configuration
+        env:
+          PROD_SSH_HOST: ${{ secrets.PROD_SSH_HOST }}
+          PROD_SSH_USER: ${{ secrets.PROD_SSH_USER }}
+          PROD_SSH_KEY: ${{ secrets.PROD_SSH_KEY }}
+        run: |
+          test -n "$PROD_WEB_DIR" || (echo "Configure PROD_WEB_DIR with the production Nginx root directory." && exit 1)
+          test -n "$PROD_SSH_HOST" || (echo "Configure PROD_SSH_HOST." && exit 1)
+          test -n "$PROD_SSH_USER" || (echo "Configure PROD_SSH_USER." && exit 1)
+          test -n "$PROD_SSH_KEY" || (echo "Configure PROD_SSH_KEY." && exit 1)
+
+      - name: Configure SSH
+        env:
+          PROD_SSH_HOST: ${{ secrets.PROD_SSH_HOST }}
+          PROD_SSH_KEY: ${{ secrets.PROD_SSH_KEY }}
+          PROD_SSH_PORT: ${{ secrets.PROD_SSH_PORT || '22' }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$PROD_SSH_KEY" > ~/.ssh/prod_key
+          chmod 600 ~/.ssh/prod_key
+          ssh-keyscan -p "$PROD_SSH_PORT" "$PROD_SSH_HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy over SSH
+        env:
+          PROD_SSH_HOST: ${{ secrets.PROD_SSH_HOST }}
+          PROD_SSH_USER: ${{ secrets.PROD_SSH_USER }}
+          PROD_SSH_PORT: ${{ secrets.PROD_SSH_PORT || '22' }}
+        run: |
+          scp -i ~/.ssh/prod_key -P "$PROD_SSH_PORT" dist.tar.gz "$PROD_SSH_USER@$PROD_SSH_HOST:/tmp/laprovence-front-prod.tar.gz"
+          ssh -i ~/.ssh/prod_key -p "$PROD_SSH_PORT" "$PROD_SSH_USER@$PROD_SSH_HOST" \
+            "PROD_WEB_DIR='$PROD_WEB_DIR' bash -s" <<'REMOTE'
+          set -euo pipefail
+          PROD_WEB_DIR="${PROD_WEB_DIR/#\~/$HOME}"
+          case "$PROD_WEB_DIR" in
+            ""|"/"|"/var"|"/var/www"|"$HOME")
+              echo "PROD_WEB_DIR points to an unsafe target: $PROD_WEB_DIR"
+              exit 1
+              ;;
+          esac
+          mkdir -p "$PROD_WEB_DIR"
+          find "$PROD_WEB_DIR" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+          tar -xzf /tmp/laprovence-front-prod.tar.gz -C "$PROD_WEB_DIR"
+          rm -f /tmp/laprovence-front-prod.tar.gz
+          REMOTE
