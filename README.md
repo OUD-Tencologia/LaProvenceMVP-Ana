@@ -65,3 +65,21 @@ Content Security Policy no servidor web, ela deve permitir o SDK em
 
 O endereço de cobrança solicitado no fluxo de cartão é encaminhado diretamente
 ao SDK para autenticação 3DS; a aplicação não o armazena.
+
+---
+
+## **Deploy de homologação**
+
+O deploy automático de homologação roda a partir da branch `develop`. Todo push
+nessa branch executa o workflow `.github/workflows/deploy-homologacao.yml`,
+gera o build Vite e publica o conteúdo de `dist/` no GitHub Pages.
+
+Antes do primeiro deploy:
+
+1. Em **Settings > Pages**, selecione **GitHub Actions** como origem do site.
+2. Em **Settings > Environments**, crie o ambiente `homologacao`.
+3. No ambiente `homologacao`, configure as variáveis:
+   - `VITE_API_URL`: URL da API de homologação.
+   - `VITE_RECAPTCHA_SITE_KEY`: site key pública do reCAPTCHA, se usada.
+   - `VITE_BASE_PATH`: opcional. Use `/` quando houver domínio customizado; se
+     não for definida, o workflow usa `/<nome-do-repositorio>/`.
