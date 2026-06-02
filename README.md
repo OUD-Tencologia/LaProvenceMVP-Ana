@@ -77,15 +77,15 @@ gera o build Vite e publica o conteúdo de `dist/` no GitHub Pages.
 Antes do primeiro deploy:
 
 1. Em **Settings > Pages**, selecione **GitHub Actions** como origem do site.
-2. Em **Settings > Environments**, crie o ambiente `homologacao`.
-3. No ambiente `homologacao`, configure as variáveis:
+2. Configure o domínio customizado `laprovence.hom-oud.com.br`.
+3. Em **Settings > Environments**, crie o ambiente `homologacao`.
+4. No ambiente `homologacao`, configure as variáveis:
    - `VITE_API_URL`: URL da API de homologação. Se não for definida, o
-     workflow usa `https://laprovencevie.com.br/api`.
+     workflow usa `https://laprovence.hom-oud.com.br/api`.
    - `VITE_RECAPTCHA_SITE_KEY`: site key pública do reCAPTCHA, se usada.
-   - `VITE_BASE_PATH`: opcional. Use `/` quando houver domínio customizado; se
-     não for definida, o workflow usa `/<nome-do-repositorio>/`.
+   - `VITE_BASE_PATH`: opcional. Como homologação usa domínio próprio, o padrão
+     é `/`.
 
-A API pública atual responde em `https://laprovencevie.com.br/api`. Para usar o
-front publicado no GitHub Pages sem bloqueio do navegador, inclua a origem do
-Pages em `CORS_ORIGINS` no backend, por exemplo:
-`https://oud-tencologia.github.io`.
+A API de homologação deve responder em
+`https://laprovence.hom-oud.com.br/api`. Como front e API usam o mesmo domínio,
+as chamadas podem usar essa URL sem misturar dados de produção.

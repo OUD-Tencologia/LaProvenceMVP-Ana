@@ -21,9 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     environment: homologacao
     env:
-      VITE_API_URL: ${{ vars.VITE_API_URL || 'https://laprovencevie.com.br/api' }}
+      VITE_API_URL: ${{ vars.VITE_API_URL || 'https://laprovence.hom-oud.com.br/api' }}
       VITE_RECAPTCHA_SITE_KEY: ${{ vars.VITE_RECAPTCHA_SITE_KEY }}
-      VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH || format('/{0}/', github.event.repository.name) }}
+      VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH || '/' }}
 
     steps:
       - name: Checkout
@@ -43,8 +43,8 @@ jobs:
 
       - name: Validate homologation environment
         run: |
-          if [ -z "$VITE_API_URL" ]; then
-            echo "Configure VITE_API_URL as a variable in the homologacao GitHub Environment."
+          if [ "$VITE_API_URL" = "https://laprovencevie.com.br/api" ]; then
+            echo "Homologacao nao pode apontar para a API de producao."
             exit 1
           fi
 
