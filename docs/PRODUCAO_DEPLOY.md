@@ -1,7 +1,6 @@
 # Deploy de producao
 
 O deploy automatico de producao do front roda a partir da branch `main`.
-O workflow tambem aceita `master` caso essa branch venha a existir.
 
 ## URL
 
