@@ -40,7 +40,8 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(*)"
     ],
     "additionalDirectories": [
       "/home/gabriel/Documents/ESTÁGIO/OunceData/la-provence/laprovence-api/src/modules/listas",
