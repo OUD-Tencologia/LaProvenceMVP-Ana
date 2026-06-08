@@ -473,15 +473,22 @@ export default function Checkout() {
       if (authentication?.status === 'CHANGE_PAYMENT_METHOD') {
         throw safePaymentError('A autenticação foi recusada. Escolha Pix ou utilize outro cartão.')
       }
-      if (authentication?.status === 'AUTH_NOT_SUPPORTED') {
+      const canPayWithout3ds = Boolean(threeDsSession.allow_without_3ds)
+      if (authentication?.status === 'AUTH_NOT_SUPPORTED' && !canPayWithout3ds) {
         throw safePaymentError('Este cartão não permite autenticação 3DS. Escolha Pix ou utilize outro cartão.')
       }
-      if (authentication?.status !== 'AUTH_FLOW_COMPLETED' || !authentication.id) {
+      if (
+        authentication?.status !== 'AUTH_FLOW_COMPLETED' &&
+        authentication?.status !== 'AUTH_NOT_SUPPORTED'
+      ) {
+        throw safePaymentError('A autenticação 3DS não foi concluída. Tente novamente ou escolha Pix.')
+      }
+      if (authentication.status === 'AUTH_FLOW_COMPLETED' && !authentication.id) {
         throw safePaymentError('A autenticação 3DS não foi concluída. Tente novamente ou escolha Pix.')
       }
 
       paymentPayload.card_encrypted = enc.encryptedCard
-      paymentPayload.authentication_id = authentication.id
+      if (authentication.id) paymentPayload.authentication_id = authentication.id
       paymentPayload.recaptcha_token = await getRecaptchaToken('pagbank_card_order')
 
       const order = await pagBankService.createCreditCardOrder(paymentPayload, checkoutAccessToken)
