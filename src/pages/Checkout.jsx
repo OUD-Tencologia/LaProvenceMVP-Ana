@@ -37,6 +37,39 @@ function safePaymentError(message) {
   return error
 }
 
+function normalizeThreeDsName(value) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Za-z\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function hasTwoNameParts(value) {
+  return normalizeThreeDsName(value)
+    .split(' ')
+    .filter(part => part.length >= 2).length >= 2
+}
+
+function pagBank3dsErrorMessage(error) {
+  const detail = error?.detail
+  console.error('[PagBank 3DS auth error]', detail || error)
+
+  const validation = Array.isArray(detail?.errorMessages)
+    ? detail.errorMessages
+      .map(err => [err.description, err.parameterName].filter(Boolean).join(' em '))
+      .filter(Boolean)
+      .join('; ')
+    : ''
+
+  if (detail?.traceId) console.error('[PagBank 3DS traceId]', detail.traceId)
+  if (detail?.message && validation) return `${detail.message}: ${validation}`
+  if (detail?.message) return detail.message
+  if (validation) return validation
+  return 'Não foi possível autenticar este cartão pelo 3DS. Tente outro cartão ou escolha Pix.'
+}
+
 function fmtCountdown(secs) {
   if (secs == null || secs < 0) return '00:00'
   const m = Math.floor(secs / 60).toString().padStart(2, '0')
@@ -284,7 +317,7 @@ export default function Checkout() {
   async function confirmar() {
     const errs = {}
     setGlobalErr('')
-    if (!form.nome.trim()) errs.nome = true
+    if (!hasTwoNameParts(form.nome)) errs.nome = true
     if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) errs.email = true
     if (!validateCPF(form.cpf)) errs.cpf = true
     if (!form.tel || form.tel.replace(/\D/g, '').length < 10) errs.tel = true
@@ -363,10 +396,12 @@ export default function Checkout() {
     setCardSubmitting(true)
     try {
       const fullYear = expY.length === 2 ? `20${expY}` : expY
+      const threeDsCustomerName = normalizeThreeDsName(form.nome)
+      const cardHolderName = normalizeThreeDsName(cardForm.holder)
       const paymentPayload = {
         compra_id: compraId,
         installments: parcelas,
-        card_holder_name: cardForm.holder.trim(),
+        card_holder_name: cardHolderName,
       }
 
       const sdk = window.PagSeguro
@@ -377,7 +412,7 @@ export default function Checkout() {
       const publicKey = await pagBankService.getPublicKey()
       const enc = sdk.encryptCard({
         publicKey,
-        holder: cardForm.holder.trim(),
+        holder: cardHolderName,
         number: cleanNum,
         expMonth: expM,
         expYear: fullYear,
@@ -401,7 +436,7 @@ export default function Checkout() {
         authentication = await sdk.authenticate3DS({
           data: {
             customer: {
-              name: form.nome.trim(),
+              name: threeDsCustomerName,
               email: form.email.trim(),
               phones: [{
                 country: '55',
@@ -431,22 +466,29 @@ export default function Checkout() {
             dataOnly: false,
           },
         })
-      } catch {
-        throw safePaymentError('Não foi possível autenticar este cartão pelo 3DS. Tente outro cartão ou escolha Pix.')
+      } catch (error) {
+        throw safePaymentError(pagBank3dsErrorMessage(error))
       }
 
       if (authentication?.status === 'CHANGE_PAYMENT_METHOD') {
         throw safePaymentError('A autenticação foi recusada. Escolha Pix ou utilize outro cartão.')
       }
-      if (authentication?.status === 'AUTH_NOT_SUPPORTED') {
+      const canPayWithout3ds = Boolean(threeDsSession.allow_without_3ds)
+      if (authentication?.status === 'AUTH_NOT_SUPPORTED' && !canPayWithout3ds) {
         throw safePaymentError('Este cartão não permite autenticação 3DS. Escolha Pix ou utilize outro cartão.')
       }
-      if (authentication?.status !== 'AUTH_FLOW_COMPLETED' || !authentication.id) {
+      if (
+        authentication?.status !== 'AUTH_FLOW_COMPLETED' &&
+        authentication?.status !== 'AUTH_NOT_SUPPORTED'
+      ) {
+        throw safePaymentError('A autenticação 3DS não foi concluída. Tente novamente ou escolha Pix.')
+      }
+      if (authentication.status === 'AUTH_FLOW_COMPLETED' && !authentication.id) {
         throw safePaymentError('A autenticação 3DS não foi concluída. Tente novamente ou escolha Pix.')
       }
 
       paymentPayload.card_encrypted = enc.encryptedCard
-      paymentPayload.authentication_id = authentication.id
+      if (authentication.id) paymentPayload.authentication_id = authentication.id
       paymentPayload.recaptcha_token = await getRecaptchaToken('pagbank_card_order')
 
       const order = await pagBankService.createCreditCardOrder(paymentPayload, checkoutAccessToken)
@@ -653,7 +695,7 @@ export default function Checkout() {
 
             <input type="text" className="co-field" placeholder="Nome completo" autoComplete="name"
               value={form.nome} onChange={e => setForm({ ...form, nome: e.target.value })} />
-            {errors.nome && <div className="co-err-label show">Informe seu nome completo</div>}
+            {errors.nome && <div className="co-err-label show">Informe nome e sobrenome</div>}
 
             <input type="email" className="co-field" placeholder="E-mail" autoComplete="email"
               value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />

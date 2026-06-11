@@ -65,3 +65,27 @@ Content Security Policy no servidor web, ela deve permitir o SDK em
 
 O endereço de cobrança solicitado no fluxo de cartão é encaminhado diretamente
 ao SDK para autenticação 3DS; a aplicação não o armazena.
+
+---
+
+## **Deploy de homologação**
+
+O deploy automático de homologação roda a partir da branch `develop`. Todo push
+nessa branch executa o workflow `.github/workflows/deploy-homologacao.yml`,
+gera o build Vite e publica o conteúdo de `dist/` no GitHub Pages.
+
+Antes do primeiro deploy:
+
+1. Em **Settings > Pages**, selecione **GitHub Actions** como origem do site.
+2. Configure o domínio customizado `laprovence.hom-oud.com.br`.
+3. Em **Settings > Environments**, crie o ambiente `homologacao`.
+4. No ambiente `homologacao`, configure as variáveis:
+   - `VITE_API_URL`: URL da API de homologação. Se não for definida, o
+     workflow usa `https://laprovence.hom-oud.com.br/api`.
+   - `VITE_RECAPTCHA_SITE_KEY`: site key pública do reCAPTCHA, se usada.
+   - `VITE_BASE_PATH`: opcional. Como homologação usa domínio próprio, o padrão
+     é `/`.
+
+A API de homologação deve responder em
+`https://laprovence.hom-oud.com.br/api`. Como front e API usam o mesmo domínio,
+as chamadas podem usar essa URL sem misturar dados de produção.

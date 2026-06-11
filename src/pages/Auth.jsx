@@ -42,6 +42,7 @@ export default function Auth() {
   const tomorrow = new Date()
   tomorrow.setDate(tomorrow.getDate() + 1)
   const minDate = tomorrow.toISOString().split('T')[0]
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
   useEffect(() => {
     if (currentUser && ['noivo', 'gestor'].includes(currentUser.role)) {
@@ -118,17 +119,23 @@ export default function Auth() {
   }
 
   async function handleForgotPassword() {
-    if (!forgotEmail || !forgotEmail.includes('@')) {
-      setForgotError('Informe um e-mail válido')
+    const email = forgotEmail.trim().toLowerCase()
+    if (!emailPattern.test(email)) {
+      setForgotError('E-mail inválido')
       return
     }
     setForgotLoading(true)
     setForgotError('')
     try {
-      await authService.forgotPassword(forgotEmail)
+      await authService.forgotPassword(email)
       setForgotSent(true)
     } catch (e) {
-      setForgotError(e.message)
+      const message = e.message || ''
+      if (/email inv[aá]lido|e-mail inv[aá]lido|erro de valida/i.test(message)) {
+        setForgotError('E-mail inválido')
+      } else {
+        setForgotError(message || 'Não foi possível enviar o link agora. Tente novamente mais tarde.')
+      }
     } finally {
       setForgotLoading(false)
     }
@@ -409,7 +416,10 @@ export default function Auth() {
                 type="email"
                 placeholder="seu@email.com"
                 value={forgotEmail}
-                onChange={(e) => setForgotEmail(e.target.value)}
+                onChange={(e) => {
+                  setForgotEmail(e.target.value)
+                  if (forgotError) setForgotError('')
+                }}
                 onKeyDown={(e) => e.key === 'Enter' && handleForgotPassword()}
               />
               {forgotError && <span className="form-error show">{forgotError}</span>}

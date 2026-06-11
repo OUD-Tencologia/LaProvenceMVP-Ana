@@ -1,0 +1,73 @@
+name: Deploy Homologacao
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: homologacao-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build homologacao
+    runs-on: ubuntu-latest
+    environment: homologacao
+    env:
+      VITE_API_URL: ${{ vars.VITE_API_URL || 'https://laprovence.hom-oud.com.br/api' }}
+      VITE_RECAPTCHA_SITE_KEY: ${{ vars.VITE_RECAPTCHA_SITE_KEY }}
+      VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH || '/' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate homologation environment
+        run: |
+          if [ "$VITE_API_URL" = "https://laprovencevie.com.br/api" ]; then
+            echo "Homologacao nao pode apontar para a API de producao."
+            exit 1
+          fi
+
+      - name: Build
+        run: npm run build
+
+      - name: Enable SPA fallback
+        run: cp dist/index.html dist/404.html
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: Publicar homologacao
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
