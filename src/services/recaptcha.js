@@ -4,7 +4,7 @@ const RECAPTCHA_TIMEOUT_MS = 12000
 let scriptPromise = null
 
 function recaptchaError() {
-  return new Error('Nao foi possivel validar a seguranca do checkout. Atualize a pagina e tente novamente.')
+  return new Error('Não foi possível validar a segurança do checkout. Atualize a página e tente novamente.')
 }
 
 function withTimeout(promise) {
