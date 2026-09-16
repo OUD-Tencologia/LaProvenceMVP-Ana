@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import useStore from '../../store/useStore';
 
-export default function Navbar() {
+export default function Navbar({ solid = false }) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+
   const { currentUser } = useStore();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isHome = location.pathname === '/';
+  const comoFuncionaHref = isHome ? '#como-funciona' : '/#como-funciona';
+  const listasHref = isHome ? '#listas' : '/#listas';
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -23,13 +28,14 @@ export default function Navbar() {
   const dashLabel = currentUser?.role === 'gestor' ? 'Painel do Gestor' : 'Minha Lista';
 
   return (
-    <nav className={`navbar${scrolled ? ' scrolled' : ''}`}>
+    <nav className={`navbar${scrolled || solid ? ' scrolled' : ''}`}>
       <Link to="/" className="navbar-logo">
         <img src="/assets/img/LaProvenceDecor-Logo.png" alt="La Provence" style={{ width: 180, height: 'auto' }} />
       </Link>
-      <div className="navbar-nav">
-        <a href="#como-funciona">Como Funciona</a>
-        <a href="#listas">Nossas Listas</a>
+        <div className="navbar-nav">
+        <a href={comoFuncionaHref}>Como Funciona</a>
+        <a href={listasHref}>Nossas Listas</a>
+        <Link to="/catalogo">Catálogo</Link>
         {currentUser
           ? <Link to={dashHref} id="nav-entrar">{dashLabel}</Link>
           : <Link to="/auth" id="nav-entrar">Entrar</Link>
@@ -55,9 +61,10 @@ export default function Navbar() {
                 </svg>
               </button>
             </div>
-            <nav className="navbar-mobile-links">
-              <a href="#como-funciona" onClick={() => setMenuOpen(false)}>Como Funciona</a>
-              <a href="#listas" onClick={() => setMenuOpen(false)}>Nossas Listas</a>
+              <nav className="navbar-mobile-links">
+              <a href={comoFuncionaHref} onClick={() => setMenuOpen(false)}>Como Funciona</a>
+              <a href={listasHref} onClick={() => setMenuOpen(false)}>Nossas Listas</a>
+              <Link to="/catalogo" onClick={() => setMenuOpen(false)}>Catálogo</Link>
               {currentUser
                 ? <Link to={dashHref} onClick={() => setMenuOpen(false)}>{dashLabel}</Link>
                 : <Link to="/auth" onClick={() => setMenuOpen(false)}>Entrar</Link>
