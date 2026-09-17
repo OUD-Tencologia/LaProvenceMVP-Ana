@@ -64,7 +64,7 @@ export default function ResetPassword() {
           Voltar
         </Link>
         <div className="auth-logo">
-          <img src="/assets/img/LaProvenceDecor-Logo.png" alt="La Provence" style={{ width: 180, height: 'auto' }} />
+          <img src={`${import.meta.env.BASE_URL}assets/img/LaProvenceDecor-Logo.png`} alt="La Provence" style={{ width: 180, height: 'auto' }} />
         </div>
 
         {done ? (

@@ -30,7 +30,7 @@ export default function Navbar({ solid = false }) {
   return (
     <nav className={`navbar${scrolled || solid ? ' scrolled' : ''}`}>
       <Link to="/" className="navbar-logo">
-        <img src="/assets/img/LaProvenceDecor-Logo.png" alt="La Provence" style={{ width: 180, height: 'auto' }} />
+        <img src={`${import.meta.env.BASE_URL}assets/img/LaProvenceDecor-Logo.png`} alt="La Provence" style={{ width: 180, height: 'auto' }} />
       </Link>
         <div className="navbar-nav">
         <a href={comoFuncionaHref}>Como Funciona</a>
@@ -54,7 +54,7 @@ export default function Navbar({ solid = false }) {
           <button type="button" className="navbar-mobile-overlay" aria-label="Fechar menu" onClick={() => setMenuOpen(false)} />
           <div className="navbar-mobile-drawer">
             <div className="navbar-mobile-header">
-              <img src="/assets/img/LaProvenceDecor-Logo.png" alt="La Provence Decor" style={{ height: 28 }} />
+              <img src={`${import.meta.env.BASE_URL}assets/img/LaProvenceDecor-Logo.png`} alt="La Provence Decor" style={{ height: 28 }} />
               <button type="button" className="navbar-mobile-close" aria-label="Fechar menu" onClick={() => setMenuOpen(false)}>
                 <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24" aria-hidden="true">
                   <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
