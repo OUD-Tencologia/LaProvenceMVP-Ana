@@ -15,7 +15,7 @@ export default function TemplatesSection({ premontadas, onVerItens }) {
         {premontadas.map((p) => (
           <div key={p.id} className="template-card template-card--static">
             <span className={`template-card-badge${p.popular ? ' popular' : ''}`}>{p.badge}</span>
-            <div className="template-card-img" style={{ backgroundImage: `url('${p.img || 'assets/img/dishesTemplate1.png'}')` }}></div>
+            <div className="template-card-img" style={{ backgroundImage: `url('${p.img || `${import.meta.env.BASE_URL}assets/img/dishesTemplate1.png`}')` }}></div>
             <div className="template-card-body">
               <span className="label-caps">{p.itens.length} itens selecionados</span>
               <h3>{p.nome}</h3>
