@@ -10,8 +10,8 @@ export default function Navbar({ solid = false }) {
   const navigate = useNavigate();
   const location = useLocation();
   const isHome = location.pathname === '/';
-  const comoFuncionaHref = isHome ? '#como-funciona' : '/#como-funciona';
-  const listasHref = isHome ? '#listas' : '/#listas';
+  const comoFuncionaHref = isHome ? '#como-funciona' : `${import.meta.env.BASE_URL}#como-funciona`;
+  const listasHref = isHome ? '#listas' : `${import.meta.env.BASE_URL}#listas`;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
