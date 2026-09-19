@@ -82,7 +82,7 @@ export default function Dashboard() {
     return s
   }, 0)
 
-  function getListaUrl() { return window.location.origin + '/lista?codigo=' + lista?.codigo }
+  function getListaUrl() { return window.location.origin + import.meta.env.BASE_URL + 'lista?codigo=' + lista?.codigo }
 
   function copyText(text, msg) {
     if (navigator.clipboard && window.isSecureContext) {

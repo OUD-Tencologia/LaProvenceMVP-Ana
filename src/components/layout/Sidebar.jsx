@@ -29,7 +29,7 @@ export default function Sidebar({ role = 'noivo' }) {
     try {
       const lista = await listasService.getByUser(currentUser.id);
       if (!lista) return;
-      const url = `${window.location.origin}/lista?codigo=${lista.codigo}`;
+      const url = `${window.location.origin}${import.meta.env.BASE_URL}lista?codigo=${lista.codigo}`;
       const msg = encodeURIComponent(
         `Oi! ${formatNomeNoivos(lista.nome_noivos)} estão se casando e montaram a lista de presentes no La Provence.\n\nAcesse aqui: ${url}\n\nOu use o código: ${lista.codigo}`
       );
