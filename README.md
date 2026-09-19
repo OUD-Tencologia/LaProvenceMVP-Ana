@@ -2,46 +2,61 @@
 
 ## **Sobre o projeto**
 
-Este repositório contém o **protótipo de alta fidelidade** da **Lista de Casamentos da La Provence Decor**.
+Este repositório contém o **frontend em React** da **Lista de Casamentos da La Provence Decor**: uma plataforma para que noivos criem e gerenciem suas listas de presentes, e convidados possam visualizar e comprar itens.
 
-Atualmente, o projeto está sendo desenvolvido em **HTML**, com foco na construção inicial da interface, validação da experiência do usuário e definição dos principais fluxos da plataforma. A próxima etapa prevê a **migração para React**, visando maior escalabilidade, organização e manutenção do sistema.
-
----
-
-## **Objetivo**
-
-O projeto tem como objetivo desenvolver uma plataforma digital para **gestão de listas de casamento**, proporcionando uma experiência **elegante, intuitiva e funcional** para noivos, convidados e administradores.
+O projeto nasceu como um protótipo estático em HTML/CSS/JS (mantido em `legacy/` como referência histórica) e já foi **migrado para React**, consumindo a API própria ([`laprovence-api`](../laprovence-api)) para catálogo, listas, autenticação e pagamentos.
 
 ---
 
-## **Status do projeto**
+## **Tecnologias**
 
-- **Etapa atual:** Protótipo de alta fidelidade  
-- **Tecnologia atual:** HTML, CSS e JavaScript  
-- **Próxima fase:** Migração para React  
-
----
-
-## **Finalidade do protótipo**
-
-Este protótipo foi criado para:
-
-- **validar a proposta visual da plataforma**
-- **estruturar os fluxos principais de navegação**
-- **simular a experiência do usuário**
-- **servir como base para evolução técnica do sistema**
+- **Framework:** [React 18](https://react.dev/) + [Vite](https://vitejs.dev/)
+- **Roteamento:** [React Router DOM](https://reactrouter.com/) v6
+- **Estado global:** [Zustand](https://github.com/pmndrs/zustand)
+- **Pagamentos:** SDK PagBank (Pix e cartão de crédito com 3DS) + reCAPTCHA v3
 
 ---
 
-## **Próximos passos**
+## **Estrutura do projeto**
 
-As próximas evoluções previstas para o projeto incluem:
+```
+src/
+├── main.jsx              # Entry point
+├── App.jsx               # Rotas da aplicação
+├── pages/                # Telas: Index, Auth, Dashboard, Catalog, Checkout,
+│                          # PublicList, Admin, Story, ResetPassword
+├── components/
+│   ├── layout/            # Navbar, Sidebar
+│   ├── sections/          # Seções da landing (Hero, Features, FAQ, CTA, etc.)
+│   └── ui/                # Componentes reutilizáveis (Modal, Toast, Skeleton, etc.)
+├── services/              # Um arquivo por recurso da API (auth, catalogo, listas,
+│                          # compras, premontadas, pagbank, recaptcha)
+├── store/                 # Estado global (Zustand)
+├── hooks/                 # Hooks customizados
+├── utils/                 # Formatadores e validadores
+└── data/                  # Seeds/dados estáticos auxiliares
 
-- **migração da interface para React**
-- **componentização das telas**
-- **padronização e reaproveitamento de código**
-- **facilidade de manutenção e expansão**
-- **integração com regras de negócio e futuras APIs**
+legacy/                  # HTMLs do protótipo original (referência histórica)
+css/                      # Estilos do protótipo original (referência histórica)
+```
+
+---
+
+## **Rodando localmente**
+
+```bash
+npm install
+npm run dev
+```
+
+Configure um `.env` na raiz com base no `.env.example`:
+
+```env
+VITE_API_URL="https://sua-api.com"
+VITE_RECAPTCHA_SITE_KEY="sua_site_key_recaptcha_v3"
+```
+
+`VITE_RECAPTCHA_SITE_KEY` é opcional em desenvolvimento local; em homologação e produção deve ser configurada com uma chave reCAPTCHA v3 real.
 
 ---
 
@@ -50,13 +65,6 @@ As próximas evoluções previstas para o projeto incluem:
 O checkout React integrado oferece Pix e cartão de crédito. No cartão, os
 dados são criptografados no navegador pelo SDK PagBank e a cobrança somente é
 enviada após a autenticação 3DS retornar `AUTH_FLOW_COMPLETED`.
-
-Para executar o frontend, configure:
-
-```env
-VITE_API_URL="https://sua-api.com"
-VITE_RECAPTCHA_SITE_KEY="sua_site_key_recaptcha_v3"
-```
 
 Em homologação e produção, a página deve ser servida em HTTPS. Se houver uma
 Content Security Policy no servidor web, ela deve permitir o SDK em
@@ -89,3 +97,6 @@ Antes do primeiro deploy:
 A API de homologação deve responder em
 `https://laprovence.hom-oud.com.br/api`. Como front e API usam o mesmo domínio,
 as chamadas podem usar essa URL sem misturar dados de produção.
+
+Há também um workflow `.github/workflows/security.yml` para auditoria de
+dependências (`npm audit`).
