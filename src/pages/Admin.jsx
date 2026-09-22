@@ -480,6 +480,8 @@ export default function Admin() {
   async function handleSalvarItem() {
     if (!itemModal?.nome || !itemModal?.preco) { toast('Preencha nome e preço.', 'error'); return }
     setSaving(true)
+    const isNew = !itemModal.id
+    let saved
     try {
       const payload = {
         nome: itemModal.nome,
@@ -492,21 +494,29 @@ export default function Admin() {
         marca: itemModal.marca || '',
         status: itemModal.status || 'Ativo',
       }
-      let saved
-      if (itemModal.id) {
-        saved = await catalogoService.update(itemModal.id, payload)
-        const oldImages = itemModal.catalogo_images ?? []
-        await Promise.allSettled(oldImages.map((img) => catalogoService.deleteImage(img.id)))
-      } else {
+      if (isNew) {
         saved = await catalogoService.create(payload)
+      } else {
+        saved = await catalogoService.update(itemModal.id, payload)
       }
       const newImgs = (itemModal.imgs ?? []).filter((u) => !!u)
+      // Cria as imagens novas antes de apagar as antigas: se o upload falhar
+      // (ex.: imagem grande demais), não perdemos as imagens já existentes.
       await Promise.all(newImgs.map((url, idx) => catalogoService.addImage(saved.id, url, idx)))
+      if (!isNew) {
+        const oldImages = itemModal.catalogo_images ?? []
+        await Promise.allSettled(oldImages.map((img) => catalogoService.deleteImage(img.id)))
+      }
       const updated = await catalogoService.getAll({ limit: 500 })
       setCatalogo(updated)
       setItemModal(null)
       toast('Item salvo!')
     } catch (e) {
+      // Se o item chegou a ser criado mas o upload das imagens falhou,
+      // desfaz a criação para não deixar item órfão/duplicado no catálogo.
+      if (isNew && saved?.id) {
+        try { await catalogoService.delete(saved.id) } catch { /* melhor esforço */ }
+      }
       toast(e.message, 'error')
     } finally {
       setSaving(false)
