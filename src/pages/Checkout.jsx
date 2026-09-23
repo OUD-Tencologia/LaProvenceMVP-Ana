@@ -253,7 +253,7 @@ export default function Checkout() {
     return (
       <>
         <nav className="co-navbar">
-          <Link to="/"><img src="/assets/img/LaProvenceDecor-Logo.png" alt="La Provence" /></Link>
+          <Link to="/"><img src={`${import.meta.env.BASE_URL}assets/img/LaProvenceDecor-Logo.png`} alt="La Provence" /></Link>
         </nav>
         <div className="co-error-screen">
           <span className="label-caps">Carregando...</span>
@@ -268,7 +268,7 @@ export default function Checkout() {
     return (
       <>
         <nav className="co-navbar">
-          <Link to="/"><img src="/assets/img/LaProvenceDecor-Logo.png" alt="La Provence" /></Link>
+          <Link to="/"><img src={`${import.meta.env.BASE_URL}assets/img/LaProvenceDecor-Logo.png`} alt="La Provence" /></Link>
         </nav>
         <div className="co-error-screen">
           <span className="label-caps" style={{ color: 'var(--ocre)' }}>{processing ? 'Item em processamento' : 'Item presenteado'}</span>
@@ -288,7 +288,7 @@ export default function Checkout() {
     return (
       <>
         <nav className="co-navbar">
-          <Link to="/"><img src="/assets/img/LaProvenceDecor-Logo.png" alt="La Provence" /></Link>
+          <Link to="/"><img src={`${import.meta.env.BASE_URL}assets/img/LaProvenceDecor-Logo.png`} alt="La Provence" /></Link>
         </nav>
         <div className="co-error-screen">
           <span className="label-caps" style={{ color: 'var(--ocre)' }}>Item não disponível</span>
@@ -623,7 +623,7 @@ export default function Checkout() {
 
   const navbar = (
     <nav className="co-navbar">
-      <Link to="/"><img src="/assets/img/LaProvenceDecor-Logo.png" alt="La Provence" /></Link>
+      <Link to="/"><img src={`${import.meta.env.BASE_URL}assets/img/LaProvenceDecor-Logo.png`} alt="La Provence" /></Link>
     </nav>
   )
 

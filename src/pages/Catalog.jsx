@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import Sidebar from '../components/layout/Sidebar'
+import Navbar from '../components/layout/Navbar'
 import Modal from '../components/ui/Modal'
 import ItemCarousel from '../components/ui/ItemCarousel'
 import Toast from '../components/ui/Toast'
@@ -35,32 +36,33 @@ export default function Catalog() {
 
   const ITEMS_PER_PAGE = 16
 
+
   useEffect(() => {
-    if (!currentUser) { navigate('/auth'); return }
-    if (currentUser.role !== 'noivo') { navigate('/admin'); return }
+    if (currentUser && currentUser.role !== 'noivo') { navigate('/admin'); return }
   }, [currentUser, navigate])
 
   useEffect(() => {
-    if (!currentUser || currentUser.role !== 'noivo') return
     async function load() {
       setLoading(true)
       try {
         const cat = await catalogoService.getAll({ limit: 500 })
         setCatalogo(cat.filter((i) => i.status === 'Ativo'))
 
-        let l = null
-        try { l = await listasService.getByUser(currentUser.id) } catch (e) {
-          console.warn('[Catalog] getByUser failed:', e?.message)
-        }
-        setLista(l)
+        if (currentUser?.role === 'noivo') {
+          let l = null
+          try { l = await listasService.getByUser(currentUser.id) } catch (e) {
+            console.warn('[Catalog] getByUser failed:', e?.message)
+          }
+          setLista(l)
 
-        if (l) {
-          const [itens, comprasData] = await Promise.all([
-            listasService.getItens(l.id),
-            comprasService.getByLista(l.id).catch(() => []),
-          ])
-          setListaItens(itens)
-          setCompras(comprasData)
+          if (l) {
+            const [itens, comprasData] = await Promise.all([
+              listasService.getItens(l.id),
+              comprasService.getByLista(l.id).catch(() => []),
+            ])
+            setListaItens(itens)
+            setCompras(comprasData)
+          }
         }
       } catch (e) {
         toast(e.message, 'error')
@@ -71,9 +73,11 @@ export default function Catalog() {
     load()
   }, [currentUser?.id])
 
-  if (!currentUser) return null
-
   async function toggleItem(catalogoId) {
+    if (!currentUser) {
+      navigate('/auth')
+      return
+    }
     if (!lista) {
       toast('Volte ao painel para criar sua lista primeiro.', 'error')
       return
@@ -128,9 +132,9 @@ export default function Catalog() {
   return (
     <div className="app-layout">
       <Toast toasts={toasts} />
-      <Sidebar role="noivo" />
+      {currentUser ? <Sidebar role="noivo" /> : <Navbar solid />}
 
-      <main className="main-content">
+      <main className={`main-content${currentUser ? '' : ' main-content--public'}`}>
         <div className="page-header">
           <div className="page-header-text"><h1>Catálogo de Presentes</h1></div>
           <div className="search-bar">

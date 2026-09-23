@@ -2464,3 +2464,13 @@ tbody tr:last-child td {
     display: none;
   }
 }
+
+.main-content--public {
+  margin-left: 0;
+  padding-top: 7rem;
+}
+@media (max-width: 768px) {
+  .main-content--public {
+    padding-top: 5.5rem;
+  }
+}

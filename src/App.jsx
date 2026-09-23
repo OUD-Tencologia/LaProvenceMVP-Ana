@@ -34,7 +34,7 @@ export default function App() {
   }, [loadSession]);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/auth" element={<Auth />} />
@@ -45,9 +45,7 @@ export default function App() {
         <Route path="/dashboard" element={
           <PrivateRoute role="noivo"><Dashboard /></PrivateRoute>
         } />
-        <Route path="/catalogo" element={
-          <PrivateRoute role="noivo"><Catalog /></PrivateRoute>
-        } />
+        <Route path="/catalogo" element={<Catalog />} />
         <Route path="/story" element={
           <PrivateRoute><Story /></PrivateRoute>
         } />

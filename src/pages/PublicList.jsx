@@ -8,22 +8,8 @@ import { SkeletonGrid } from '../components/ui/Skeleton'
 import { formatMoney, formatDate, formatNomeNoivos } from '../utils/formatters'
 import { listasService } from '../services/listas.js'
 import { comprasService } from '../services/compras.js'
-import { getRecaptchaToken } from '../services/recaptcha.js'
 
 const SETOR_ORDER = ['Mesa posta', 'Prataria', 'Adornos', 'Aromas', 'Mobiliário', 'Vasos', 'Complementos']
-const WA_NUMBER = '5565996828577'
-
-function maskCPF(v) {
-  return v.replace(/\D/g, '').slice(0, 11)
-    .replace(/(\d{3})(\d)/, '$1.$2')
-    .replace(/(\d{3}\.\d{3})(\d)/, '$1.$2')
-    .replace(/(\d{3}\.\d{3}\.\d{3})(\d)/, '$1-$2')
-}
-function maskPhone(v) {
-  return v.replace(/\D/g, '').slice(0, 11)
-    .replace(/(\d{2})(\d)/, '($1) $2')
-    .replace(/(\(\d{2}\) \d{4,5})(\d{4})$/, '$1-$2')
-}
 
 export default function PublicList() {
   const [searchParams] = useSearchParams()
@@ -41,14 +27,6 @@ export default function PublicList() {
   const [statusFiltro, setStatusFiltro] = useState('todos')
   const [sort, setSort] = useState('padrao')
   const [detailItem, setDetailItem] = useState(null)
-
-  // Gift flow
-  const [giftModal, setGiftModal] = useState(null) // { item, listaItem }
-  const [giftValor, setGiftValor] = useState(200)
-  const [guestData, setGuestData] = useState({ nome: '', cpf: '', telefone: '', formaPagamento: '' })
-  const [guestErrors, setGuestErrors] = useState({})
-  const [confirmModal, setConfirmModal] = useState(null) // { items, guestNome, formaPagamento }
-  const [confirmando, setConfirmando] = useState(false)
 
   const CARTAO_PRESENTE_ITEM = { id: null, nome: 'Cartão Presente', preco: 200, setor: '', tamanho: '', imgs: [], marca: '', isCartaoPresente: true }
 
@@ -89,7 +67,7 @@ export default function PublicList() {
     return (
       <div>
         <nav className="public-navbar">
-          <Link to="/"><img src="/assets/img/LaProvenceDecor-Logo.png" alt="La Provence" style={{ width: 150 }} /></Link>
+          <Link to="/"><img src={`${import.meta.env.BASE_URL}assets/img/LaProvenceDecor-Logo.png`} alt="La Provence" style={{ width: 150 }} /></Link>
         </nav>
         <div className="public-hero">
           <div className="public-hero-content">
@@ -150,69 +128,12 @@ export default function PublicList() {
     navigate(`/checkout?itemId=${item.id}&codigo=${codigo}`)
   }
 
-  function validarGuest() {
-    const errs = {}
-    if (!guestData.nome.trim()) errs.nome = 'Informe seu nome completo'
-    if (!guestData.cpf.replace(/\D/g, '') || guestData.cpf.replace(/\D/g, '').length < 11) errs.cpf = 'CPF inválido'
-    if (!guestData.telefone.trim()) errs.telefone = 'Informe seu telefone'
-    if (!guestData.formaPagamento) errs.formaPagamento = 'Selecione a forma de pagamento'
-    if (giftModal?.item?.isCartaoPresente && (!giftValor || giftValor < 200)) errs.valor = 'Valor mínimo de R$ 200,00'
-    setGuestErrors(errs)
-    return Object.keys(errs).length === 0
-  }
-
-  async function confirmarPresente() {
-    if (!validarGuest()) return
-    const item = giftModal.item
-
-    setConfirmando(true)
-    try {
-      const recaptchaToken = await getRecaptchaToken('gift_confirm')
-      await comprasService.create({
-        listas_id: lista.id,
-        catalogo_id: item.isCartaoPresente ? null : item.id,
-        nome_convidado: guestData.nome,
-        cpf: guestData.cpf.replace(/\D/g, ''),
-        telefone: guestData.telefone,
-        valor_pago: String(item.isCartaoPresente ? giftValor : Number(item.preco)),
-        forma_pagamento: guestData.formaPagamento,
-        status_pagamento: 'Pendente',
-        is_new_gestor: true,
-        recaptcha_token: recaptchaToken,
-      })
-    } catch {
-      // item continuará sendo tentado pelo gestor via WhatsApp
-    }
-    try {
-      const novasCompras = await comprasService.getPublicAvailabilityByLista(lista.id)
-      setCompras(novasCompras)
-    } catch { /* manter estado atual */ }
-
-    setConfirmando(false)
-    setGiftModal(null)
-    setConfirmModal({ items: [item], guestNome: guestData.nome, formaPagamento: guestData.formaPagamento, giftValor: item.isCartaoPresente ? giftValor : null })
-  }
-
-  function abrirWhatsApp() {
-    if (!confirmModal) return
-    const totalValor = confirmModal.giftValor ?? confirmModal.items.reduce((s, i) => s + Number(i.preco), 0)
-    const itensText = confirmModal.items.map((i) => `• ${i.nome} — ${formatMoney(confirmModal.giftValor ?? i.preco)}`).join('\n')
-    const msg = encodeURIComponent(
-      `Olá! Gostaria de confirmar o presente para os noivos *${formatNomeNoivos(lista.nome_noivos)}*. 🎁\n\n` +
-      `*Meus dados:*\nNome: ${confirmModal.guestNome}\nForma de pagamento: ${confirmModal.formaPagamento}\n\n` +
-      `*${confirmModal.items.length > 1 ? 'Itens escolhidos' : 'Item escolhido'}:*\n${itensText}\n\n` +
-      `*Total: ${formatMoney(totalValor)}*\n\nCódigo da lista: ${lista.codigo}`
-    )
-    window.open(`https://wa.me/${WA_NUMBER}?text=${msg}`, '_blank')
-    setConfirmModal(null)
-  }
-
   return (
     <>
       <Toast toasts={toasts} />
 
       <nav className="public-navbar">
-        <Link to="/"><img src="/assets/img/LaProvenceDecor-Logo.png" alt="La Provence" style={{ width: 150 }} /></Link>
+        <Link to="/"><img src={`${import.meta.env.BASE_URL}assets/img/LaProvenceDecor-Logo.png`} alt="La Provence" style={{ width: 150 }} /></Link>
       </nav>
 
       <div className="public-hero">
@@ -368,126 +289,6 @@ export default function PublicList() {
               <p style={{ fontSize: '0.9rem', lineHeight: 1.6, color: 'var(--texto)', marginBottom: '1rem' }}>{detailItem.item.descricao || 'Sem descrição detalhada.'}</p>
               <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--ouro)' }}>{formatMoney(detailItem.item.preco)}</div>
             </div>
-          </div>
-        </Modal>
-      )}
-
-      {/* Gift modal */}
-      {giftModal && (
-        <Modal
-          open={!!giftModal}
-          onClose={() => setGiftModal(null)}
-          title="Presentear este item"
-          maxWidth="480px"
-          footer={
-            <div style={{ display: 'flex', gap: '0.75rem', width: '100%' }}>
-              <button type="button" className="btn btn-outline-dark btn-sm" style={{ flex: 1 }} onClick={() => setGiftModal(null)}>
-                CANCELAR
-              </button>
-              <button type="button" className="btn btn-verde btn-sm" style={{ flex: 1 }} onClick={confirmarPresente} disabled={confirmando}>
-                {confirmando ? 'REGISTRANDO...' : 'CONFIRMAR PRESENTE'}
-              </button>
-            </div>
-          }
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
-
-            {/* Item info */}
-            <div>
-              <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--verde)', marginBottom: '0.3rem' }}>{giftModal.item.nome}</div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--texto-suave)' }}>
-                {giftModal.item.isCartaoPresente ? 'Escolha o valor do cartão presente (mínimo R$ 200,00):' : 'Defina o valor com o qual deseja presentear os noivos:'}
-              </div>
-            </div>
-
-            {/* Price box */}
-            <div style={{ background: 'var(--bege-suave)', border: '1px solid rgba(0,48,13,0.1)', borderRadius: 4, padding: '1rem 1.5rem', textAlign: 'center' }}>
-              {giftModal.item.isCartaoPresente ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <input
-                    type="number"
-                    min={200}
-                    step={50}
-                    value={giftValor}
-                    onChange={(e) => setGiftValor(Number(e.target.value))}
-                    style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--verde)', textAlign: 'center', border: '1px solid rgba(0,48,13,0.2)', borderRadius: 4, padding: '0.4rem 0.75rem', width: '100%', boxSizing: 'border-box', background: 'var(--branco)' }}
-                  />
-                  {guestErrors.valor && <span className="form-error show">{guestErrors.valor}</span>}
-                </div>
-              ) : (
-                <div style={{ fontSize: '1.7rem', fontWeight: 700, color: 'var(--verde)' }}>{formatMoney(giftModal.item.preco)}</div>
-              )}
-            </div>
-
-            {/* Guest form */}
-            <div>
-              <div className="form-group" style={{ marginBottom: '0.85rem' }}>
-                <label htmlFor="guest-nome" style={{ textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '0.62rem' }}>Seu Nome Completo</label>
-                <input id="guest-nome" type="text" placeholder="Nome completo" value={guestData.nome}
-                  onChange={(e) => setGuestData({ ...guestData, nome: e.target.value })} />
-                {guestErrors.nome && <span className="form-error show">{guestErrors.nome}</span>}
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.85rem' }}>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label htmlFor="guest-cpf" style={{ textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '0.62rem' }}>CPF</label>
-                  <input id="guest-cpf" type="text" placeholder="000.000.000-00" value={guestData.cpf}
-                    onChange={(e) => setGuestData({ ...guestData, cpf: maskCPF(e.target.value) })} />
-                  {guestErrors.cpf && <span className="form-error show">{guestErrors.cpf}</span>}
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label htmlFor="guest-tel" style={{ textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '0.62rem' }}>Telefone</label>
-                  <input id="guest-tel" type="text" placeholder="(00) 00000-0000" value={guestData.telefone}
-                    onChange={(e) => setGuestData({ ...guestData, telefone: maskPhone(e.target.value) })} />
-                  {guestErrors.telefone && <span className="form-error show">{guestErrors.telefone}</span>}
-                </div>
-              </div>
-
-              <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
-                <legend style={{ display: 'block', fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--texto-suave)', marginBottom: '0.5rem', width: '100%' }}>
-                  Forma de Pagamento
-                </legend>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                  {['Pix', 'Cartão'].map((op) => (
-                    <button type="button" key={op}
-                      className={`payment-option${guestData.formaPagamento === op ? ' selected' : ''}`}
-                      onClick={() => setGuestData({ ...guestData, formaPagamento: op })}>
-                      {op}
-                    </button>
-                  ))}
-                </div>
-                {guestErrors.formaPagamento && <span className="form-error show">{guestErrors.formaPagamento}</span>}
-              </fieldset>
-            </div>
-
-            <p style={{ fontSize: '0.72rem', color: 'var(--texto-suave)', lineHeight: 1.6, textAlign: 'center', margin: 0 }}>
-              Ao confirmar, nossa equipe entrará em contato para finalizar o pagamento com segurança.
-            </p>
-          </div>
-        </Modal>
-      )}
-      {/* Modal confirmação presente */}
-      {confirmModal && (
-        <Modal open={!!confirmModal} onClose={() => setConfirmModal(null)} maxWidth="420px">
-          <div className="confirm-present-modal">
-            <div className="script confirm-present-title">Quase lá!</div>
-            <h3 className="confirm-present-subtitle">Estamos finalizando seu presente</h3>
-            <p className="confirm-present-desc">
-              Para garantir a segurança da transação, o pagamento é concluído diretamente com nossa equipe.
-            </p>
-            <div className="confirm-present-box">
-              <div className="label-caps" style={{ color: 'var(--ouro)', marginBottom: '0.5rem' }}>
-                {confirmModal.items.length > 1 ? 'Itens Escolhidos' : 'Item Escolhido'}
-              </div>
-              {confirmModal.items.map((item) => (
-                <div key={item.id ?? 'cartao'} className="confirm-present-item">
-                  {item.nome}{confirmModal.giftValor ? ` — ${formatMoney(confirmModal.giftValor)}` : ''}
-                </div>
-              ))}
-            </div>
-            <button type="button" className="btn btn-verde confirm-present-wa" onClick={abrirWhatsApp}>
-              ENTRAR EM CONTATO VIA WHATSAPP
-            </button>
           </div>
         </Modal>
       )}
