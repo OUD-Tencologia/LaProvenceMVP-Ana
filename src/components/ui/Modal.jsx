@@ -1,6 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export default function Modal({ open, onClose, title, children, footer, maxWidth = '520px' }) {
+  const mouseDownOnOverlay = useRef(false);
+
   useEffect(() => {
     if (open) document.body.style.overflow = 'hidden';
     else document.body.style.overflow = '';
@@ -16,7 +18,14 @@ export default function Modal({ open, onClose, title, children, footer, maxWidth
   if (!open) return null;
 
   return (
-    <div className="modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) onClose?.(); }}>
+    <div
+      className="modal-overlay open"
+      onMouseDown={(e) => { mouseDownOnOverlay.current = e.target === e.currentTarget; }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && mouseDownOnOverlay.current) onClose?.();
+        mouseDownOnOverlay.current = false;
+      }}
+    >
       <div className="modal" style={{ maxWidth }}>
         {title && (
           <div className="modal-header">
